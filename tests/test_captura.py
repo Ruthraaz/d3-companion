@@ -21,7 +21,7 @@ import numpy as np
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
 
-from captura import achar_dica  # noqa: E402
+from captura import achar_dica, grupo_de_dicas  # noqa: E402
 from parser import interpretar  # noqa: E402
 
 
@@ -67,6 +67,28 @@ class TestAcharDica(unittest.TestCase):
         self.assertLess(esquerda[2], largura_zei)
         self.assertGreater(direita[0], largura_zei)
 
+    def test_grupo_inclui_a_dica_do_equipado_colada(self):
+        # Comparando, o jogo cola a dica do item equipado do lado. O selo tem
+        # que ir pro lado de fora das duas (visto no jogo em 24/10/2026).
+        zei, pain = amostra("gema_zei"), amostra("gema_pain_enhancer")
+        z = achar_dica(zei)
+        p = achar_dica(pain)
+        zei, pain = zei[:, z[0] - 5:z[2] + 1], pain[:, p[0]:p[2] + 5]
+        altura = max(zei.shape[0], pain.shape[0])
+        def ajustar(img):
+            return cv2.copyMakeBorder(img, 0, altura - img.shape[0], 0, 0, cv2.BORDER_CONSTANT,
+                                      value=(40, 40, 40))
+        vao = np.full((altura, 10, 3), 40, np.uint8)
+        tela = np.hstack([ajustar(zei), vao, ajustar(pain)])
+        caixa = achar_dica(tela, cursor=(100, 300))
+        self.assertLess(caixa[2], zei.shape[1] + 2)        # escolheu a da esquerda
+        x0, x1 = grupo_de_dicas(tela, caixa)
+        self.assertLess(x0, 10)
+        self.assertGreater(x1, tela.shape[1] - 15)        # e o grupo pega as duas
+        # Sozinha, o grupo é a própria dica.
+        sozinha = achar_dica(amostra("gema_zei"))
+        self.assertEqual(grupo_de_dicas(amostra("gema_zei"), sozinha), (sozinha[0], sozinha[2]))
+
     def test_sem_dica(self):
         self.assertIsNone(achar_dica(np.full((600, 800, 3), 40, np.uint8)))  # fundo cinza
         self.assertIsNone(achar_dica(np.zeros((600, 800, 3), np.uint8)))      # tudo preto
@@ -107,6 +129,16 @@ GABARITO = {
     "gema_zei": ("Zei's Stone of Vengeance", None, []),
     "gema_pain_enhancer": ("Pain Enhancer", None, []),
     "jogo_zei_abaixo_do_inventario": ("Zei's Stone of Vengeance", None, []),
+    # Prints do jogo (24/10/2026). "Ignores Durability Loss" cortava a leitura antes
+    # da lista do set, e o nome saía só "Condemnation".
+    "jogo_set_hallowed_condemnation": ("Hallowed Condemnation", None, [
+        "+951-1140 Holy Damage", "+680 Dexterity", "+719 Vitality",
+        "Reduces cooldown of all skills by 8.0%.", "+12 Maximum Discipline (Demon Hunter Only)",
+        "Ignores Durability Loss"]),
+    # Gema lendária encaixada: os efeitos dela não são afixos do item.
+    "jogo_set_litany_com_gema_encaixada": ("Litany of the Undaunted", None, [
+        "+427 Dexterity", "+13% Life", "Reduces all resource costs by 6.0%.",
+        "+157 Cold Resistance", "+5695 Life after Each Kill"]),
 }
 
 
@@ -121,6 +153,11 @@ class TestCaminhoCompleto(unittest.TestCase):
                 self.assertEqual(lidos, afixos)
                 if armadura:
                     self.assertEqual(item["armadura"], armadura)
+
+    def test_gema_encaixada_conta_como_encaixe(self):
+        texto = (RAIZ / "tests" / "ocr_recorte" / "jogo_set_litany_com_gema_encaixada.txt"
+                 ).read_text(encoding="utf-8")
+        self.assertEqual(interpretar(texto)["soquetes"], 1)
 
     def test_armadura_nunca_errada(self):
         # Quando a armadura não é lida, tem que vir None, nunca um número errado.

@@ -76,8 +76,8 @@ Cada afixo vem com um **modelo** (os números trocados por `#`), que é o que o 
 - **Nome de item de set vem da lista de peças.** O título usa a fonte decorada e sai embaralhado (`LITANY)@FeTHE/UNDAUNTED`), mas a própria peça está na lista em fonte normal. O parser escolhe a peça mais parecida com o título.
 - **Raros e mágicos ficam sem nome** (`null`). O nome é aleatório (`Vampiric Source`), sai embaralhado (`LVAmpiRIseURCE`) e não serve pra avaliar o item.
 - **Limitações conhecidas:**
-  - Gemas encaixadas no item ainda não são lidas (só conta os soquetes vazios).
-  - Um afixo sem número que seja o último da lista seria cortado junto com a descrição.
+  - Gema **lendária** encaixada conta como encaixe (linha `Nome - Rank N`), e os efeitos dela não viram afixo. Gema **comum** encaixada (ex.: diamante no elmo, "Reduces cooldown...") ainda não: o texto dela é igual ao de um afixo, e só o ícone denuncia.
+  - Um afixo sem número que seja o último da lista seria cortado junto com a descrição. Os conhecidos ficam numa lista (`AFIXOS_SEM_NUMERO`, ex.: "Ignores Durability Loss").
   - Erros de número do OCR passam direto: `+13% Life` virou `413% Life` (o "+" lido como "4"), `+157` virou `+187`, `+33%` virou `+39%`. O texto não tem como denunciar isso. **Resolvido na Etapa 4:** com o recorte da dica e o OCR ampliado 2x, os três saem certos.
   - Às vezes a armadura sai `null` (o OCR não leu "Armor" ou separou os dígitos: `5 8 1`). O parser prefere `null` a um número errado.
 
@@ -158,6 +158,12 @@ O selo é uma janela separada do jogo: fica sempre por cima, **deixa o clique pa
 ```
 
 Sem `rotulo`, o selo mostra o próprio modelo; sem `apelido`, o nome da build. Tudo fica no JSON, nada no código.
+
+**Primeiro teste no jogo (24/10/2026):** gemas e equipamentos com selo certo. Três problemas apareceram e viraram testes com os prints reais (`samples/jogo_*.png`):
+- **Dica encostada no inventário** não era achada (veja a Etapa 4).
+- **"Hallowed Condemnation" saía "Condemnation"**: o afixo "Ignores **Durability** Loss" era confundido com o rodapé "Durability: 29/29" e a leitura parava antes da lista do set. Agora o fim é `Durability:` com dois-pontos.
+- **O selo tampava a dica do item equipado** quando o jogo mostra as duas lado a lado pra comparar. Agora o app acha as dicas coladas na do item e põe o selo do lado de fora do grupo.
+- E uma gema lendária encaixada virava afixo do item e não contava como encaixe.
 
 **Como as partes conversam:** o F8 é ouvido numa thread separada, que faz o trabalho pesado (print + OCR, ~1 s) sem travar a interface e manda o resultado pro selo por um *sinal* do Qt. O núcleo (`src/nucleo.py`) monta o texto e a posição do selo sem depender de interface, então tudo isso tem teste sem abrir janela.
 

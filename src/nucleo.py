@@ -11,10 +11,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+import cv2
+import numpy as np
 from PIL import Image
 
 from avaliador import avaliar_todas
-from captura import AMPLIAR, FOLGA_TOPO, localizar_dica
+from captura import AMPLIAR, FOLGA_TOPO, grupo_de_dicas, localizar_dica
 from ocr import ler_texto
 from parser import interpretar
 
@@ -28,6 +30,7 @@ class Avaliacao:
     item: dict | None = None
     resultados: list[dict] = field(default_factory=list)
     caixa: Caixa | None = None      # onde a dica está, em coordenadas da imagem
+    grupo: tuple[int, int] | None = None  # (x0, x1) da dica + dicas coladas (Equipped)
     erro: str | None = None
     arquivo: Path | None = None     # recorte (ou print, se não achou dica) salvo
     segundos: float = 0.0
@@ -49,6 +52,8 @@ def avaliar_print(imagem: Image.Image, cursor: tuple[int, int] | None,
             av.arquivo = PASTA_CAPTURAS / f"{carimbo}_sem_dica.png"
             imagem.save(av.arquivo)
     else:
+        bgr = cv2.cvtColor(np.array(imagem.convert("RGB")), cv2.COLOR_RGB2BGR)
+        av.grupo = grupo_de_dicas(bgr, av.caixa)
         recorte = imagem.crop(av.caixa)
         if salvar:
             av.arquivo = PASTA_CAPTURAS / f"{carimbo}.png"
@@ -121,6 +126,8 @@ def caixa_na_tela(av: Avaliacao, origem: tuple[int, int], cursor: tuple[int, int
         mx, my = cursor[0] + ox, cursor[1] + oy
         return mx, my, mx + 1, my + 1
     x0, y0, x1, y1 = av.caixa
+    if av.grupo:  # o selo vai pro lado de fora da dica do item equipado
+        x0, x1 = av.grupo
     return x0 + ox, y0 + FOLGA_TOPO + oy, x1 + ox, y1 + oy
 
 

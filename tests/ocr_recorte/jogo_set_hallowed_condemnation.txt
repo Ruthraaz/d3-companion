@@ -1,0 +1,37 @@
+— ar A Se
+C HALL®@W£D) C@NDEMNATI@N 4
+[ ee Set Hand Crossbow 1-Hand
+1] | 2 344 8 Demon Hunter
+bred Damage Per Second
+L% |
+1077-1854 Damage
+1.60 Attacks per Second
+Primary
+» +951-1140 Holy Damage
+» +680 Dexterity
+> +719 Vitality
+# Reduces cooldown of all skills by 8.0%.
+Secondary
+¢ +12 Maximum Discipline (Demon Hunter Only)
+Ignores Durability Loss
+Hallowed Protectors
+Hallowed Barricade (Off-Hand)
+Hallowed Breach (1-Hand)
+Hallowed Hold (1-Hand)
+Hallowed Sufferance (1-Hand)
+Hallowed Nemesis (1-Hand)
+Hallowed Condemnation (1-Hand)
+Hallowed Baton (1-Hand)
+(2) Set:
+» +100 Resistance to All Elements
+» Attack Speed Increased by 10.0%
+Stat Changes if Equipped:
+-18.4°> Damage
++18.4% Toughness
++0.0% Recovery
+An angelic weapon re-forged to suit the needs of a hero
+wielding the powers of the nephalem.
+Unique Equipped
+Required Level: 1
+Account Bound
+Sell Value: 7989 @ Durability: 29/29 |

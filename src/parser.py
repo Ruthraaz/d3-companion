@@ -39,7 +39,10 @@ MINUSCULAS = {"of", "the", "and", "a", "an", "to", "in", "on"}
 
 # Linhas que encerram a parte de atributos da dica.
 FIM_DOS_ATRIBUTOS = ("Stat Changes", "Required Level", "Account Bound",
-                     "Sell Value", "Durability", "Unique Equipped")
+                     "Sell Value", "Durability:", "Unique Equipped")
+# Com dois-pontos: "Ignores Durability Loss" é afixo, não o fim da dica.
+# Gema lendária encaixada no item: "Gem of Efficacious Toxin - Rank 10".
+GEMA_ENCAIXADA = r"\s[-–]\s*Rank\s+\d+\s*$"
 
 NUMERO = r"\d[\d,]*(?:\.\d+)?"
 # Caracteres que aparecem em texto de verdade. Qualquer outro (©, ”, |, =, /)
@@ -90,8 +93,13 @@ def _eh_lixo(linha: str) -> bool:
     return len(linha.split()) < 2 or sum(c.isalnum() for c in linha) < 5
 
 
+# Afixos de verdade que não têm número (sem isso seriam cortados como descrição).
+AFIXOS_SEM_NUMERO = ("Ignores Durability Loss",)
+
+
 def _parece_afixo(texto: str) -> bool:
-    return texto.startswith("+") or any(c.isdigit() for c in texto)
+    return (texto.startswith("+") or any(c.isdigit() for c in texto)
+            or texto in AFIXOS_SEM_NUMERO)
 
 
 def agrupar_afixos(linhas: list[str]) -> list[str]:
@@ -275,6 +283,15 @@ def interpretar(texto: str) -> dict:
         if "Set" in qualidade:
             nome = _nome_pela_lista(titulo, pecas) or nome
 
+    # Gema lendária encaixada: vem depois dos afixos, com os efeitos dela embaixo.
+    # Os efeitos não são afixos do item, e o encaixe existe (só não está vazio).
+    vazios = sum("Empty Socket" in l for l in linhas[:i_fim])
+    gemas_encaixadas = 0
+    i_gema = _indice(linhas[:i_fim], GEMA_ENCAIXADA, i_qual)
+    if i_gema is not None:
+        gemas_encaixadas = sum(bool(re.search(GEMA_ENCAIXADA, l)) for l in linhas[i_gema:i_fim])
+        i_fim = i_gema
+
     # Títulos de seção, aceitando um pouco de lixo em volta ("°S\ Secondary").
     i_prim = _indice(linhas[:i_fim], r"^.{0,6}\bPrimary\b.{0,6}$", i_qual)
     i_sec = _indice(linhas[:i_fim], r"^.{0,6}\bSecondary\b.{0,6}$", i_qual)
@@ -313,7 +330,7 @@ def interpretar(texto: str) -> dict:
         "ataques_por_segundo": float(m_aps.group(1)) if m_aps else None,
         "primarios": secao(i_prim, i_sec if i_sec is not None else i_fim),
         "secundarios": secao(i_sec, i_fim),
-        "soquetes": sum("Empty Socket" in l for l in linhas[:i_fim]),
+        "soquetes": vazios + gemas_encaixadas,
         "nivel_requerido": int(m_nivel.group(1)) if m_nivel else None,
         "set": conjunto,
     }

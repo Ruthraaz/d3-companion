@@ -1,4 +1,4 @@
-﻿"""
+"""
 Etapa 4 — Captura da dica (tooltip) perto do cursor.
 
 Duas partes:
@@ -104,6 +104,51 @@ def achar_dica(img: np.ndarray, cursor: tuple[int, int] | None = None
     Com `cursor` (x, y na imagem), escolhe a dica mais perto dele. Isso
     importa quando aparecem duas (a do item e a do item equipado).
     """
+    candidatas = achar_dicas(img)
+    if not candidatas:
+        return None
+
+    def area(c):
+        return (c[2] - c[0]) * (c[3] - c[1])
+
+    if cursor is None:
+        return max(candidatas, key=area)
+
+    def distancia(c):
+        cx = cursor[0]
+        return max(c[0] - cx, 0, cx - c[2])  # 0 se o cursor está na faixa da dica
+
+    perto = [c for c in candidatas if distancia(c) <= DISTANCIA_DO_CURSOR]
+    if not perto:
+        return None
+    return min(perto, key=lambda c: (distancia(c), -area(c)))
+
+
+VIZINHA = 40  # px entre duas dicas lado a lado (item + "Equipped")
+
+
+def grupo_de_dicas(img: np.ndarray, caixa: tuple[int, int, int, int]) -> tuple[int, int]:
+    """(x0, x1) da dica `caixa` somada às dicas grudadas nela dos lados.
+
+    Ao comparar, o jogo mostra a dica do item equipado colada na do item.
+    O selo vai pro lado de FORA desse grupo, pra não tampar nenhuma das duas.
+    """
+    x0, y0, x1, y1 = caixa
+    candidatas = achar_dicas(img)
+    mudou = True
+    while mudou:
+        mudou = False
+        for c in candidatas:
+            mesma_altura = min(c[3], y1) - max(c[1], y0) > 0.3 * (y1 - y0)
+            encosta = c[0] <= x1 + VIZINHA and c[2] >= x0 - VIZINHA
+            if mesma_altura and encosta and (c[0] < x0 or c[2] > x1):
+                x0, x1, mudou = min(x0, c[0]), max(x1, c[2]), True
+    return x0, x1
+
+
+def achar_dicas(img: np.ndarray) -> list[tuple[int, int, int, int]]:
+    """Todas as caixas que parecem dica na imagem (BGR). Pode haver repetidas
+    quase iguais (a moldura é dupla)."""
     mx = img.max(axis=2)
     escuro = mx < ESCURO
     # Imagem integral: soma de qualquer retângulo em tempo constante.
@@ -132,24 +177,7 @@ def achar_dica(img: np.ndarray, cursor: tuple[int, int] | None = None
                    for x, y, n in colunas):
                 continue
             candidatas.append((xe, min(ye, yd), xd, max(ye + ne, yd + nd)))
-
-    if not candidatas:
-        return None
-
-    def area(c):
-        return (c[2] - c[0]) * (c[3] - c[1])
-
-    if cursor is None:
-        return max(candidatas, key=area)
-
-    def distancia(c):
-        cx = cursor[0]
-        return max(c[0] - cx, 0, cx - c[2])  # 0 se o cursor está na faixa da dica
-
-    perto = [c for c in candidatas if distancia(c) <= DISTANCIA_DO_CURSOR]
-    if not perto:
-        return None
-    return min(perto, key=lambda c: (distancia(c), -area(c)))
+    return candidatas
 
 
 def localizar_dica(imagem: Image.Image, cursor: tuple[int, int] | None = None

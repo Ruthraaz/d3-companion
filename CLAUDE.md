@@ -68,10 +68,13 @@ trabalho extra agora, não feche essa porta:
 | 3 | Formato de build em JSON + avaliador (`builds/`, `src/avaliador.py`) | ✅ (formato aprovado em 24/10/2026) |
 | 4 | Atalho global + captura perto do cursor (`src/app.py`, `src/captura.py`) | ✅ (testado no jogo em 24/10/2026) |
 | 5 | Overlay em cima do jogo (PySide6: `src/overlay.py`, núcleo em `src/nucleo.py`) | ✅ (testado no jogo com gemas) |
-| — | **Versão 1:** Arthur testa F8 + selo dentro do jogo; corrigir o que aparecer | falta só testar um **equipamento** no jogo |
+| — | **Versão 1:** Arthur testa F8 + selo dentro do jogo; corrigir o que aparecer | ✅ testado no jogo em 24/10/2026 (gemas + equipamentos) |
 
 Em 24/10/2026 o selo dos 7 equipamentos de `samples/` foi conferido fora do jogo (mesmo caminho do F8)
 e saiu certo: sets da build certa, lendário fora da build com "Não serve" + motivo, raro com ✓/✗ por afixo.
+No jogo (mesmo dia): corrigidos nome de set com "Ignores Durability Loss", gema lendária encaixada
+(conta como encaixe) e selo tampando a dica do item equipado (`grupo_de_dicas`). Limitação aberta:
+gema comum encaixada é lida como afixo. Próximo: Arthur revisar gemas/itens das builds; depois, janela principal.
 
 ### Etapa 5 — notas
 - Builds ganharam `apelido` (nome curto no selo) e `rotulo` por afixo (ex.: "Destreza"). Sem eles, usa nome/modelo.

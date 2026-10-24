@@ -72,6 +72,11 @@ class TestPosicao(unittest.TestCase):
         av = Avaliacao(caixa=(10, 30, 410, 700))
         self.assertEqual(caixa_na_tela(av, (300, 0), (0, 0)), (310, 100, 710, 700))
 
+    def test_caixa_na_tela_usa_o_grupo_com_a_dica_do_equipado(self):
+        # Dica do item em x 10-410 e a do equipado colada até x 820.
+        av = Avaliacao(caixa=(10, 30, 410, 700), grupo=(10, 820))
+        self.assertEqual(caixa_na_tela(av, (300, 0), (0, 0)), (310, 100, 1120, 700))
+
     def test_caixa_na_tela_sem_dica_usa_o_mouse(self):
         self.assertEqual(caixa_na_tela(Avaliacao(), (300, 0), (50, 60)), (350, 60, 351, 61))
 

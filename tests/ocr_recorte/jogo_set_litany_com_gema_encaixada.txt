@@ -1,0 +1,33 @@
+ek SS ONY
+N =
+= EQUIPPED P
+C LITANY ®F THE UNDAUNTED q
+» | Set Ring Finger
+aed
+Primary
++427 Dexterity
++13% Life
+¢ Reduces all resource costs by 6.0%.
+Secondary
++157 Cold Resistance
++5695 Life after Each Kill
+Fal Gem of Efficacious Toxin - Rank 10
+Poison all enemies hit for 2500% weapon damage
+over 10 seconds.
+¢ All enemies you poison take 10% increased damage
+from all sources and deal 10% less damage.
+(Requires Rank 25)
+Legacy of Nightmares
+Litany of the Undaunted (Finger)
+The Wailing Host (Finger)
+(2) Set:
+While this is your only Item Set bonus every Ancient
+item you have equipped increases your damage dealt
+by 750% and reduces your damage taken by 4%.
+The names of those who have given their lives to fight the
+scourge of the Burning Hells are inscribed on this band,
+each one giving its power to the wearer.
+Unique Equipped
+Required Level: 1
+Account Bound
+Sell Value: 6063 @ Durability: 31/31
