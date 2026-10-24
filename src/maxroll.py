@@ -31,18 +31,35 @@ RAIZ = Path(__file__).resolve().parent.parent
 PASTA_CACHE = RAIZ / "dados" / "maxroll"
 URL_PLANNER = "https://planners.maxroll.gg/profiles/load/d3/{}"
 URL_DADOS = "https://assets-ng.maxroll.gg/d3planner/data.json"
+VERSAO_DO_CACHE = 2  # sobe quando o que guardamos do data.json muda
 CABECALHO = {"User-Agent": "D3Companion/1.0 (app pessoal; uma build por vez)"}
 
-# classe do Maxroll -> (classe nas builds, atributo principal, rótulo)
+# classe do Maxroll -> (classe nas builds, atributo principal, rótulo, chave do atributo no Maxroll)
 CLASSES = {
-    "barbarian": ("Barbarian", "Strength", "Força"),
-    "crusader": ("Crusader", "Strength", "Força"),
-    "demonhunter": ("Demon Hunter", "Dexterity", "Destreza"),
-    "monk": ("Monk", "Dexterity", "Destreza"),
-    "necromancer": ("Necromancer", "Intelligence", "Inteligência"),
-    "witchdoctor": ("Witch Doctor", "Intelligence", "Inteligência"),
-    "wizard": ("Wizard", "Intelligence", "Inteligência"),
+    "barbarian": ("Barbarian", "Strength", "Força", "str"),
+    "crusader": ("Crusader", "Strength", "Força", "str"),
+    "demonhunter": ("Demon Hunter", "Dexterity", "Destreza", "dex"),
+    "monk": ("Monk", "Dexterity", "Destreza", "dex"),
+    "necromancer": ("Necromancer", "Intelligence", "Inteligência", "int"),
+    "witchdoctor": ("Witch Doctor", "Intelligence", "Inteligência", "int"),
+    "wizard": ("Wizard", "Intelligence", "Inteligência", "int"),
 }
+
+# Afixo do Maxroll -> rótulo curto do selo. O que não está aqui usa o nome do Maxroll.
+ROTULOS = {
+    "str": "Força", "dex": "Destreza", "int": "Inteligência", "vit": "Vitalidade",
+    "chc": "Crítico", "chd": "Dano crítico", "ias": "Vel. de ataque", "cdr": "Recarga",
+    "rcr": "Custo de recurso", "area": "Dano em área", "resall": "Resistência total",
+    "life": "Vida %", "armor": "Armadura", "lph": "Vida por acerto", "regen": "Vida por segundo",
+    "dmgred": "Redução de dano", "edmg": "Dano a elites", "damage": "Dano %", "ms": "Velocidade",
+    "dmgphy": "Dano físico", "dmgfir": "Dano de fogo", "dmgcol": "Dano de frio",
+    "dmglit": "Dano elétrico", "dmgpsn": "Dano de veneno", "dmgarc": "Dano arcano",
+    "dmghol": "Dano sagrado", "damage_demonhunter": "Dano de habilidade",
+}
+# Não viram regra: armadura base do item, poder lendário, durabilidade e o
+# aumento do Caldesann (vem depois, no cubo). Secundários (ouro, raio, XP) também não.
+IGNORADOS = {"basearmor", "custom", "dura"}
+IGNORADOS_PREFIXO = ("caldesanns_", "leg_")
 
 # espaço do Maxroll -> espaço nas builds (os dois anéis vão juntos em Finger)
 ESPACOS = {
@@ -141,16 +158,23 @@ def dados_do_planejador(pasta: Path = PASTA_CACHE, abrir=urllib.request.urlopen)
     Baixado uma vez e guardado em dados/maxroll/."""
     arquivo = pasta / "data.json"
     if arquivo.exists():
-        return json.loads(arquivo.read_text(encoding="utf-8"))
+        guardado = json.loads(arquivo.read_text(encoding="utf-8"))
+        if guardado.get("versao") == VERSAO_DO_CACHE:  # cache antigo: baixa de novo
+            return guardado
     dados = _baixar(URL_DADOS, abrir)
     def por_id(colecao):  # o data.json traz lista de itens; dicionário fica igual
         valores = colecao.values() if isinstance(colecao, dict) else colecao
         return {v["id"]: v for v in valores if isinstance(v, dict) and v.get("id")}
     gemas = dados.get("legendaryGems", {})
-    pequeno = {"items": {k: {"name": v.get("name"), "ids": v.get("ids", [])}
+    pequeno = {"versao": VERSAO_DO_CACHE,
+               "items": {k: {"name": v.get("name"), "ids": v.get("ids", [])}
                          for k, v in por_id(dados.get("items", [])).items()},
                # As gemas ficam pela chave do Maxroll ("zei"), que é como o planner as cita.
-               "legendaryGems": {k: {"name": v.get("name")} for k, v in gemas.items()}}
+               "legendaryGems": {k: {"name": v.get("name")} for k, v in gemas.items()},
+               # Texto de cada afixo, igual ao do jogo: "Critical Hit Chance Increased by %.1f%%".
+               "stats": {k: {"name": v.get("name"), "format": v.get("format"),
+                             "secondary": bool(v.get("secondary")), "args": v.get("args")}
+                         for k, v in dados.get("stats", {}).items() if isinstance(v, dict)}}
     pasta.mkdir(parents=True, exist_ok=True)
     arquivo.write_text(json.dumps(pequeno, ensure_ascii=False), encoding="utf-8")
     return pequeno
@@ -176,6 +200,52 @@ def _nome_do_item(codigo: str, dados: dict) -> str | None:
     return None
 
 
+def modelo_do_formato(formato: str) -> str:
+    """Texto do Maxroll -> modelo do app (o mesmo que o parser tira da dica):
+    "Critical Hit Chance Increased by %.1f%%" -> "Critical Hit Chance Increased by #%"."""
+    texto = formato.replace("%%", "\0")
+    texto = re.sub(r"%[-+]?\d*(?:\.\d+)?[dfs]", "#", texto)
+    return texto.replace("\0", "%")
+
+
+def regras_do_item(stats: dict, dados: dict, atributo: str, habilidades: dict[str, dict],
+                   na_arma: bool = False) -> list[dict]:
+    """Os afixos que o guia escolheu pra um item -> regras desejáveis do espaço.
+
+    `atributo` é a chave do atributo principal ("dex"), que já é obrigatório em
+    todos os espaços e não se repete aqui. `habilidades`: código sem hífen ->
+    habilidade da Blizzard (pra "Increases Impale Damage by #%")."""
+    regras = []
+    for chave in stats:
+        if chave == "sockets":
+            regras.append({"modelo": "@soquete", "rotulo": "Encaixe"})
+            continue
+        if chave.startswith("skill_"):
+            # skill_demonhunter_impale -> "Increases Impale Damage by 13% (Demon Hunter Only)"
+            h = habilidades.get(chave.split("_", 2)[-1])
+            if h and h.get("nome"):
+                regras.append({"modelo": f"Increases {h['nome']} Damage by #% *",
+                               "rotulo": f"Dano de {h.get('nome_pt') or h['nome']}"})
+            continue
+        if chave == atributo or chave in IGNORADOS or chave.startswith(IGNORADOS_PREFIXO):
+            continue
+        info = dados.get("stats", {}).get(chave)
+        if not info or info.get("secondary") or not info.get("name"):
+            continue
+        if info.get("format"):
+            modelo = modelo_do_formato(info["format"])
+        elif info.get("args") == 2:  # dano com faixa: "+1015-1214 Cold Damage"
+            modelo = f"+#-# {info['name']}"
+        else:
+            modelo = f"+# {info['name']}"
+        if chave.startswith("wpn"):
+            rotulo = "Dano da arma" if na_arma else "Dano mín–máx"
+        else:
+            rotulo = ROTULOS.get(chave, info["name"])
+        regras.append({"modelo": modelo, "rotulo": rotulo})
+    return regras
+
+
 def _sem_hifen(slug: str) -> str:
     return slug.replace("-", "").replace(" ", "").lower()
 
@@ -196,7 +266,13 @@ def converter(planner: dict, dados: dict, habilidades_da_classe: dict | None = N
     classe_mx = p.get("class") or planner.get("class")
     if classe_mx not in CLASSES:
         raise ErroMaxroll(f"Classe {classe_mx!r} do Maxroll não é conhecida pelo app.")
-    classe, atributo, rotulo = CLASSES[classe_mx]
+    classe, atributo, rotulo, chave_do_atributo = CLASSES[classe_mx]
+
+    # código sem hífen ("smokescreen") -> habilidade da Blizzard (slug, nome, nome_pt)
+    da_blizzard = {}
+    if habilidades_da_classe:
+        for tipo in ("ativas", "passivas"):
+            da_blizzard.update({_sem_hifen(h["slug"]): h for h in habilidades_da_classe[tipo]})
 
     espacos, gemas, desconhecidos = {}, [], []
     for espaco_mx, item in (p.get("items") or {}).items():
@@ -209,6 +285,13 @@ def converter(planner: dict, dados: dict, habilidades_da_classe: dict | None = N
         espaco = espacos.setdefault(ESPACOS[espaco_mx], {"itens": []})
         if nome not in espaco["itens"]:
             espaco["itens"].append(nome)
+        # Os afixos que o guia escolheu viram desejáveis. Nos anéis (dois itens no
+        # mesmo espaço) junta os dos dois, sem repetir.
+        desejaveis = espaco.setdefault("desejaveis", [])
+        for regra in regras_do_item(item.get("stats") or {}, dados, chave_do_atributo, da_blizzard,
+                                    na_arma=ESPACOS[espaco_mx] == "Weapon"):
+            if regra["modelo"] not in {r["modelo"] for r in desejaveis}:
+                desejaveis.append(regra)
         for gema in item.get("gems") or []:
             # Gema lendária vem como ["zei", 150]; a comum como [9, "topaz"].
             if gema and isinstance(gema[0], str) and gema[0] in dados["legendaryGems"]:
@@ -226,10 +309,7 @@ def converter(planner: dict, dados: dict, habilidades_da_classe: dict | None = N
             else:
                 desconhecidos.append(codigo)
 
-    por_codigo = {}
-    if habilidades_da_classe:
-        for tipo in ("ativas", "passivas"):
-            por_codigo.update({_sem_hifen(h["slug"]): h["slug"] for h in habilidades_da_classe[tipo]})
+    por_codigo = {codigo: h["slug"] for codigo, h in da_blizzard.items()}
     # Runa "x" no Maxroll = habilidade sem runa; vira "" (a build só aceita a-e).
     ativas = [{"habilidade": por_codigo.get(_sem_hifen(s[0]), s[0]),
                "runa": s[1] if len(s) > 1 and s[1] in RUNAS else ""}

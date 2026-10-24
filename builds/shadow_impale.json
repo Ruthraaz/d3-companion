@@ -22,62 +22,246 @@
     "Head": {
       "itens": [
         "The Shadow's Mask"
+      ],
+      "desejaveis": [
+        {
+          "modelo": "Critical Hit Chance Increased by #%",
+          "rotulo": "Crítico"
+        },
+        {
+          "modelo": "Increases Impale Damage by #% *",
+          "rotulo": "Dano de Empalamento"
+        },
+        {
+          "modelo": "@soquete",
+          "rotulo": "Encaixe"
+        }
       ]
     },
     "Shoulders": {
       "itens": [
         "The Shadow's Burden"
+      ],
+      "desejaveis": [
+        {
+          "modelo": "Chance to Deal #% Area Damage on Hit.",
+          "rotulo": "Dano em área"
+        },
+        {
+          "modelo": "Reduces cooldown of all skills by #%.",
+          "rotulo": "Recarga"
+        },
+        {
+          "modelo": "Reduces all resource costs by #%.",
+          "rotulo": "Custo de recurso"
+        }
       ]
     },
     "Neck": {
       "itens": [
         "Squirt's Necklace"
+      ],
+      "desejaveis": [
+        {
+          "modelo": "Critical Hit Damage Increased by #%",
+          "rotulo": "Dano crítico"
+        },
+        {
+          "modelo": "Critical Hit Chance Increased by #%",
+          "rotulo": "Crítico"
+        },
+        {
+          "modelo": "@soquete",
+          "rotulo": "Encaixe"
+        },
+        {
+          "modelo": "Cold skills deal #% more damage.",
+          "rotulo": "Dano de frio"
+        }
       ]
     },
     "Torso": {
       "itens": [
         "The Shadow's Bane"
+      ],
+      "desejaveis": [
+        {
+          "modelo": "+# Vitality",
+          "rotulo": "Vitalidade"
+        },
+        {
+          "modelo": "+# Resistance to All Elements",
+          "rotulo": "Resistência total"
+        },
+        {
+          "modelo": "@soquete",
+          "rotulo": "Encaixe"
+        }
       ]
     },
     "Waist": {
       "itens": [
         "Captain Crimson's Silk Girdle"
+      ],
+      "desejaveis": [
+        {
+          "modelo": "+# Vitality",
+          "rotulo": "Vitalidade"
+        },
+        {
+          "modelo": "+# Resistance to All Elements",
+          "rotulo": "Resistência total"
+        },
+        {
+          "modelo": "+#% Life",
+          "rotulo": "Vida %"
+        }
       ]
     },
     "Hands": {
       "itens": [
         "The Shadow's Grasp"
+      ],
+      "desejaveis": [
+        {
+          "modelo": "Critical Hit Damage Increased by #%",
+          "rotulo": "Dano crítico"
+        },
+        {
+          "modelo": "Critical Hit Chance Increased by #%",
+          "rotulo": "Crítico"
+        },
+        {
+          "modelo": "Chance to Deal #% Area Damage on Hit.",
+          "rotulo": "Dano em área"
+        }
       ]
     },
     "Wrists": {
       "itens": [
         "Wraps of Clarity"
+      ],
+      "desejaveis": [
+        {
+          "modelo": "Critical Hit Chance Increased by #%",
+          "rotulo": "Crítico"
+        },
+        {
+          "modelo": "+# Vitality",
+          "rotulo": "Vitalidade"
+        },
+        {
+          "modelo": "Cold skills deal #% more damage.",
+          "rotulo": "Dano de frio"
+        }
       ]
     },
     "Legs": {
       "itens": [
         "Captain Crimson's Thrust"
+      ],
+      "desejaveis": [
+        {
+          "modelo": "+# Vitality",
+          "rotulo": "Vitalidade"
+        },
+        {
+          "modelo": "+# Resistance to All Elements",
+          "rotulo": "Resistência total"
+        },
+        {
+          "modelo": "@soquete",
+          "rotulo": "Encaixe"
+        }
       ]
     },
     "Feet": {
       "itens": [
         "The Shadow's Heels"
+      ],
+      "desejaveis": [
+        {
+          "modelo": "+# Vitality",
+          "rotulo": "Vitalidade"
+        },
+        {
+          "modelo": "+# Resistance to All Elements",
+          "rotulo": "Resistência total"
+        },
+        {
+          "modelo": "Increases Impale Damage by #% *",
+          "rotulo": "Dano de Empalamento"
+        }
       ]
     },
     "Finger": {
       "itens": [
         "Focus",
         "Restraint"
+      ],
+      "desejaveis": [
+        {
+          "modelo": "@soquete",
+          "rotulo": "Encaixe"
+        },
+        {
+          "modelo": "Critical Hit Damage Increased by #%",
+          "rotulo": "Dano crítico"
+        },
+        {
+          "modelo": "Critical Hit Chance Increased by #%",
+          "rotulo": "Crítico"
+        },
+        {
+          "modelo": "+#-# Damage",
+          "rotulo": "Dano mín–máx"
+        }
       ]
     },
     "Weapon": {
       "itens": [
         "Karlei's Point"
+      ],
+      "desejaveis": [
+        {
+          "modelo": "+#-# Cold Damage",
+          "rotulo": "Dano da arma"
+        },
+        {
+          "modelo": "+#% Damage",
+          "rotulo": "Dano %"
+        },
+        {
+          "modelo": "@soquete",
+          "rotulo": "Encaixe"
+        },
+        {
+          "modelo": "Chance to Deal #% Area Damage on Hit.",
+          "rotulo": "Dano em área"
+        }
       ]
     },
     "Off-Hand": {
       "itens": [
         "Holy Point Shot"
+      ],
+      "desejaveis": [
+        {
+          "modelo": "Attack Speed Increased by #%",
+          "rotulo": "Vel. de ataque"
+        },
+        {
+          "modelo": "Critical Hit Chance Increased by #%",
+          "rotulo": "Crítico"
+        },
+        {
+          "modelo": "Increases Impale Damage by #% *",
+          "rotulo": "Dano de Empalamento"
+        },
+        {
+          "modelo": "Cold skills deal #% more damage.",
+          "rotulo": "Dano de frio"
+        }
       ]
     }
   },

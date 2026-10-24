@@ -22,7 +22,7 @@ sys.path.insert(0, str(RAIZ / "src"))
 from avaliador import problemas_da_build  # noqa: E402
 from maxroll import (ErroMaxroll, baixar_planner, classe_do_planner, converter,  # noqa: E402
                      dados_do_planejador, e_de_seguidor, link_de_guia, planners_do_link, salvar_build,
-                     id_do_link, nome_do_arquivo, nomes_dos_perfis)
+                     id_do_link, modelo_do_formato, nome_do_arquivo, nomes_dos_perfis, regras_do_item)
 
 DADOS = {
     "items": {
@@ -34,6 +34,20 @@ DADOS = {
         "P3_Unique_Ring_107": {"name": "Ring of Royal Grandeur", "ids": ["Unique_Ring_107_x1"]},
     },
     "legendaryGems": {"zei": {"name": "Zei's Stone of Vengeance"}, "trapped": {"name": "Bane of the Trapped"}},
+    # Formato igual ao "stats" do data.json do Maxroll (conferido em out/2026).
+    "stats": {
+        "dex": {"name": "Dexterity", "format": "+%d Dexterity", "secondary": False},
+        "vit": {"name": "Vitality", "format": "+%d Vitality", "secondary": False},
+        "chc": {"name": "Critical Hit Chance", "format": "Critical Hit Chance Increased by %.1f%%",
+                "secondary": False},
+        "chd": {"name": "Critical Hit Damage", "format": "Critical Hit Damage Increased by %d%%",
+                "secondary": False},
+        "wpnphy": {"name": "Damage", "format": "+%d-%d Damage", "secondary": False, "args": 2},
+        "wpncol": {"name": "Cold Damage", "format": None, "secondary": False, "args": 2},
+        "pickup": {"name": "Pickup Radius", "format": "Increases Gold and Health pickup by %d yards.",
+                   "secondary": True},
+        "dura": {"name": "Durability", "format": None, "secondary": False},
+    },
 }
 
 PERFIL = {
@@ -43,9 +57,11 @@ PERFIL = {
     "kanai": {"weapon": "P69_Unique_Bow_102", "jewelry": "Unique_Ring_107_x1"},
     "items": {
         "head": {"id": "Unique_Helm_Set_03_p2", "gems": [[9, "topaz"]]},
-        "leftfinger": {"id": "Unique_Ring_Set_001_x1", "gems": [["trapped", 150]]},
-        "rightfinger": {"id": "Unique_Ring_Set_002_x1", "gems": [["zei", 150]]},
-        "mainhand": {"id": "P61_Unique_Bow_104_x1"},
+        "leftfinger": {"id": "Unique_Ring_Set_001_x1", "gems": [["trapped", 150]],
+                       "stats": {"dex": {}, "chc": {}, "sockets": {}}},
+        "rightfinger": {"id": "Unique_Ring_Set_002_x1", "gems": [["zei", 150]],
+                        "stats": {"chc": {}, "chd": {}, "sockets": {}}},
+        "mainhand": {"id": "P61_Unique_Bow_104_x1", "stats": {"wpncol": {}, "sockets": {}}},
         "waist": {"id": "Item_Que_Nao_Existe"},
     },
 }
@@ -53,7 +69,8 @@ PLANNER = {"_nome": "Sanc UE Multishot", "_numero": 345357607, "activeProfile": 
            "profiles": [PERFIL, {"name": "Speed", "class": "demonhunter", "items": {}}]}
 
 HABILIDADES = {
-    "ativas": [{"slug": "entangling-shot"}, {"slug": "multishot"}],
+    "ativas": [{"slug": "entangling-shot", "nome": "Entangling Shot"},
+               {"slug": "multishot", "nome": "Multishot", "nome_pt": "Tiro Múltiplo"}],
     "passivas": [{"slug": "cull-the-weak"}, {"slug": "ambush"}],
 }
 
@@ -151,6 +168,46 @@ class TestConverter(unittest.TestCase):
             segundo = salvar_build(self.build, Path(pasta))
             self.assertEqual((primeiro.name, segundo.name), ("sanc_ue_multishot.json", "sanc_ue_multishot_2.json"))
             self.assertEqual(json.loads(primeiro.read_text(encoding="utf-8")), self.build)
+
+
+class TestAfixos(unittest.TestCase):
+    """Os afixos que o guia escolheu viram as regras desejáveis (o "Crítico ✓" do selo)."""
+
+    HAB = {"multishot": {"nome": "Multishot", "nome_pt": "Tiro Múltiplo"}}
+
+    def regras(self, *chaves, na_arma=False):
+        return regras_do_item({c: {} for c in chaves}, DADOS, "dex", self.HAB, na_arma=na_arma)
+
+    def test_formato_vira_modelo_do_parser(self):
+        self.assertEqual(modelo_do_formato("Critical Hit Chance Increased by %.1f%%"),
+                         "Critical Hit Chance Increased by #%")
+        self.assertEqual(modelo_do_formato("+%d-%d Damage"), "+#-# Damage")
+
+    def test_encaixe_critico_e_rotulos(self):
+        self.assertEqual(self.regras("sockets", "chc"), [
+            {"modelo": "@soquete", "rotulo": "Encaixe"},
+            {"modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico"},
+        ])
+
+    def test_atributo_principal_secundario_e_durabilidade_ficam_de_fora(self):
+        # Destreza já é obrigatória em todo espaço; raio de coleta e durabilidade não importam.
+        self.assertEqual(self.regras("dex", "pickup", "dura", "inventado"), [])
+
+    def test_dano_de_habilidade_com_sufixo_da_classe(self):
+        self.assertEqual(self.regras("skill_demonhunter_multishot"),
+                         [{"modelo": "Increases Multishot Damage by #% *", "rotulo": "Dano de Tiro Múltiplo"}])
+
+    def test_dano_elemental_da_arma_tem_faixa(self):
+        self.assertEqual(self.regras("wpncol", na_arma=True),
+                         [{"modelo": "+#-# Cold Damage", "rotulo": "Dano da arma"}])
+        self.assertEqual(self.regras("wpnphy"), [{"modelo": "+#-# Damage", "rotulo": "Dano mín–máx"}])
+
+    def test_aneis_juntam_sem_repetir(self):
+        build = converter(PLANNER, DADOS, HABILIDADES)
+        self.assertEqual([r["rotulo"] for r in build["espacos"]["Finger"]["desejaveis"]],
+                         ["Crítico", "Encaixe", "Dano crítico"])
+        self.assertEqual([r["rotulo"] for r in build["espacos"]["Weapon"]["desejaveis"]],
+                         ["Dano da arma", "Encaixe"])
 
 
 class TestTiposDePlanner(unittest.TestCase):

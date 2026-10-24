@@ -265,6 +265,15 @@ A build vai pra `builds/` (nunca sobrescreve outra) e o overlay reinicia sozinho
 
 O Maxroll não tem API oficial. O app lê o mesmo endereço que a página do guia usa pra mostrar a build, **uma build por vez, só quando você pede**. Os itens vêm com o código da Blizzard, e o app acha o nome, o ícone e a descrição.
 
+**Os afixos do guia viram regras.** Pra cada item, o Maxroll diz quais afixos procurar (crítico, encaixe, dano de Empalamento…). O app transforma isso nas regras *desejáveis* daquele espaço, e o selo do F8 mostra, por exemplo:
+
+```
+Karlei's Point
+✅ Shadow Impale · Destreza ✓  Dano da arma ✓  Dano % ✗  Encaixe ✗  Dano em área ✓
+```
+
+Ficam de fora o atributo principal (já obrigatório em tudo), afixos secundários (raio de coleta, espinhos…) e durabilidade. Nos dois anéis, as regras se juntam sem repetir.
+
 ```
 python src/maxroll.py https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide                  # mostra as builds e os perfis
 python src/maxroll.py https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide --build 1 --perfil 3 --salvar

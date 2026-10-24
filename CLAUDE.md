@@ -46,7 +46,7 @@ pronta de um site, mostrar no app e dizer o que é daquela build. Nesta ordem:
 1. Chave da Blizzard + dados do jogo (`src/blizzard.py`): habilidades, itens, ícones. ✅
 2. Tela nova: boneco com os itens da build + barra de habilidades (6 ativas + 4 passivas), com ícones. ✅
 3. Importar do Maxroll: botão "+ Importar" na janela (link de guia ou planner → build + perfil + nome). ✅
-   Próximo natural: transformar os afixos do Maxroll (`stats` de cada item) em regras desejáveis.
+   Afixos do Maxroll (`stats` de cada item) viram regras desejáveis do espaço (`regras_do_item`). ✅
 4. Herói real vs. build: BattleTag → itens equipados pela API → o que está certo / o que falta.
    (A API só mostra o equipado, e atualiza ao sair do jogo; mochila e baú continuam no F8.)
 Não complicar: o "passar o mouse" fica parado; o F8 continua.
@@ -99,6 +99,10 @@ trabalho extra agora, não feche essa porta:
   perfil (sem `profiles`). Runa "x" = sem runa → "".
 - `Api.buscar_maxroll` guarda os planners em memória; `Api.importar_maxroll` grava com `salvar_build`
   (nunca sobrescreve: _2, _3) e a página reinicia o overlay (ele só lê builds/ ao abrir).
+- Afixos: `stats` do data.json tem name/format/secondary/args. `format` "%.1f%%" → "#%" (`modelo_do_formato`).
+  `wpn*` (dano elemental da arma) vem SEM format e args 2 → "+#-# Cold Damage". `skill_<classe>_<skill>` →
+  "Increases <Nome> Damage by #% *" (o "*" engole o "(Demon Hunter Only)"). Mudou o que guardamos do
+  data.json? Sobe `VERSAO_DO_CACHE` pra baixar de novo.
 - Testes que comparam resultados usam só `tests/builds_dos_testes.py` (as 3 originais); a conferência
   olha todas. Assim importar uma build não quebra teste.
 - Arthur importou "Shadow Impale" (guia shadow-impale, perfil Sanc: Solo Push) em 24/10/2026.
