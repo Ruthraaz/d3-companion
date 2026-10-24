@@ -2,7 +2,10 @@
 Janela principal (depois da versão 1): builds no boneco, histórico e configurações.
 
 Uso:
-    python src/janela.py
+    python src/janela.py      (ou dois cliques em abrir.bat, na raiz do projeto)
+
+Funciona até sem ativar a .venv: se faltar o pywebview, o arquivo se abre de
+novo com o Python da .venv.
 
 A janela é HTML/CSS/JS (pasta src/web/) aberta pelo pywebview, que usa o
 WebView2 do próprio Windows (o mesmo motor do Edge), sem Chromium embutido.
@@ -23,7 +26,18 @@ import threading
 from collections import deque
 from pathlib import Path
 
-import webview
+PYTHON_DA_VENV = Path(__file__).resolve().parent.parent / ".venv" / "Scripts" / "python.exe"
+
+try:
+    import webview
+except ImportError:
+    # Rodou com o Python do Windows (sem a .venv ativada): ele não tem o
+    # pywebview. Em vez de só dar erro, abre de novo com o Python da .venv.
+    if PYTHON_DA_VENV.exists() and Path(sys.executable).resolve() != PYTHON_DA_VENV.resolve():
+        sys.exit(subprocess.call([str(PYTHON_DA_VENV), __file__, *sys.argv[1:]]))
+    sys.exit("Falta o pywebview. Na pasta do projeto, rode:\n"
+             "    .venv\\Scripts\\activate\n"
+             "    pip install -r requirements.txt")
 from PIL import Image
 
 import historico

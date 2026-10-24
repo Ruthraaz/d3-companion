@@ -247,7 +247,7 @@ O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes
    python src/avaliador.py samples/set_fiendish_grips.png    # recorte + OCR + parser + avaliador
    python src/app.py --testar samples/set_fiendish_grips.png # mostra o selo desse print no meio da tela
    ```
-5. **No jogo:** deixe o Diablo 3 em **Tela cheia em janela** (Windowed Fullscreen), rode `python src/janela.py` (janela + overlay) ou só `python src/app.py` (só o overlay), passe o mouse num item e aperte **F8**. O selo aparece ao lado da dica (e o resumo no terminal).
+5. **No jogo:** deixe o Diablo 3 em **Tela cheia em janela** (Windowed Fullscreen), dê **dois cliques em `abrir.bat`** (ou rode `python src/janela.py`; funciona mesmo sem ativar a `.venv`) pra abrir janela + overlay ou só `python src/app.py` (só o overlay), passe o mouse num item e aperte **F8**. O selo aparece ao lado da dica (e o resumo no terminal).
    Se outro programa já usar o F8, o app avisa quais teclas estão livres; troque com `ATALHO=` no `.env` (ex.: `ATALHO=Ctrl+F8`).
 6. Testes (não precisam do Tesseract, usam os textos salvos em `tests/ocr/` e `tests/ocr_recorte/`):
    ```
