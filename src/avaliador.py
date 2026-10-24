@@ -14,6 +14,9 @@ Regras:
              + todos os afixos obrigatórios + Ancient, se a build exigir
              + não é de outra classe.
   - "nota" = fração dos afixos desejáveis que o item tem (0 a 1).
+  - "por_enquanto" = não bate, mas serve pra ir upando: está no espaço certo,
+             tem os obrigatórios e é só o item errado (com metade ou mais
+             dos desejáveis) ou o item certo sem ser Ancient.
 """
 
 import json
@@ -33,6 +36,9 @@ ESPACOS = ["Head", "Shoulders", "Neck", "Torso", "Hands", "Wrists", "Waist",
 SOQUETE = "@soquete"
 
 PARTES_DO_CUBO = ("arma", "armadura", "joia")
+
+# Item errado pro espaço "serve por enquanto" com pelo menos esta fração dos desejáveis.
+NOTA_POR_ENQUANTO = 0.5
 
 
 # ---------------------------------------------------------------- afixos
@@ -103,6 +109,7 @@ def avaliar(item: dict, build: dict) -> dict:
             "desejaveis": vazio,
             "afixos": [],
             "nota": 1.0 if bate else 0.0,
+            "por_enquanto": False,
         }
 
     nome = item.get("nome") or ""
@@ -118,6 +125,7 @@ def avaliar(item: dict, build: dict) -> dict:
             "desejaveis": vazio,
             "afixos": [],
             "nota": 1.0,
+            "por_enquanto": False,
         }
 
     nome_espaco = ESPACO_DA_BUILD.get(item.get("slot"), item.get("slot"))
@@ -133,12 +141,18 @@ def avaliar(item: dict, build: dict) -> dict:
     exige_ancient = espaco.get("exige_ancient", build.get("exige_ancient", False))
 
     # A primeira regra que falhar explica o "não serve".
+    item_errado = bool(itens) and nome.lower() not in {i.lower() for i in itens}
+    sem_ancient = exige_ancient and "Ancient" not in item.get("qualidade", "")
+    por_enquanto = False
     if item.get("classe") and item["classe"] != build.get("classe"):
         bate, motivo = False, f"Item de {item['classe']}"
-    elif itens and nome.lower() not in {i.lower() for i in itens}:
+    elif item_errado:
         bate, motivo = False, "A build pede: " + " ou ".join(itens)
-    elif exige_ancient and "Ancient" not in item.get("qualidade", ""):
+        # Pra upar: no espaço certo e com os afixos da build, dá pra usar até achar o item.
+        por_enquanto = not obrigatorios["faltando"] and nota >= NOTA_POR_ENQUANTO
+    elif sem_ancient:
         bate, motivo = False, "Precisa ser Ancient"
+        por_enquanto = not obrigatorios["faltando"]  # serve até cair um Ancient
     elif obrigatorios["faltando"]:
         bate, motivo = False, "Falta: " + ", ".join(obrigatorios["faltando"])
     else:
@@ -152,6 +166,7 @@ def avaliar(item: dict, build: dict) -> dict:
         "desejaveis": desejaveis,
         "afixos": obrigatorios["lista"] + desejaveis["lista"],
         "nota": nota,
+        "por_enquanto": por_enquanto,
     }
 
 
@@ -371,16 +386,17 @@ def builds_escolhidas(builds: list[dict], escolha: str) -> list[dict]:
 
 
 def avaliar_todas(item: dict, builds: list[dict]) -> list[dict]:
-    """Avalia contra todas as builds; as que batem (e com nota maior) vêm primeiro."""
+    """Avalia contra todas as builds: primeiro as que batem, depois as que
+    servem por enquanto; dentro de cada grupo, a nota maior primeiro."""
     resultados = [avaliar(item, b) for b in builds]
-    return sorted(resultados, key=lambda r: (not r["bate"], -r["nota"]))
+    return sorted(resultados, key=lambda r: (not r["bate"], not r["por_enquanto"], -r["nota"]))
 
 
 def resumo(item: dict, resultados: list[dict]) -> str:
     """Texto curto com o veredito de cada build (terminal; depois, o overlay)."""
     linhas = [f"{item.get('nome') or '(sem nome)'} — {item.get('qualidade')} {item.get('tipo')}"]
     for r in resultados:
-        selo = "✅" if r["bate"] else "❌"
+        selo = "✅" if r["bate"] else "🟡" if r["por_enquanto"] else "❌"
         linhas.append(f"{selo} {r['build']}: {r['motivo']} (nota {r['nota']:.2f})")
         if r["bate"] and r["desejaveis"]["ok"]:
             linhas.append("     tem: " + ", ".join(r["desejaveis"]["ok"]))

@@ -28,6 +28,7 @@ def registrar(av: Avaliacao, selo: Selo, arquivo: Path = ARQUIVO, com: str = "To
         "tipo": item.get("tipo"),
         "slot": item.get("slot"),
         "serve": selo.serve,
+        "parcial": selo.parcial,
         "linhas": [[[texto, estilo] for texto, estilo in linha] for linha in selo.linhas],
         "imagem": av.arquivo.name if av.arquivo else None,
         "erro": av.erro,

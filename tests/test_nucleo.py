@@ -46,11 +46,33 @@ class TestSelo(unittest.TestCase):
         # (arma do guia do Maxroll).
         self.assertEqual(len(linhas), 2)
 
-    def test_nao_serve_mostra_o_motivo(self):
+    def test_item_errado_com_os_afixos_serve_por_enquanto(self):
+        # Pra upar: o Cloak não é o peito da build, mas tem Destreza e encaixe.
         selo = montar_selo(avaliacao("lendario_cloak_garwulf"))
         self.assertFalse(selo.serve)
+        self.assertTrue(selo.parcial)
+        self.assertEqual(texto_do_selo(selo).splitlines()[1:3],
+                         ["🟡 Por enquanto · Dreadlands · Destreza ✓  Vitalidade ✗  Encaixe ✓",
+                          "A build pede: Galvanized Vest"])
+
+    def test_nao_serve_mostra_o_motivo(self):
+        # Sem Destreza (obrigatória) não serve nem por enquanto.
+        item = interpretar((RAIZ / "tests" / "ocr_recorte" / "lendario_cloak_garwulf.txt")
+                           .read_text(encoding="utf-8"))
+        item["primarios"] = [a for a in item["primarios"] if "Dexterity" not in a["modelo"]]
+        selo = montar_selo(Avaliacao(item=item, resultados=avaliar_todas(item, BUILDS)))
+        self.assertFalse(selo.serve or selo.parcial)
         self.assertEqual(texto_do_selo(selo).splitlines()[1:],
                          ["❌ Não serve", "Dreadlands: A build pede: Galvanized Vest"])
+
+    def test_poucos_desejaveis_nao_serve_por_enquanto(self):
+        # Item errado com menos da metade dos desejáveis: continua "não serve".
+        item = interpretar((RAIZ / "tests" / "ocr_recorte" / "lendario_cloak_garwulf.txt")
+                           .read_text(encoding="utf-8"))
+        item["soquetes"] = 0  # sobra só Destreza (Vitalidade e Encaixe faltam)
+        dread = [b for b in BUILDS if b["apelido"] == "Dreadlands"]
+        selo = montar_selo(Avaliacao(item=item, resultados=avaliar_todas(item, dread)))
+        self.assertFalse(selo.parcial)
 
     def test_gema(self):
         selo = montar_selo(avaliacao("gema_zei"))

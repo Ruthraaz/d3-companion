@@ -56,7 +56,9 @@ e ver cada build; no jogo, mostrar itens *parecidos* pra upar; marcador de habil
 paragon. Referência: apps de PoE e D4 (lista de builds + overlay). Ordem:
 5. Aba Guias: todos os guias do Maxroll por classe (`catalogo()` lê o sitemap, 1×/dia). ✅
    Builds do guia só baixam ao clicar em "Ver builds" (não puxar o site inteiro).
-6. Upar: item que não é o da build, mas tem os afixos certos no espaço → "serve por enquanto".
+6. Upar: item que não é o da build, mas tem os afixos certos no espaço → "serve por enquanto". ✅
+   `por_enquanto` no resultado (obrigatórios ok + nota ≥ `NOTA_POR_ENQUANTO` 0.5, ou item certo
+   sem Ancient); `Selo.parcial` = borda amarela. Só aparece se nenhuma build bate.
 7. Marcadores: destacar habilidade/runa da build e mostrar o paragon (`paragon.data` do perfil:
    4 grupos × 4 atributos).
 8. Herói real vs. build (era o passo 4).

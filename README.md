@@ -46,7 +46,7 @@ A lógica (OCR, parser, avaliador) fica num **núcleo** sem interface (`src/nucl
 | 8b | Tela nova: boneco + barra de habilidades com ícones | ✅ funcionando |
 | 8c | Importar build do Maxroll: colar o link do guia na janela | ✅ funcionando |
 | 8d | Aba Guias: todos os guias do Maxroll, por classe | ✅ funcionando |
-| 8e | Upar: o F8 mostra itens parecidos com os da build (afixos certos no espaço certo) | ⏳ |
+| 8e | Upar: o F8 mostra itens parecidos com os da build ("serve por enquanto", selo amarelo) | ✅ funcionando |
 | 8f | Marcadores: qual habilidade, runa e paragon focar | ⏳ |
 | 8g | Seu herói (BattleTag) vs. a build | ⏳ |
 
@@ -124,9 +124,19 @@ As builds ficam em `builds/*.json`, num **formato próprio** do app. Se um dia e
 Fiendish Grips — Set Gloves
 ✅ Unhallowed Essence — Multidisparo: Item da build: Fiendish Grips (nota 0.67)
      tem: +# Vitality, Critical Hit Chance Increased by #%
-❌ Gears of Dreadlands — Metralhar: A build pede: Gas Powered Automail Forearm (nota 0.67)
-❌ Legacy of Nightmares: Precisa ser Ancient (nota 0.67)
+🟡 Gears of Dreadlands — Metralhar: A build pede: Gas Powered Automail Forearm (nota 0.67)
+🟡 Legacy of Nightmares: Precisa ser Ancient (nota 0.67)
 ```
+
+**Serve por enquanto (pra upar):** quando o item não bate, mas está no espaço certo, tem todos os obrigatórios e **metade ou mais dos desejáveis**, ele *serve por enquanto*: dá pra usar até cair o item da build. O item certo sem ser Ancient também serve por enquanto. O selo fica com a borda **amarela**:
+
+```
+Cain's Scrivener
+🟡 Por enquanto · Unhallowed · Destreza ✓  Vitalidade ✓  Crítico ✓  Dano crítico ✗
+A build pede: Fiendish Grips
+```
+
+Sem um obrigatório (ex.: sem Destreza num Caçador de Demônios), ou com menos da metade dos desejáveis, continua **não serve**. No histórico da janela, o filtro "Serve" mostra os dois.
 
 **A revisar nas builds:** só as peças dos sets (vistas nos prints) estão preenchidas; os outros espaços estão com `itens: []`. As **gemas** são um palpite inicial. A prioridade de afixos segue a referência geral do Icy Veins.
 

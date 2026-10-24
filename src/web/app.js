@@ -538,8 +538,9 @@ async function importarMaxroll(b, perfil, apelido, botao) {
 
 function desenharHistorico(anterior = null) {
   const lista = document.getElementById("lista-historico");
+  // "Serve" junta o que serve e o que serve por enquanto (pra upar).
   const itens = estado.historico.filter(h =>
-    estado.filtro === "todos" || (estado.filtro === "serve") === h.serve);
+    estado.filtro === "todos" || (estado.filtro === "serve") === Boolean(h.serve || h.parcial));
   if (!itens.length) {
     trocar(lista, el("li", { class: "vazio-lista" },
       estado.historico.length
@@ -555,7 +556,7 @@ function registro(h, anterior) {
   const mini = el("div", { class: "miniatura", title: h.imagem || "" });
   if (h.imagem) pedirMiniatura(h.imagem, mini);
   const novo = anterior && h.quando > anterior;
-  return el("li", { class: "registro" + (h.serve ? " serve" : "") + (novo ? " novo" : "") },
+  return el("li", { class: "registro" + (h.serve ? " serve" : h.parcial ? " parcial" : "") + (novo ? " novo" : "") },
     mini,
     el("div", {},
       el("p", { class: "registro-titulo" }, h.titulo),
@@ -568,7 +569,7 @@ function registro(h, anterior) {
     el("div", { class: "registro-hora" },
       hora(h.quando),
       el("br"),
-      el("span", { class: "veredito" }, h.serve ? "Serve" : "Não serve"),
+      el("span", { class: "veredito" }, h.serve ? "Serve" : h.parcial ? "Por enquanto" : "Não serve"),
     ),
   );
 }
@@ -732,6 +733,10 @@ function apiDeExemplo() {
   const historico = [
     { quando: quando(1), com: "Dreadlands", titulo: "Antique Vintage Boots", qualidade: "Set", tipo: "Boots", serve: true,
       linhas: [[["✅ ", "normal"], ["Dreadlands", "build"], [" · ", "normal"], ["Destreza ✓", "ok"], ["  ", "normal"], ["Vitalidade ✓", "ok"]]] },
+    { quando: quando(2), com: "Dreadlands", titulo: "Rare Gloves", qualidade: "Rare", tipo: "Gloves", serve: false, parcial: true,
+      linhas: [[["🟡 Por enquanto · ", "normal"], ["Dreadlands", "build"], [" · ", "normal"], ["Destreza ✓", "ok"], ["  ", "normal"],
+                ["Vitalidade ✓", "ok"], ["  ", "normal"], ["Crítico ✓", "ok"], ["  ", "normal"], ["Dano crítico ✗", "falta"]],
+               [["A build pede: Gas Powered Automail Forearm", "motivo"]]] },
     { quando: quando(3), titulo: "Cain's Scrivener", qualidade: "Set", tipo: "Gloves", serve: false,
       linhas: [[["❌ Não serve", "build"]], [["Dreadlands: A build pede: Gas Powered Automail Forearm", "motivo"]]] },
     { quando: quando(6), titulo: "Zei's Stone of Vengeance", qualidade: "Legendary", tipo: "Gem", serve: true,

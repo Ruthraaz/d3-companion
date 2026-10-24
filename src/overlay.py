@@ -27,6 +27,7 @@ from nucleo import Caixa, Selo, posicao_do_selo
 CORES = {
     "borda_serve": "#3fb950",
     "borda_nao_serve": "#e5534b",
+    "borda_parcial": "#d29922",
     "fundo": "rgba(14, 11, 8, 225)",
     "titulo": "#d8b26a",
     "build": "#f0c86e",
@@ -82,7 +83,8 @@ class JanelaSelo(QWidget):
         self.segundos = segundos
 
     def preencher(self, selo: Selo):
-        borda = CORES["borda_serve"] if selo.serve else CORES["borda_nao_serve"]
+        borda = (CORES["borda_serve"] if selo.serve
+                 else CORES["borda_parcial"] if selo.parcial else CORES["borda_nao_serve"])
         self.moldura.setStyleSheet(
             f"QFrame {{ background: {CORES['fundo']}; border: 2px solid {borda}; border-radius: 7px; }}"
             "QLabel { border: none; background: transparent;"

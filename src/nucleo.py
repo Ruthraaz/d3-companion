@@ -91,10 +91,19 @@ def avaliar_print(imagem: Image.Image, cursor: tuple[int, int] | None,
 @dataclass
 class Selo:
     """O que o overlay mostra. Cada linha é uma lista de pedaços (texto, estilo),
-    com estilo em: "normal", "build", "ok", "falta", "motivo"."""
+    com estilo em: "normal", "build", "ok", "falta", "motivo".
+    `parcial`: não serve, mas dá pra usar enquanto upa (borda amarela)."""
     serve: bool
     titulo: str
     linhas: list[list[tuple[str, str]]]
+    parcial: bool = False
+
+
+def _afixos_da_linha(linha: list, r: dict) -> None:
+    for i, a in enumerate(r["afixos"]):
+        if i:
+            linha.append(("  ", "normal"))
+        linha.append((f"{a['rotulo']} {'✓' if a['ok'] else '✗'}", "ok" if a["ok"] else "falta"))
 
 
 def montar_selo(av: Avaliacao) -> Selo:
@@ -107,6 +116,18 @@ def montar_selo(av: Avaliacao) -> Selo:
         return Selo(False, titulo, [[("Nenhuma build em builds/", "motivo")]])
 
     batem = [r for r in av.resultados if r["bate"]]
+    por_enquanto = [r for r in av.resultados if r["por_enquanto"]]
+    if not batem and por_enquanto:
+        # Pra upar: não é o item da build, mas serve até achar.
+        linhas = []
+        for r in por_enquanto:
+            linha = [("🟡 Por enquanto · ", "normal"), (r["apelido"], "build")]
+            if r["afixos"]:
+                linha.append((" · ", "normal"))
+                _afixos_da_linha(linha, r)
+            linhas.append(linha)
+            linhas.append([(r["motivo"], "motivo")])
+        return Selo(False, titulo, linhas, parcial=True)
     if not batem:
         r = av.resultados[0]  # a que chegou mais perto
         return Selo(False, titulo, [[("❌ Não serve", "build")],
@@ -117,10 +138,7 @@ def montar_selo(av: Avaliacao) -> Selo:
         linha = [("✅ ", "normal"), (r["apelido"], "build")]
         if r["afixos"]:
             linha.append((" · ", "normal"))
-            for i, a in enumerate(r["afixos"]):
-                if i:
-                    linha.append(("  ", "normal"))
-                linha.append((f"{a['rotulo']} {'✓' if a['ok'] else '✗'}", "ok" if a["ok"] else "falta"))
+            _afixos_da_linha(linha, r)
         else:
             linha.append((f" · {r['motivo']}", "normal"))
         linhas.append(linha)
