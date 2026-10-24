@@ -51,6 +51,16 @@ pronta de um site, mostrar no app e dizer o que é daquela build. Nesta ordem:
    (A API só mostra o equipado, e atualiza ao sair do jogo; mochila e baú continuam no F8.)
 Não complicar: o "passar o mouse" fica parado; o F8 continua.
 
+**Pedido seguinte do Arthur (24/10/2026):** "puxa todas as builds do site", escolher o boneco (classe)
+e ver cada build; no jogo, mostrar itens *parecidos* pra upar; marcador de habilidade, runa e
+paragon. Referência: apps de PoE e D4 (lista de builds + overlay). Ordem:
+5. Aba Guias: todos os guias do Maxroll por classe (`catalogo()` lê o sitemap, 1×/dia). ✅
+   Builds do guia só baixam ao clicar em "Ver builds" (não puxar o site inteiro).
+6. Upar: item que não é o da build, mas tem os afixos certos no espaço → "serve por enquanto".
+7. Marcadores: destacar habilidade/runa da build e mostrar o paragon (`paragon.data` do perfil:
+   4 grupos × 4 atributos).
+8. Herói real vs. build (era o passo 4).
+
 ### Quem usa
 Por enquanto só o Arthur. Se ficar bom, pode virar público. Então, sem fazer
 trabalho extra agora, não feche essa porta:
@@ -99,6 +109,9 @@ trabalho extra agora, não feche essa porta:
   perfil (sem `profiles`). Runa "x" = sem runa → "".
 - `Api.buscar_maxroll` guarda os planners em memória; `Api.importar_maxroll` grava com `salvar_build`
   (nunca sobrescreve: _2, _3) e a página reinicia o overlay (ele só lê builds/ ao abrir).
+- Catálogo: `guia_do_link` tira nome e classe do endereço ("-demon-hunter-guide"; suporte usa
+  "zbarb", "zmonk", "zwiz", "znecromancer"). Um guia não termina em "-guide" (skeletal-mage-rat).
+  `fonte.guia` = link do guia de onde a build veio (a aba Guias marca "No app").
 - Afixos: `stats` do data.json tem name/format/secondary/args. `format` "%.1f%%" → "#%" (`modelo_do_formato`).
   `wpn*` (dano elemental da arma) vem SEM format e args 2 → "+#-# Cold Damage". `skill_<classe>_<skill>` →
   "Increases <Nome> Damage by #% *" (o "*" engole o "(Demon Hunter Only)"). Mudou o que guardamos do

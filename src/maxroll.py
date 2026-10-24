@@ -15,11 +15,16 @@ Os nomes dos itens vêm do arquivo de dados do planejador (data.json, guardado
 em dados/maxroll/). Os códigos das habilidades são convertidos pros da Blizzard
 ("entanglingshot" -> "entangling-shot"), que é de onde vêm ícone e descrição.
 
+Catálogo: a lista de guias vem do mapa do site (maxroll.gg/d3/sitemap.xml),
+um arquivo pequeno, lido no máximo uma vez por dia. As builds de cada guia
+só são baixadas quando o Arthur abre o guia na janela.
+
 Uso (o link pode ser do guia ou do planejador):
     python src/maxroll.py <link>                                # mostra as builds, os perfis e a build
     python src/maxroll.py <link> --build 1 --perfil 2 --salvar  # grava em builds/ (sem sobrescrever)
 """
 
+import datetime
 import json
 import re
 import sys
@@ -31,6 +36,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 PASTA_CACHE = RAIZ / "dados" / "maxroll"
 URL_PLANNER = "https://planners.maxroll.gg/profiles/load/d3/{}"
 URL_DADOS = "https://assets-ng.maxroll.gg/d3planner/data.json"
+URL_MAPA_DO_SITE = "https://maxroll.gg/d3/sitemap.xml"
 VERSAO_DO_CACHE = 2  # sobe quando o que guardamos do data.json muda
 CABECALHO = {"User-Agent": "D3Companion/1.0 (app pessoal; uma build por vez)"}
 
@@ -111,6 +117,62 @@ def planners_do_link(texto: str, abrir=urllib.request.urlopen) -> list[int]:
     if not numeros:
         raise ErroMaxroll("Não achei nenhuma build nesse guia (o site pode ter mudado).")
     return numeros
+
+
+# Fim do endereço do guia -> classe do Maxroll. Os de suporte usam "zbarb", "zmonk"...
+CLASSE_DO_GUIA = {
+    "barbarian": "barbarian", "zbarb": "barbarian", "crusader": "crusader",
+    "demon-hunter": "demonhunter", "monk": "monk", "zmonk": "monk",
+    "necromancer": "necromancer", "znecromancer": "necromancer",
+    "witch-doctor": "witchdoctor", "wizard": "wizard", "zwiz": "wizard",
+}
+# Siglas que os guias usam no nome (lod = Legacy of Dreams...).
+SIGLAS = {"lod": "LoD", "lon": "LoN", "ue": "UE", "ik": "IK", "aov": "AoV", "sotl": "SotL",
+          "dmo": "DMO", "ww": "WW", "hota": "HotA", "god": "GoD", "ha": "HA", "wod": "WoD",
+          "of": "of", "the": "the"}
+
+
+def guia_do_link(link: str) -> dict | None:
+    """Endereço de um guia -> {link, titulo, classe}; None se não for guia de classe.
+    "…/guides/shadow-impale-demon-hunter-guide" -> titulo "Shadow Impale", classe "Demon Hunter"."""
+    m = re.fullmatch(r"https://maxroll\.gg/d3/guides/([a-z0-9-]+)", link.strip())
+    if not m:
+        return None
+    nome = m.group(1).removesuffix("-guide")
+    for fim in sorted(CLASSE_DO_GUIA, key=len, reverse=True):  # "witch-doctor" antes de "doctor"
+        if nome == fim or nome.endswith("-" + fim):
+            palavras = nome.removesuffix(fim).strip("-").split("-")
+            titulo = " ".join(SIGLAS.get(p, p.capitalize()) for p in palavras if p)
+            return {"link": link.strip(), "titulo": "Suporte" if titulo == "Support" else titulo or "Guia",
+                    "classe": CLASSES[CLASSE_DO_GUIA[fim]][0]}
+    return None
+
+
+def catalogo(pasta: Path = PASTA_CACHE, abrir=urllib.request.urlopen, atualizar: bool = False) -> list[dict]:
+    """Todos os guias de classe do Maxroll, por classe e nome. Guardado em
+    dados/maxroll/ e lido de novo do site no máximo uma vez por dia. Sem
+    internet, usa o guardado (se houver)."""
+    arquivo = pasta / "catalogo.json"
+    hoje = datetime.date.today().isoformat()
+    guardado = json.loads(arquivo.read_text(encoding="utf-8")) if arquivo.exists() else None
+    if guardado and guardado.get("dia") == hoje and not atualizar:
+        return guardado["guias"]
+    try:
+        with abrir(urllib.request.Request(URL_MAPA_DO_SITE, headers=CABECALHO), timeout=30) as r:
+            mapa = r.read().decode("utf-8", "replace")
+    except (urllib.error.URLError, TimeoutError, OSError) as e:
+        if guardado:
+            return guardado["guias"]
+        raise ErroMaxroll("Não consegui falar com o Maxroll. Está sem internet?") from e
+    links = dict.fromkeys(re.findall(r"<loc>(https://maxroll\.gg/d3/guides/[a-z0-9-]+)</loc>", mapa))
+    guias = sorted((g for g in map(guia_do_link, links) if g), key=lambda g: (g["classe"], g["titulo"]))
+    if not guias:
+        if guardado:
+            return guardado["guias"]
+        raise ErroMaxroll("Não achei a lista de guias no Maxroll (o site pode ter mudado).")
+    pasta.mkdir(parents=True, exist_ok=True)
+    arquivo.write_text(json.dumps({"dia": hoje, "guias": guias}, ensure_ascii=False), encoding="utf-8")
+    return guias
 
 
 SEGUIDORES = re.compile(r"enchantress|templar|scoundrel|follower", re.I)
@@ -324,7 +386,8 @@ def converter(planner: dict, dados: dict, habilidades_da_classe: dict | None = N
         "classe": classe,
         "exige_ancient": False,
         "fonte": {"site": "maxroll", "planner": planner["_numero"], "perfil": nome_do_perfil,
-                  "link": f"https://maxroll.gg/d3/planner/{planner['_numero']}"},
+                  "link": f"https://maxroll.gg/d3/planner/{planner['_numero']}"}
+                 | ({"guia": planner["_guia"]} if planner.get("_guia") else {}),
         "todos_os_espacos": {"obrigatorios": [{"modelo": f"+# {atributo}", "rotulo": rotulo}]},
         "espacos": espacos,
         "gemas": gemas,

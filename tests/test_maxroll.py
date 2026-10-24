@@ -20,8 +20,9 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
 
 from avaliador import problemas_da_build  # noqa: E402
-from maxroll import (ErroMaxroll, baixar_planner, classe_do_planner, converter,  # noqa: E402
-                     dados_do_planejador, e_de_seguidor, link_de_guia, planners_do_link, salvar_build,
+from maxroll import (ErroMaxroll, baixar_planner, catalogo, classe_do_planner, converter,  # noqa: E402
+                     dados_do_planejador, e_de_seguidor, guia_do_link, link_de_guia, planners_do_link,
+                     salvar_build,
                      id_do_link, modelo_do_formato, nome_do_arquivo, nomes_dos_perfis, regras_do_item)
 
 DADOS = {
@@ -162,12 +163,74 @@ class TestConverter(unittest.TestCase):
         self.assertEqual([a["runa"] for a in build["habilidades"]["ativas"]], ["", "a"])
         self.assertEqual(problemas_da_build(build), [])
 
+    def test_fonte_guarda_o_guia(self):
+        guia = "https://maxroll.gg/d3/guides/ue-multishot-demon-hunter-guide"
+        build = converter(PLANNER | {"_guia": guia}, DADOS)
+        self.assertEqual(build["fonte"]["guia"], guia)
+        self.assertNotIn("guia", self.build["fonte"])  # link de planner: sem guia
+
     def test_salvar_nunca_sobrescreve(self):
         with tempfile.TemporaryDirectory() as pasta:
             primeiro = salvar_build(self.build, Path(pasta))
             segundo = salvar_build(self.build, Path(pasta))
             self.assertEqual((primeiro.name, segundo.name), ("sanc_ue_multishot.json", "sanc_ue_multishot_2.json"))
             self.assertEqual(json.loads(primeiro.read_text(encoding="utf-8")), self.build)
+
+
+class TestCatalogo(unittest.TestCase):
+    MAPA = """<urlset>
+      <url><loc>https://maxroll.gg/d3/category/guides/wizard</loc></url>
+      <url><loc>https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide</loc></url>
+      <url><loc>https://maxroll.gg/d3/guides/lod-skeletal-mage-rat-necromancer</loc></url>
+      <url><loc>https://maxroll.gg/d3/guides/support-zbarb-guide</loc></url>
+      <url><loc>https://maxroll.gg/d3/guides/aov-fist-of-the-heavens-crusader-guide</loc></url>
+      <url><loc>https://maxroll.gg/d3/resources/season-start-1-70-leveling-guide</loc></url>
+    </urlset>"""
+
+    def abrir(self, pedido, timeout=None):
+        self.pedidos += 1
+        return io.BytesIO(self.MAPA.encode())
+
+    def setUp(self):
+        self.pedidos = 0
+        self.pasta = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.pasta.cleanup()
+
+    def test_nome_e_classe_saem_do_link(self):
+        self.assertEqual(guia_do_link("https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide"),
+                         {"link": "https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide",
+                          "titulo": "Shadow Impale", "classe": "Demon Hunter"})
+        self.assertEqual(guia_do_link("https://maxroll.gg/d3/guides/vyr-chantodo-archon-wod-wizard-guide")["titulo"],
+                         "Vyr Chantodo Archon WoD")
+        self.assertIsNone(guia_do_link("https://maxroll.gg/d3/guides/algo-sem-classe-guide"))
+
+    def test_lista_so_guias_de_classe_em_ordem(self):
+        guias = catalogo(Path(self.pasta.name), self.abrir)
+        self.assertEqual([(g["classe"], g["titulo"]) for g in guias], [
+            ("Barbarian", "Suporte"), ("Crusader", "AoV Fist of the Heavens"),
+            ("Demon Hunter", "Shadow Impale"), ("Necromancer", "LoD Skeletal Mage Rat"),
+        ])
+
+    def test_guarda_e_so_busca_de_novo_no_outro_dia_ou_se_pedir(self):
+        pasta = Path(self.pasta.name)
+        catalogo(pasta, self.abrir)
+        catalogo(pasta, self.abrir)
+        self.assertEqual(self.pedidos, 1)
+        catalogo(pasta, self.abrir, atualizar=True)
+        self.assertEqual(self.pedidos, 2)
+
+    def test_sem_internet_usa_o_guardado(self):
+        pasta = Path(self.pasta.name)
+        guias = catalogo(pasta, self.abrir)
+
+        def sem_rede(pedido, timeout=None):
+            raise urllib.error.URLError("sem rede")
+        self.assertEqual(catalogo(pasta, sem_rede, atualizar=True), guias)
+        with tempfile.TemporaryDirectory() as vazia:
+            with self.assertRaisesRegex(ErroMaxroll, "sem internet"):
+                catalogo(Path(vazia), sem_rede)
 
 
 class TestAfixos(unittest.TestCase):

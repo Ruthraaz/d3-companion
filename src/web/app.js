@@ -20,6 +20,12 @@ const BONECO = [
   ["Feet", "Feet"],
 ];
 
+// Classe nas builds -> nome no jogo em português.
+const CLASSES = {
+  Barbarian: "Bárbaro", Crusader: "Cruzado", "Demon Hunter": "Caçador de Demônios", Monk: "Monge",
+  Necromancer: "Necromante", "Witch Doctor": "Feiticeiro", Wizard: "Arcanista",
+};
+
 const estado = {
   api: null,
   builds: [],
@@ -32,6 +38,8 @@ const estado = {
   filtro: "todos",
   miniaturas: {},    // nome do arquivo -> data URI (pede ao Python uma vez só)
   ultimoVisto: null, // "quando" do registro mais novo já mostrado (ISO, compara como texto)
+  guias: null,       // lista de guias do Maxroll (pede ao Python na 1ª vez que abre a aba)
+  classe: null,      // classe escolhida na aba Guias
 };
 
 // ------------------------------------------------------------ utilidades
@@ -80,6 +88,64 @@ function abrirAba(nome) {
   document.querySelectorAll(".aba").forEach(a => a.classList.toggle("ativa", a.dataset.aba === nome));
   document.querySelectorAll(".painel").forEach(p => p.classList.toggle("ativo", p.id === `painel-${nome}`));
   if (nome === "config") carregarConfig();
+  if (nome === "guias" && !estado.guias) carregarGuias();
+}
+
+// ------------------------------------------------------------ guias do Maxroll
+
+async function carregarGuias(atualizar = false) {
+  const status = document.getElementById("guias-status");
+  status.className = "importar-status";
+  status.textContent = "Buscando a lista de guias no Maxroll…";
+  const r = await estado.api.guias(atualizar);
+  if (r.erro) {
+    status.className = "importar-status erro";
+    status.textContent = r.erro;
+    return;
+  }
+  status.textContent = "";
+  estado.guias = r.guias;
+  if (!estado.classe) {
+    // Começa pela classe da build que está no boneco.
+    const b = estado.builds[estado.build];
+    estado.classe = b && CLASSES[b.classe] ? b.classe : "Demon Hunter";
+  }
+  desenharGuias();
+}
+
+function desenharGuias() {
+  const porClasse = cl => estado.guias.filter(g => g.classe === cl);
+  trocar(document.getElementById("classes"), Object.entries(CLASSES).map(([cl, pt]) =>
+    el("button", {
+      class: "classe" + (cl === estado.classe ? " ativo" : ""), role: "tab",
+      onclick: () => { estado.classe = cl; desenharGuias(); },
+    }, el("span", { class: "classe-nome" }, pt), el("span", { class: "classe-qtd" }, `${porClasse(cl).length} guias`))));
+
+  // Guia já importado: a build guarda o link do guia de onde veio.
+  const importadas = {};
+  for (const b of estado.builds) {
+    const guia = b.fonte && b.fonte.guia;
+    if (guia) (importadas[guia] = importadas[guia] || []).push(b.apelido);
+  }
+  trocar(document.getElementById("lista-guias"), porClasse(estado.classe).map(g =>
+    el("li", { class: "guia" + (importadas[g.link] ? " importado" : "") },
+      el("div", {},
+        el("p", { class: "guia-titulo" }, g.titulo),
+        el("p", { class: "guia-sub" }, importadas[g.link]
+          ? `No app: ${importadas[g.link].join(", ")}`
+          : CLASSES[g.classe])),
+      el("div", { class: "guia-acoes" },
+        el("button", { type: "button", class: "botao", onclick: () => verBuildsDoGuia(g.link) }, "Ver builds"),
+        el("button", { type: "button", class: "botao botao-leve", onclick: () => estado.api.abrir_link(g.link) },
+          "Ler o guia")))));
+}
+
+// Abre o painel de importar (aba Builds) já buscando as builds do guia.
+function verBuildsDoGuia(link) {
+  abrirAba("builds");
+  abrirImportar();
+  document.getElementById("form-importar").elements.link.value = link;
+  buscarTexto(link);
 }
 
 // ------------------------------------------------------------ builds
@@ -368,7 +434,10 @@ function fecharImportar() {
 
 async function buscarMaxroll(evento) {
   evento.preventDefault();
-  const texto = evento.target.elements.link.value.trim();
+  buscarTexto(evento.target.elements.link.value.trim());
+}
+
+async function buscarTexto(texto) {
   const status = document.getElementById("importar-status");
   const opcoes = document.getElementById("importar-opcoes");
   if (!texto) { status.textContent = "Cole um link primeiro."; return; }
@@ -427,6 +496,7 @@ async function importarMaxroll(b, perfil, apelido, botao) {
   // A build nova entra na lista; o overlay só lê builds/ ao abrir, então reinicia.
   estado.builds = await estado.api.builds();
   estado.build = Math.max(0, estado.builds.findIndex(x => x.id === r.id));
+  if (estado.guias) desenharGuias();
   estado.habilidade = null;
   fecharImportar();
   desenharBuilds();
@@ -554,6 +624,7 @@ async function iniciar(api) {
   document.getElementById("form-config").addEventListener("submit", salvarConfig);
   document.getElementById("form-importar").addEventListener("submit", buscarMaxroll);
   document.getElementById("fechar-importar").addEventListener("click", fecharImportar);
+  document.getElementById("atualizar-guias").addEventListener("click", () => carregarGuias(true));
   document.getElementById("reiniciar").addEventListener("click", async () => {
     await estado.api.reiniciar_overlay();
     setTimeout(atualizarEstado, 1500);
@@ -615,7 +686,8 @@ function apiDeExemplo() {
       Finger: esp(["Focus", "Restraint"], critico),
       Weapon: esp(["Yang's Recurve"], ["Dano da arma", "Encaixe"]),
     }, ["Bane of the Trapped", "Zei's Stone of Vengeance"]), {
-      fonte: { site: "maxroll", perfil: "Sanc: Solo Push Odyssey", link: "https://maxroll.gg/d3/planner/345357607" },
+      fonte: { site: "maxroll", perfil: "Sanc: Solo Push Odyssey", link: "https://maxroll.gg/d3/planner/345357607",
+               guia: "https://maxroll.gg/d3/guides/ue-multishot-demon-hunter-guide" },
       cubo: { arma: "Odyssey's End", armadura: "Mantle of Channeling", joia: "Ring of Royal Grandeur" },
       habilidades: {
         ativas: ["entangling-shot", "multishot", "strafe", "preparation", "smoke-screen", "vengeance"]
@@ -663,6 +735,13 @@ function apiDeExemplo() {
     escolher_build: async id => { config = { ...config, BUILD_ATIVA: id }; return { erros: {} }; },
     visual: async id => visualDeExemplo(builds.find(b => b.id === id)),
     abrir_link: async url => { window.open(url, "_blank"); },
+    guias: async () => ({ guias: [
+      ["shadow-impale-demon-hunter", "Shadow Impale", "Demon Hunter"],
+      ["ue-multishot-demon-hunter", "UE Multishot", "Demon Hunter"],
+      ["god-ha-demon-hunter", "GoD HA", "Demon Hunter"],
+      ["lod-meteor-wizard", "LoD Meteor", "Wizard"],
+      ["ik-hota-barbarian", "IK HotA", "Barbarian"],
+    ].map(([s, titulo, classe]) => ({ link: `https://maxroll.gg/d3/guides/${s}-guide`, titulo, classe })) }),
     buscar_maxroll: async texto => /maxroll\.gg\/d3\/(guides|planner)\//.test(texto)
       ? { builds: [
           { numero: 236100095, nome: "Sanc Shadow Impale", classe: "Demon Hunter", perfil: 0,

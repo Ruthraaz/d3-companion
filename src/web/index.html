@@ -13,6 +13,7 @@
       <span class="marca-nome">D3 Companion</span>
     </div>
     <nav class="abas" role="tablist">
+      <button class="aba" data-aba="guias" role="tab">Guias</button>
       <button class="aba ativa" data-aba="builds" role="tab">Builds</button>
       <button class="aba" data-aba="historico" role="tab">Histórico</button>
       <button class="aba" data-aba="config" role="tab">Configurações</button>
@@ -24,6 +25,21 @@
   </header>
 
   <main>
+    <!-- GUIAS -->
+    <section class="painel" id="painel-guias">
+      <div class="cabeca-painel">
+        <h2>Guias do Maxroll</h2>
+        <p class="mudo">Escolha a classe do seu boneco. Abra um guia pra ver as builds dele e trazer a que quiser pro app.</p>
+      </div>
+      <div class="classes" id="classes" role="tablist"></div>
+      <p class="importar-status" id="guias-status" role="status"></p>
+      <ul class="lista-guias" id="lista-guias"></ul>
+      <p class="nota-guias mudo">
+        A lista vem do mapa do site do Maxroll e é atualizada uma vez por dia.
+        <button class="link" type="button" id="atualizar-guias">Atualizar agora</button>
+      </p>
+    </section>
+
     <!-- BUILDS -->
     <section class="painel ativo" id="painel-builds">
       <div class="problemas" id="problemas" role="alert" hidden></div>

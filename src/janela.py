@@ -45,8 +45,8 @@ import historico
 from avaliador import ficha_da_build, ler_builds, problemas_da_build
 from blizzard import Blizzard, ErroBlizzard, visual_da_build
 from config import ler_config, salvar_config
-from maxroll import (ErroMaxroll, baixar_planner, classe_do_planner, e_de_seguidor, montar,
-                     nomes_dos_perfis, planners_do_link, salvar_build)
+from maxroll import (ErroMaxroll, baixar_planner, catalogo, classe_do_planner, e_de_seguidor,
+                     link_de_guia, montar, nomes_dos_perfis, planners_do_link, salvar_build)
 from nucleo import PASTA_CAPTURAS
 
 PASTA_SRC = Path(__file__).resolve().parent
@@ -113,6 +113,14 @@ class Api:
         except ErroBlizzard as e:
             return {"erro": str(e)}
 
+    def guias(self, atualizar: bool = False) -> dict:
+        """Todos os guias de classe do Maxroll (só a lista; as builds de um guia
+        vêm quando ele é aberto, por buscar_maxroll). {"guias"} ou {"erro"}."""
+        try:
+            return {"guias": catalogo(atualizar=bool(atualizar))}
+        except ErroMaxroll as e:
+            return {"erro": str(e)}
+
     def buscar_maxroll(self, texto: str) -> dict:
         """Link de guia ou de planner do Maxroll -> builds que ele traz, com os
         perfis de cada uma. As do seguidor ficam de fora."""
@@ -121,6 +129,8 @@ class Api:
         except ErroMaxroll as e:
             return {"erro": str(e)}
         herois = [p for p in planners if not e_de_seguidor(p) and classe_do_planner(p)]
+        for p in herois:
+            p["_guia"] = link_de_guia(texto)  # a janela marca o guia como "já importado"
         if not herois:
             return {"erro": "Esse link não tem build de herói que o app conheça."}
         self._planners.update({p["_numero"]: p for p in herois})

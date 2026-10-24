@@ -45,7 +45,10 @@ A lógica (OCR, parser, avaliador) fica num **núcleo** sem interface (`src/nucl
 | 8a | Dados oficiais da Blizzard: habilidades, itens, ícones (`src/blizzard.py`) | ✅ funcionando |
 | 8b | Tela nova: boneco + barra de habilidades com ícones | ✅ funcionando |
 | 8c | Importar build do Maxroll: colar o link do guia na janela | ✅ funcionando |
-| 8d | Seu herói (BattleTag) vs. a build | ⏳ |
+| 8d | Aba Guias: todos os guias do Maxroll, por classe | ✅ funcionando |
+| 8e | Upar: o F8 mostra itens parecidos com os da build (afixos certos no espaço certo) | ⏳ |
+| 8f | Marcadores: qual habilidade, runa e paragon focar | ⏳ |
+| 8g | Seu herói (BattleTag) vs. a build | ⏳ |
 
 ## O que aprendemos na Etapa 1
 
@@ -255,6 +258,10 @@ Clicar numa habilidade mostra no painel da direita a descrição em português e
 - **Runa:** uma letra de `a` a `e`, a mesma que a Blizzard e o Maxroll usam.
 
 ## Builds do Maxroll
+
+**Aba Guias:** escolha a classe do seu boneco e aparecem todos os guias do Maxroll dela (69 no total). **Ver builds** traz as builds do guia pra você escolher e importar; **Ler o guia** abre a página no navegador. Guia que já tem build no app fica com a borda verde.
+
+A lista vem do mapa do site (`maxroll.gg/d3/sitemap.xml`), fica guardada em `dados/maxroll/` e é lida de novo no máximo uma vez por dia. As builds de um guia só são baixadas quando você clica em **Ver builds**: assim o app não puxa o site inteiro de uma vez.
 
 **Pela janela:** na aba Builds, clique em **+ Importar** e cole o link do guia (ex.: `https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide`) ou do planejador. Depois:
 1. **Build:** se o guia tiver mais de uma, escolha qual. As da seguidora (Enchantress) ficam de fora.
