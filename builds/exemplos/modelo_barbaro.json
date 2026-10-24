@@ -1,0 +1,51 @@
+{
+  "_como_usar": "Copie este arquivo para builds/ (fora da pasta exemplos), troque o nome do arquivo e edite. Chaves que começam com _ são comentários. Confira com: python src/avaliador.py --conferir",
+  "formato": 1,
+  "nome": "Modelo de Bárbaro (exemplo)",
+  "apelido": "Bárbaro",
+  "classe": "Barbarian",
+  "exige_ancient": false,
+
+  "_todos_os_espacos": "Regras que valem em todo espaço. Bárbaro usa Força no lugar de Destreza.",
+  "todos_os_espacos": {
+    "obrigatorios": [{ "modelo": "+# Strength", "rotulo": "Força" }],
+    "desejaveis": [{ "modelo": "+# Vitality", "rotulo": "Vitalidade" }]
+  },
+
+  "_espacos": "Opções: Head, Shoulders, Neck, Torso, Hands, Wrists, Waist, Legs, Feet, Finger, Weapon, Off-Hand. itens vazio = qualquer item com os afixos; com nomes = só esses (em inglês, como no jogo).",
+  "espacos": {
+    "Head": {
+      "itens": [],
+      "desejaveis": [
+        { "modelo": "@soquete", "rotulo": "Encaixe" },
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" }
+      ]
+    },
+    "Hands": {
+      "itens": [],
+      "_minimo": "minimo = valor mínimo do PRIMEIRO número do afixo (aqui, pelo menos 40% de dano crítico).",
+      "desejaveis": [
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
+        { "modelo": "Critical Hit Damage Increased by #%", "rotulo": "Dano crítico", "minimo": 40 }
+      ]
+    },
+    "Neck": {
+      "itens": [],
+      "desejaveis": [
+        { "modelo": "@soquete", "rotulo": "Encaixe" },
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
+        { "modelo": "Critical Hit Damage Increased by #%", "rotulo": "Dano crítico" }
+      ]
+    },
+    "Weapon": {
+      "itens": [],
+      "desejaveis": [
+        { "modelo": "+#-# * Damage", "rotulo": "Dano da arma" },
+        { "modelo": "@soquete", "rotulo": "Encaixe" }
+      ]
+    }
+  },
+
+  "_gemas": "Gemas lendárias da build, com o nome em inglês como aparece no jogo.",
+  "gemas": []
+}

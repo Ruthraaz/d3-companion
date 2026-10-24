@@ -27,7 +27,7 @@ import webview
 from PIL import Image
 
 import historico
-from avaliador import carregar_builds, ficha_da_build
+from avaliador import ficha_da_build, ler_builds
 from config import ler_config, salvar_config
 from nucleo import PASTA_CAPTURAS
 
@@ -80,7 +80,11 @@ class Api:
         self._overlay = overlay  # com "_" o pywebview não expõe pro JavaScript
 
     def builds(self) -> list[dict]:
-        return [ficha_da_build(b) for b in carregar_builds()]
+        return [ficha_da_build(b) for b in ler_builds()[0]]
+
+    def problemas_das_builds(self) -> dict[str, list[str]]:
+        """{arquivo: [o que corrigir]} das builds que ficaram de fora."""
+        return ler_builds()[1]
 
     def historico(self, limite: int = 50) -> list[dict]:
         return historico.ler(limite)

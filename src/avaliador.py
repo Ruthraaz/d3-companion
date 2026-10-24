@@ -19,6 +19,7 @@ Regras:
 import json
 import re
 import sys
+from difflib import get_close_matches
 from pathlib import Path
 
 PASTA_BUILDS = Path(__file__).resolve().parent.parent / "builds"
@@ -170,15 +171,137 @@ def ficha_da_build(build: dict) -> dict:
     }
 
 
-def carregar_builds(pasta: Path = PASTA_BUILDS) -> list[dict]:
-    """Lê builds/*.json. Cada build ganha um "id" = nome do arquivo sem .json
-    (ex.: "legacy_of_nightmares"), que não muda se o apelido mudar."""
-    builds = []
+# ---------------------------------------------------------------- conferir builds
+# Pra uma classe nova entrar "só escrevendo JSON", o JSON errado tem que avisar.
+# Sem isso, "Hand" no lugar de "Hands" ou "desejavel" no lugar de "desejaveis"
+# fazia a regra sumir calada; e uma vírgula faltando derrubava o app inteiro.
+
+CHAVES_DA_BUILD = {"formato", "nome", "apelido", "classe", "exige_ancient",
+                   "todos_os_espacos", "espacos", "gemas"}
+CHAVES_DO_ESPACO = {"itens", "obrigatorios", "desejaveis", "exige_ancient"}
+CHAVES_GERAIS = {"obrigatorios", "desejaveis"}
+CHAVES_DA_REGRA = {"modelo", "rotulo", "minimo"}
+
+
+def _sugestao(palavra: str, opcoes) -> str:
+    perto = get_close_matches(palavra, list(opcoes), n=1, cutoff=0.6)
+    return f" Quis dizer {perto[0]!r}?" if perto else ""
+
+
+def _chaves_desconhecidas(onde: str, objeto: dict, validas: set) -> list[str]:
+    # Chave começando com "_" é comentário (JSON não tem comentário de verdade).
+    return [f"{onde}: chave {k!r} não existe.{_sugestao(k, validas)}"
+            for k in objeto if k not in validas and not k.startswith("_")]
+
+
+def _problemas_das_regras(onde: str, regras) -> list[str]:
+    if not isinstance(regras, list):
+        return [f"{onde}: precisa ser uma lista [ ... ]."]
+    problemas = []
+    for n, regra in enumerate(regras, 1):
+        lugar = f"{onde}, regra {n}"
+        if isinstance(regra, str):
+            continue
+        if not isinstance(regra, dict) or not isinstance(regra.get("modelo"), str):
+            problemas.append(f'{lugar}: use "+# Dexterity" ou {{"modelo": "+# Dexterity", "rotulo": "Destreza"}}.')
+            continue
+        problemas += _chaves_desconhecidas(lugar, regra, CHAVES_DA_REGRA)
+        minimo = regra.get("minimo")
+        if minimo is not None and (isinstance(minimo, bool) or not isinstance(minimo, (int, float))):
+            problemas.append(f"{lugar}: \"minimo\" precisa ser um número, sem aspas.")
+    return problemas
+
+
+def _lista_de_textos(onde: str, valor) -> list[str]:
+    if not isinstance(valor, list) or not all(isinstance(v, str) for v in valor):
+        return [f'{onde}: precisa ser uma lista de nomes, ex.: ["Nome do item"].']
+    return []
+
+
+def problemas_da_build(build) -> list[str]:
+    """Tudo que está errado na build, em português. Lista vazia = build ok."""
+    from parser import CLASSES  # aqui: o avaliador não precisa do parser pro resto
+
+    if not isinstance(build, dict):
+        return ["O arquivo precisa ser um objeto JSON { ... }."]
+    problemas = []
+    if build.get("formato") != 1:
+        problemas.append('"formato" precisa ser 1.')
+    if not isinstance(build.get("nome"), str) or not build["nome"].strip():
+        problemas.append('Falta o "nome" da build.')
+    if build.get("classe") not in CLASSES:
+        problemas.append(f"Classe {build.get('classe')!r} não existe."
+                         f"{_sugestao(str(build.get('classe')), CLASSES)} Opções: {', '.join(CLASSES)}.")
+    problemas += _chaves_desconhecidas("build", build, CHAVES_DA_BUILD)
+
+    gerais = build.get("todos_os_espacos", {})
+    if not isinstance(gerais, dict):
+        problemas.append('"todos_os_espacos" precisa ser um objeto { ... }.')
+    else:
+        problemas += _chaves_desconhecidas("todos_os_espacos", gerais, CHAVES_GERAIS)
+        for chave in CHAVES_GERAIS & set(gerais):
+            problemas += _problemas_das_regras(f"todos_os_espacos.{chave}", gerais[chave])
+
+    espacos = build.get("espacos", {})
+    if not isinstance(espacos, dict):
+        problemas.append('"espacos" precisa ser um objeto { ... }.')
+        espacos = {}
+    for nome, espaco in espacos.items():
+        if nome not in ESPACOS:
+            problemas.append(f"Espaço {nome!r} não existe.{_sugestao(nome, ESPACOS)} "
+                             f"Opções: {', '.join(ESPACOS)}.")
+            continue
+        if not isinstance(espaco, dict):
+            problemas.append(f"{nome}: precisa ser um objeto {{ ... }}.")
+            continue
+        problemas += _chaves_desconhecidas(nome, espaco, CHAVES_DO_ESPACO)
+        if "itens" in espaco:
+            problemas += _lista_de_textos(f"{nome}.itens", espaco["itens"])
+        for chave in ("obrigatorios", "desejaveis"):
+            if chave in espaco:
+                problemas += _problemas_das_regras(f"{nome}.{chave}", espaco[chave])
+
+    if "gemas" in build:
+        problemas += _lista_de_textos("gemas", build["gemas"])
+    return problemas
+
+
+def ler_builds(pasta: Path = PASTA_BUILDS) -> tuple[list[dict], dict[str, list[str]]]:
+    """(builds que estão ok, {arquivo: problemas}). Build com problema fica de fora;
+    as outras continuam funcionando."""
+    builds, problemas = [], {}
     for p in sorted(pasta.glob("*.json")):
-        build = json.loads(p.read_text(encoding="utf-8"))
+        try:
+            build = json.loads(p.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as erro:
+            problemas[p.name] = [f"JSON inválido na linha {erro.lineno}, coluna {erro.colno} "
+                                 "(vírgula, aspas ou chave { } faltando ou sobrando?)."]
+            continue
+        except UnicodeDecodeError:
+            problemas[p.name] = ["O arquivo precisa estar salvo em UTF-8."]
+            continue
+        erros = problemas_da_build(build)
+        if erros:
+            problemas[p.name] = erros
+            continue
         build["id"] = p.stem
         builds.append(build)
-    return builds
+    return builds, problemas
+
+
+def carregar_builds(pasta: Path = PASTA_BUILDS) -> list[dict]:
+    """Lê builds/*.json (só as que estão ok). Cada build ganha um "id" = nome do
+    arquivo sem .json (ex.: "legacy_of_nightmares"), que não muda se o apelido mudar."""
+    return ler_builds(pasta)[0]
+
+
+def texto_dos_problemas(problemas: dict[str, list[str]]) -> str:
+    """Pro terminal: cada arquivo com problema e o que corrigir."""
+    linhas = []
+    for arquivo, erros in problemas.items():
+        linhas.append(f"⚠ builds/{arquivo} ficou de fora:")
+        linhas += [f"   - {e}" for e in erros]
+    return "\n".join(linhas)
 
 
 def builds_escolhidas(builds: list[dict], escolha: str) -> list[dict]:
@@ -205,9 +328,19 @@ def resumo(item: dict, resultados: list[dict]) -> str:
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
     if len(sys.argv) < 2:
-        print("Uso: python src/avaliador.py <imagem.png | texto.txt>")
+        print("Uso: python src/avaliador.py <imagem.png | texto.txt>\n"
+              "     python src/avaliador.py --conferir [pasta]   (confere as builds)")
         sys.exit(1)
+    if sys.argv[1] == "--conferir":
+        pasta = Path(sys.argv[2]) if len(sys.argv) > 2 else PASTA_BUILDS
+        ok, problemas = ler_builds(pasta)
+        for b in ok:
+            print(f"✅ {b['id']}.json — {b['nome']} ({b['classe']})")
+        if problemas:
+            print(texto_dos_problemas(problemas))
+        sys.exit(1 if problemas else 0)
     from parser import interpretar
 
     arquivo = Path(sys.argv[1])

@@ -70,7 +70,14 @@ trabalho extra agora, não feche essa porta:
 | 5 | Overlay em cima do jogo (PySide6: `src/overlay.py`, núcleo em `src/nucleo.py`) | ✅ (testado no jogo com gemas) |
 | — | **Versão 1:** Arthur testa F8 + selo dentro do jogo; corrigir o que aparecer | ✅ testado no jogo em 24/10/2026 (gemas + equipamentos) |
 | 6 | Janela principal (pywebview: `src/janela.py`, página em `src/web/`) | ✅ primeira versão (falta o Arthur usar) |
-| 7 | Outras classes: só builds novas em JSON | próxima |
+| 7 | Outras classes: só builds novas em JSON (+ conferência das builds) | ✅ |
+| 8 | Importar builds de sites (Maxroll etc.) como tradutores | próxima |
+
+### Etapa 7 — notas
+- Nada de classe fixa no código; modelo pra outra classe em `builds/exemplos/` (não é carregada).
+- `avaliador.ler_builds` confere cada build (`problemas_da_build`): build com erro fica de fora, com
+  mensagem em português + sugestão (difflib). Aparece no terminal do overlay e na aba Builds.
+  `python src/avaliador.py --conferir [pasta]`. Chaves com `_` são comentário.
 
 ### Etapa 6 — notas
 - `python src/janela.py` liga o overlay (`app.py`) como **processo filho**: Qt e pywebview querem a thread

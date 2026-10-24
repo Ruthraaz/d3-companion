@@ -43,14 +43,14 @@ function el(tag, props = {}, ...filhos) {
     else if (k.startsWith("on")) no.addEventListener(k.slice(2), v);
     else no.setAttribute(k, v);
   }
-  for (const f of filhos.flat()) {
+  for (const f of filhos.flat(Infinity)) {
     if (f !== null && f !== undefined && f !== false) no.append(f);
   }
   return no;
 }
 
 function trocar(no, ...filhos) {
-  no.replaceChildren(...filhos.flat().filter(Boolean));
+  no.replaceChildren(...filhos.flat(Infinity).filter(Boolean));
 }
 
 function hora(iso) {
@@ -69,6 +69,22 @@ function abrirAba(nome) {
 }
 
 // ------------------------------------------------------------ builds
+
+// Build com JSON errado fica de fora do app; aqui a pessoa vê o que corrigir.
+function desenharProblemas(problemas) {
+  const caixa = document.getElementById("problemas");
+  const arquivos = Object.keys(problemas);
+  caixa.hidden = !arquivos.length;
+  trocar(caixa, arquivos.length && [
+    el("p", { class: "problemas-titulo" },
+      `${arquivos.length === 1 ? "Uma build ficou" : `${arquivos.length} builds ficaram`} de fora por erro no arquivo:`),
+    arquivos.map(arquivo => el("div", { class: "problema" },
+      el("code", {}, `builds/${arquivo}`),
+      el("ul", {}, problemas[arquivo].map(p => el("li", {}, p))))),
+    el("p", { class: "mudo" }, "Corrija o arquivo e abra o app de novo. Pra conferir antes: ",
+      el("code", {}, "python src/avaliador.py --conferir")),
+  ]);
+}
 
 function desenharBuilds() {
   const caixa = document.getElementById("escolha-build");
@@ -287,6 +303,7 @@ async function iniciar(api) {
   });
 
   estado.builds = await api.builds();
+  desenharProblemas(await api.problemas_das_builds());
   const { BUILD_ATIVA } = await api.config();
   const i = estado.builds.findIndex(b => b.id === BUILD_ATIVA);
   if (i >= 0) { estado.ativa = BUILD_ATIVA; estado.build = i; }
@@ -359,6 +376,10 @@ function apiDeExemplo() {
   let config = { ATALHO: "F8", SELO_SEGUNDOS: "6", BUILD_ATIVA: "" };
   return {
     builds: async () => builds,
+    // ?problema na URL simula uma build com erro, pra ver o aviso.
+    problemas_das_builds: async () => location.search.includes("problema")
+      ? { "minha_build.json": ["Espaço 'Hand' não existe. Quis dizer 'Hands'? Opções: Head, Shoulders, …"] }
+      : {},
     historico: async () => historico,
     miniatura: async () => null,
     config: async () => config,

@@ -124,6 +124,19 @@ h3 {
 .cabeca-painel { margin-bottom: 18px; }
 
 /* ------------------------------------------------------------ builds */
+.problemas {
+  border: 1px solid rgba(229, 83, 75, .55);
+  border-left: 3px solid var(--falta);
+  border-radius: var(--raio);
+  background: rgba(229, 83, 75, .07);
+  padding: 12px 16px;
+  margin-bottom: 18px;
+}
+.problemas[hidden] { display: none; }
+.problemas-titulo { margin: 0 0 8px; color: #f0a39d; font-weight: 600; }
+.problema ul { margin: 4px 0 8px; padding-left: 20px; }
+.problema li { margin: 2px 0; }
+.problemas .mudo { margin: 6px 0 0; font-size: 12px; }
 .escolha-build { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
 .chip-build {
   border: 1px solid var(--borda);

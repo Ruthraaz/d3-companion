@@ -35,7 +35,7 @@ from PySide6.QtCore import QObject, QTimer, Signal  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 import historico  # noqa: E402
-from avaliador import builds_escolhidas, carregar_builds, resumo  # noqa: E402
+from avaliador import builds_escolhidas, ler_builds, resumo, texto_dos_problemas  # noqa: E402
 from config import ler_config  # noqa: E402
 from atalho import ler_atalho, registrar, sugestoes_livres  # noqa: E402
 from captura import capturar_perto_do_cursor  # noqa: E402
@@ -105,7 +105,9 @@ def ouvir_atalho(ponte: Ponte, builds: list[dict], pronto: threading.Event, falh
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
-    builds = carregar_builds()
+    builds, problemas = ler_builds()
+    if problemas:  # build com erro fica de fora; as outras funcionam
+        print(texto_dos_problemas(problemas), flush=True)
 
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)

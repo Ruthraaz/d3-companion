@@ -40,7 +40,8 @@ A lógica (OCR, parser, avaliador) fica num **núcleo** sem interface (`src/nucl
 | 5 | Overlay em cima do jogo | ✅ funcionando |
 | | **Versão 1:** testar tudo dentro do jogo | ✅ testada em 24/10/2026 |
 | 6 | Janela principal (pywebview): builds no boneco, histórico, configurações | ✅ primeira versão |
-| 7 | Outras classes (só JSON de build novo) | ⏳ próxima |
+| 7 | Outras classes (só JSON de build novo) + conferência das builds | ✅ funcionando |
+| 8 | Importar builds de sites (Maxroll etc.) | ⏳ próxima |
 
 ## O que aprendemos na Etapa 1
 
@@ -185,6 +186,26 @@ Sem `rotulo`, o selo mostra o próprio modelo; sem `apelido`, o nome da build. T
 - **Espaço que a build não define não é "não serve".** O avaliador ainda aplica as regras gerais nele (ex.: Destreza). A primeira versão da tela dizia o contrário; a `ficha_da_build` (no avaliador, testada) agora devolve os 12 espaços com `definido: true/false`.
 - **Nome de item vem do OCR**, então a página monta tudo com `textContent`, nunca `innerHTML`.
 - **Aberta no navegador comum, a página usa dados de exemplo** — dá pra mexer no visual sem jogo nem app.
+
+## Etapa 7: outras classes
+
+O código não tem nada fixo de Demon Hunter: o que muda de uma classe pra outra (atributo principal, itens, gemas) está todo no JSON da build. Pra jogar de outra classe:
+
+1. Copie `builds/exemplos/modelo_barbaro.json` para `builds/` com outro nome (ex.: `builds/barbaro_redemoinho.json`). A pasta `exemplos/` não é carregada pelo app.
+2. Troque `classe` (`Barbarian`, `Crusader`, `Demon Hunter`, `Monk`, `Necromancer`, `Witch Doctor`, `Wizard`), o atributo principal (`+# Strength`, `+# Intelligence`, `+# Dexterity`) e os itens e gemas, com os nomes em inglês, do jeito que o jogo mostra.
+3. Confira:
+   ```
+   python src/avaliador.py --conferir
+   ```
+
+Chave que começa com `_` é comentário (`"_nota": "..."`): o JSON não tem comentário de verdade e o app ignora essas chaves.
+
+**A conferência das builds.** Antes, um JSON errado tinha dois jeitos de dar problema: uma vírgula faltando **derrubava o app inteiro**, e um erro de digitação (`"Hand"` no lugar de `"Hands"`, `"desejavel"` no lugar de `"desejaveis"`) fazia a regra **sumir calada**, e o item passava a "servir" sem você saber por quê. Agora toda build é conferida ao carregar:
+- build com problema **fica de fora** e as outras continuam funcionando;
+- o problema aparece no terminal do overlay e num aviso vermelho na aba Builds, em português e com sugestão (`Espaço 'Hand' não existe. Quis dizer 'Hands'?`);
+- JSON quebrado diz a linha e a coluna.
+
+O que a conferência **não** pega: um `modelo` escrito certo no formato mas que não bate com nenhum afixo do jogo (ex.: `"+# Strenght"`). Pra isso não tem lista oficial de afixos no projeto; o jeito é testar com um print (`python src/avaliador.py <print.png>`).
 
 ## Como rodar (Windows)
 
