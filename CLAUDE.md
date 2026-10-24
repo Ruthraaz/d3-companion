@@ -81,6 +81,8 @@ trabalho extra agora, não feche essa porta:
 - **Build escolhida** (pedido do Arthur, 24/10/2026): clicar numa build na janela = o F8 avalia só com ela;
   "Todas" = todas. Fica em `BUILD_ATIVA` no .env (id = nome do arquivo da build); `app.py` relê a cada F8
   (`avaliador.builds_escolhidas`). Id que sumiu → volta pra todas.
+- **Só um overlay por vez** (mutex `Local\D3Companion.Overlay` no `app.py`): um `app.py` esquecido no
+  terminal segurava o F8 com código antigo e o selo "ignorava" a build escolhida.
 - Ainda não tem: editar build pela janela (decisão da v1: builds só no JSON), screenshot no README.
 
 Em 24/10/2026 o selo dos 7 equipamentos de `samples/` foi conferido fora do jogo (mesmo caminho do F8)

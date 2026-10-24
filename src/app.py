@@ -62,6 +62,20 @@ def _terminal(av) -> str:
     return f"{texto}\n({av.segundos:.1f}s · capturas/{nome})"
 
 
+_trava = None  # o Windows apaga a trava sozinho quando o processo termina
+
+
+def _unico_overlay() -> bool:
+    """Só um overlay por vez. Com dois abertos (ex.: um esquecido no terminal),
+    cada um responde a uma tecla e o selo parece "ignorar" a build escolhida
+    (aconteceu em 24/10/2026). Usa um mutex com nome do Windows como trava."""
+    global _trava
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateMutexW.restype = ctypes.wintypes.HANDLE
+    _trava = kernel32.CreateMutexW(None, False, "Local\\D3Companion.Overlay")
+    return ctypes.get_last_error() != 183  # ERROR_ALREADY_EXISTS
+
+
 def ouvir_atalho(ponte: Ponte, builds: list[dict], pronto: threading.Event, falhou: list):
     """Roda na thread do atalho. O atalho fica preso a esta thread."""
     user32 = ctypes.windll.user32
@@ -114,6 +128,11 @@ def main():
         QTimer.singleShot(int(SEGUNDOS_DO_SELO * 1000) + 300, app.quit)
         app.exec()
         return
+
+    if not _unico_overlay():
+        print("Já tem um D3 Companion (overlay) aberto — talvez num terminal ou noutra janela.\n"
+              "Feche aquele primeiro (Ctrl+C no terminal dele) e tente de novo.")
+        sys.exit(1)
 
     try:
         ler_atalho(ATALHO)
