@@ -164,6 +164,55 @@ h3 {
   vertical-align: 2px;
 }
 .chip-todas { min-width: 96px; }
+.chip-importar { border-style: dashed; border-color: var(--borda-forte); background: transparent; }
+.chip-importar .chip-apelido { color: var(--ouro); }
+.chip-importar:hover { border-color: var(--ouro); background: var(--painel); }
+
+.importar {
+  margin: -6px 0 20px;
+  padding: 18px 20px;
+  border: 1px solid var(--ouro);
+  border-radius: 10px;
+  background: linear-gradient(var(--painel-2), var(--painel));
+}
+.importar-titulo { margin: 0 0 12px; font: 400 18px var(--serifa); color: var(--ouro-claro); }
+.importar-busca { display: flex; gap: 8px; }
+.importar input, .importar select {
+  background: var(--fundo-2);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 9px 12px;
+  color: var(--texto);
+  font: inherit;
+  outline: none;
+  min-width: 0;
+}
+.importar-busca input { flex: 1; }
+.importar input:focus, .importar select:focus { border-color: var(--ouro); box-shadow: 0 0 0 2px rgba(201, 162, 90, .2); }
+.importar-status { margin: 10px 0 0; font-size: 13px; color: var(--mudo); }
+.importar-status:empty { display: none; }
+.importar-status.erro { color: #f0b4ae; }
+.opcoes-builds { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.opcao-build {
+  border: 1px solid var(--borda);
+  background: var(--fundo-2);
+  border-radius: var(--raio);
+  padding: 8px 14px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.opcao-build:hover { border-color: var(--borda-forte); }
+.opcao-build.ativo { border-color: var(--ouro); box-shadow: 0 0 0 1px rgba(201, 162, 90, .25); }
+.importar-campos {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 14px;
+}
+.t-ok { color: var(--ok); }
 .avaliando { margin: -10px 0 18px; font-size: 13px; color: var(--mudo); }
 .avaliando strong { color: var(--ouro-claro); font-weight: 600; }
 .chip-apelido { display: block; font-family: var(--serifa); font-size: 16px; color: var(--ouro-claro); }

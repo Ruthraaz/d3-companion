@@ -1,0 +1,128 @@
+{
+  "formato": 1,
+  "nome": "Sanc Shadow Impale — Sanc: Solo Push",
+  "apelido": "Shadow Impale",
+  "classe": "Demon Hunter",
+  "exige_ancient": false,
+  "fonte": {
+    "site": "maxroll",
+    "planner": 236100095,
+    "perfil": "Sanc: Solo Push",
+    "link": "https://maxroll.gg/d3/planner/236100095"
+  },
+  "todos_os_espacos": {
+    "obrigatorios": [
+      {
+        "modelo": "+# Dexterity",
+        "rotulo": "Destreza"
+      }
+    ]
+  },
+  "espacos": {
+    "Head": {
+      "itens": [
+        "The Shadow's Mask"
+      ]
+    },
+    "Shoulders": {
+      "itens": [
+        "The Shadow's Burden"
+      ]
+    },
+    "Neck": {
+      "itens": [
+        "Squirt's Necklace"
+      ]
+    },
+    "Torso": {
+      "itens": [
+        "The Shadow's Bane"
+      ]
+    },
+    "Waist": {
+      "itens": [
+        "Captain Crimson's Silk Girdle"
+      ]
+    },
+    "Hands": {
+      "itens": [
+        "The Shadow's Grasp"
+      ]
+    },
+    "Wrists": {
+      "itens": [
+        "Wraps of Clarity"
+      ]
+    },
+    "Legs": {
+      "itens": [
+        "Captain Crimson's Thrust"
+      ]
+    },
+    "Feet": {
+      "itens": [
+        "The Shadow's Heels"
+      ]
+    },
+    "Finger": {
+      "itens": [
+        "Focus",
+        "Restraint"
+      ]
+    },
+    "Weapon": {
+      "itens": [
+        "Karlei's Point"
+      ]
+    },
+    "Off-Hand": {
+      "itens": [
+        "Holy Point Shot"
+      ]
+    }
+  },
+  "gemas": [
+    "Taeguk",
+    "Bane of the Trapped",
+    "Bane of the Stricken"
+  ],
+  "cubo": {
+    "arma": "Dawn",
+    "armadura": "Mantle of Channeling",
+    "joia": "Ring of Royal Grandeur"
+  },
+  "habilidades": {
+    "ativas": [
+      {
+        "habilidade": "bolas",
+        "runa": "d"
+      },
+      {
+        "habilidade": "impale",
+        "runa": "a"
+      },
+      {
+        "habilidade": "shadow-power",
+        "runa": ""
+      },
+      {
+        "habilidade": "strafe",
+        "runa": "c"
+      },
+      {
+        "habilidade": "smoke-screen",
+        "runa": "d"
+      },
+      {
+        "habilidade": "vengeance",
+        "runa": "b"
+      }
+    ],
+    "passivas": [
+      "numbing-traps",
+      "cull-the-weak",
+      "ambush",
+      "thrill-of-the-hunt"
+    ]
+  }
+}

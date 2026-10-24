@@ -20,7 +20,8 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
 
 from avaliador import problemas_da_build  # noqa: E402
-from maxroll import (ErroMaxroll, baixar_planner, converter, dados_do_planejador,  # noqa: E402
+from maxroll import (ErroMaxroll, baixar_planner, classe_do_planner, converter,  # noqa: E402
+                     dados_do_planejador, e_de_seguidor, link_de_guia, planners_do_link, salvar_build,
                      id_do_link, nome_do_arquivo, nomes_dos_perfis)
 
 DADOS = {
@@ -64,8 +65,29 @@ class TestLink(unittest.TestCase):
         self.assertEqual(id_do_link(" 345357607 "), 345357607)
 
     def test_link_sem_numero_explica(self):
-        with self.assertRaisesRegex(ErroMaxroll, "Open in Planner"):
-            id_do_link("https://maxroll.gg/d3/guides/ue-multishot-demon-hunter-guide")
+        with self.assertRaisesRegex(ErroMaxroll, "guia de D3 do Maxroll"):
+            id_do_link("https://www.google.com")
+
+    def test_link_de_guia(self):
+        self.assertEqual(link_de_guia("maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide#skills"),
+                         "https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide")
+        self.assertIsNone(link_de_guia("https://maxroll.gg/d4/guides/algum-guide"))  # D4 não
+
+    def test_guia_traz_as_builds_da_pagina_sem_repetir(self):
+        html = ('<div data-d3planner-id="236100095"></div><p>texto</p>'
+                '<div data-d3planner-id="112481789"></div><div data-d3planner-id="236100095"></div>')
+        abrir = lambda pedido, timeout=None: io.BytesIO(html.encode())  # noqa: E731
+        self.assertEqual(planners_do_link("https://maxroll.gg/d3/guides/x-guide", abrir), [236100095, 112481789])
+
+    def test_guia_sem_builds(self):
+        abrir = lambda pedido, timeout=None: io.BytesIO(b"<html>nada</html>")  # noqa: E731
+        with self.assertRaisesRegex(ErroMaxroll, "Não achei nenhuma build"):
+            planners_do_link("https://maxroll.gg/d3/guides/x-guide", abrir)
+
+    def test_link_de_planner_nao_abre_pagina(self):
+        def nao_abre(pedido, timeout=None):
+            raise AssertionError("não devia abrir a página")
+        self.assertEqual(planners_do_link("https://maxroll.gg/d3/planner/345357607", nao_abre), [345357607])
 
 
 class TestConverter(unittest.TestCase):
@@ -115,6 +137,37 @@ class TestConverter(unittest.TestCase):
 
     def test_nome_do_arquivo(self):
         self.assertEqual(nome_do_arquivo(self.build), "sanc_ue_multishot")
+
+    def test_runa_x_vira_sem_runa(self):
+        # No Maxroll, "x" = habilidade sem runa (visto no Shadow Power do Shadow Impale).
+        perfil = PERFIL | {"skills": [["shadowpower", "x"], ["multishot", "a"]]}
+        build = converter(PLANNER | {"profiles": [perfil]}, DADOS)
+        self.assertEqual([a["runa"] for a in build["habilidades"]["ativas"]], ["", "a"])
+        self.assertEqual(problemas_da_build(build), [])
+
+    def test_salvar_nunca_sobrescreve(self):
+        with tempfile.TemporaryDirectory() as pasta:
+            primeiro = salvar_build(self.build, Path(pasta))
+            segundo = salvar_build(self.build, Path(pasta))
+            self.assertEqual((primeiro.name, segundo.name), ("sanc_ue_multishot.json", "sanc_ue_multishot_2.json"))
+            self.assertEqual(json.loads(primeiro.read_text(encoding="utf-8")), self.build)
+
+
+class TestTiposDePlanner(unittest.TestCase):
+    def test_planner_de_um_perfil_so(self):
+        # Alguns planners guardam o perfil direto em "data", sem a lista "profiles".
+        bruto = {"name": "Só um", "data": json.dumps(PERFIL)}
+        planner = baixar_planner(1, abrir=resposta(bruto))
+        self.assertEqual(nomes_dos_perfis(planner), ["Solo Push"])
+        self.assertEqual(classe_do_planner(planner), "Demon Hunter")
+
+    def test_seguidor_fica_de_fora(self):
+        self.assertTrue(e_de_seguidor({"_nome": "GR Speed Enchantress"}))
+        self.assertTrue(e_de_seguidor({"_nome": "T16 templar"}))
+        self.assertFalse(e_de_seguidor({"_nome": "Sanc Shadow Impale"}))
+
+    def test_classe_desconhecida(self):
+        self.assertIsNone(classe_do_planner({"class": "paladin", "profiles": [{}]}))
 
 
 def resposta(dados):

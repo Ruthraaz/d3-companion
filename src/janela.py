@@ -42,9 +42,11 @@ except ImportError:
 from PIL import Image
 
 import historico
-from avaliador import ficha_da_build, ler_builds
+from avaliador import ficha_da_build, ler_builds, problemas_da_build
 from blizzard import Blizzard, ErroBlizzard, visual_da_build
 from config import ler_config, salvar_config
+from maxroll import (ErroMaxroll, baixar_planner, classe_do_planner, e_de_seguidor, montar,
+                     nomes_dos_perfis, planners_do_link, salvar_build)
 from nucleo import PASTA_CAPTURAS
 
 PASTA_SRC = Path(__file__).resolve().parent
@@ -95,6 +97,7 @@ class Api:
     def __init__(self, overlay: Overlay):
         self._overlay = overlay  # com "_" o pywebview não expõe pro JavaScript
         self._blizzard = Blizzard()  # um só: o token vale 24 h
+        self._planners = {}  # número -> planner do Maxroll já baixado (entre buscar e importar)
 
     def builds(self) -> list[dict]:
         return [ficha_da_build(b) for b in ler_builds()[0]]
@@ -109,6 +112,39 @@ class Api:
             return visual_da_build(build, self._blizzard)
         except ErroBlizzard as e:
             return {"erro": str(e)}
+
+    def buscar_maxroll(self, texto: str) -> dict:
+        """Link de guia ou de planner do Maxroll -> builds que ele traz, com os
+        perfis de cada uma. As do seguidor ficam de fora."""
+        try:
+            planners = [baixar_planner(n) for n in planners_do_link(texto)]
+        except ErroMaxroll as e:
+            return {"erro": str(e)}
+        herois = [p for p in planners if not e_de_seguidor(p) and classe_do_planner(p)]
+        if not herois:
+            return {"erro": "Esse link não tem build de herói que o app conheça."}
+        self._planners.update({p["_numero"]: p for p in herois})
+        return {"builds": [{
+            "numero": p["_numero"],
+            "nome": p["_nome"],
+            "classe": classe_do_planner(p),
+            "perfis": nomes_dos_perfis(p),
+            "perfil": p.get("activeProfile") or 0,
+        } for p in herois]}
+
+    def importar_maxroll(self, numero: int, perfil: int, apelido: str = "") -> dict:
+        """Grava a build escolhida em builds/ (nunca sobrescreve). {"id"} ou {"erro"}."""
+        planner = self._planners.get(int(numero))
+        if planner is None:
+            return {"erro": "Busque o link de novo antes de importar."}
+        try:
+            build = montar(planner, int(perfil), apelido, self._blizzard)
+        except ErroMaxroll as e:
+            return {"erro": str(e)}
+        problemas = problemas_da_build(build)
+        if problemas:  # não devia acontecer; se acontecer, não grava build quebrada
+            return {"erro": "A build veio com problema: " + " ".join(problemas)}
+        return {"id": salvar_build(build).stem}
 
     def abrir_link(self, url: str) -> None:
         """Abre o guia da build no navegador do Windows (não dentro da janela).

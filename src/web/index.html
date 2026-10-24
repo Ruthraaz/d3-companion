@@ -28,6 +28,17 @@
     <section class="painel ativo" id="painel-builds">
       <div class="problemas" id="problemas" role="alert" hidden></div>
       <div class="escolha-build" id="escolha-build"></div>
+      <section class="importar" id="importar" hidden>
+        <h2 class="importar-titulo">Importar build do Maxroll</h2>
+        <form class="importar-busca" id="form-importar">
+          <input name="link" autocomplete="off" spellcheck="false"
+                 placeholder="Cole o link do guia (maxroll.gg/d3/guides/…) ou do planejador">
+          <button type="submit" class="botao">Buscar</button>
+          <button type="button" class="botao botao-leve" id="fechar-importar">Cancelar</button>
+        </form>
+        <p class="importar-status" id="importar-status" role="status"></p>
+        <div id="importar-opcoes"></div>
+      </section>
       <p class="avaliando" id="avaliando"></p>
       <div class="builds-corpo">
         <div class="coluna-build">

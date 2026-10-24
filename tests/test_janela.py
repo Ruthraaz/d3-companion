@@ -17,6 +17,7 @@ sys.path.insert(0, str(RAIZ / "src"))
 import historico  # noqa: E402
 from avaliador import (ESPACOS, avaliar_todas, builds_escolhidas, carregar_builds,  # noqa: E402
                        ficha_da_build)
+from builds_dos_testes import BUILDS_DOS_TESTES  # noqa: E402
 from config import ler_config, salvar_config  # noqa: E402
 from nucleo import Avaliacao, Selo, montar_selo, texto_do_selo  # noqa: E402
 
@@ -79,7 +80,7 @@ class TestBuildEscolhida(unittest.TestCase):
     """Na janela, clicar numa build faz o atalho avaliar só com ela."""
 
     def setUp(self):
-        self.builds = carregar_builds()
+        self.builds = [b for b in carregar_builds() if b["id"] in BUILDS_DOS_TESTES]  # só as originais
         self.pasta = tempfile.TemporaryDirectory()
         self.env = Path(self.pasta.name) / ".env"
 
@@ -127,7 +128,7 @@ class TestBuildEscolhida(unittest.TestCase):
 
 class TestFichaDaBuild(unittest.TestCase):
     def setUp(self):
-        self.builds = {b["apelido"]: b for b in carregar_builds()}
+        self.builds = {b["apelido"]: b for b in carregar_builds() if b["id"] in BUILDS_DOS_TESTES}
 
     def test_soma_as_regras_gerais_em_cada_espaco(self):
         ficha = ficha_da_build(self.builds["Dreadlands"])

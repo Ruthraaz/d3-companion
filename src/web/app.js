@@ -103,7 +103,10 @@ function desenharProblemas(problemas) {
 function desenharBuilds() {
   const caixa = document.getElementById("escolha-build");
   if (!estado.builds.length) {
-    trocar(caixa, el("p", { class: "mudo" }, "Nenhuma build em builds/. Crie um arquivo JSON lá (veja o README)."));
+    trocar(caixa,
+      el("p", { class: "mudo" }, "Nenhuma build ainda."),
+      el("button", { class: "chip-build chip-importar", onclick: () => abrirImportar() },
+        el("span", { class: "chip-apelido" }, "+ Importar"), el("span", { class: "chip-nome" }, "do Maxroll")));
     return;
   }
   // Clicar numa build = o F8 passa a avaliar só com ela. "Todas" = com todas.
@@ -128,6 +131,11 @@ function desenharBuilds() {
         el("span", { class: "chip-nome" }, b.nome),
       )),
   );
+  caixa.append(el("button", {
+    class: "chip-build chip-importar",
+    title: "Trazer uma build pronta de um guia do Maxroll",
+    onclick: () => abrirImportar(),
+  }, el("span", { class: "chip-apelido" }, "+ Importar"), el("span", { class: "chip-nome" }, "do Maxroll")));
   const com = todas ? "todas as builds" : estado.builds[estado.build].apelido;
   const fonte = estado.builds[estado.build].fonte;
   trocar(document.getElementById("avaliando"),
@@ -342,6 +350,94 @@ function blocoGemas(build) {
   return [el("h3", {}, "Gemas lendárias"), etiquetas(build.gemas, "gema")];
 }
 
+// ------------------------------------------------------------ importar do Maxroll
+
+function abrirImportar() {
+  const painel = document.getElementById("importar");
+  painel.hidden = false;
+  document.getElementById("importar-status").textContent = "";
+  trocar(document.getElementById("importar-opcoes"));
+  const campo = document.getElementById("form-importar").elements.link;
+  campo.value = "";
+  campo.focus();
+}
+
+function fecharImportar() {
+  document.getElementById("importar").hidden = true;
+}
+
+async function buscarMaxroll(evento) {
+  evento.preventDefault();
+  const texto = evento.target.elements.link.value.trim();
+  const status = document.getElementById("importar-status");
+  const opcoes = document.getElementById("importar-opcoes");
+  if (!texto) { status.textContent = "Cole um link primeiro."; return; }
+  trocar(opcoes);
+  status.className = "importar-status";
+  status.textContent = "Buscando no Maxroll…";
+  const r = await estado.api.buscar_maxroll(texto);
+  if (r.erro) {
+    status.className = "importar-status erro";
+    status.textContent = r.erro;
+    return;
+  }
+  status.textContent = r.builds.length > 1
+    ? `Esse link tem ${r.builds.length} builds. Escolha uma e o perfil (cada perfil é uma variação da build).`
+    : "Escolha o perfil (cada perfil é uma variação da build).";
+  desenharOpcoesDeImportar(r.builds, 0);
+}
+
+function desenharOpcoesDeImportar(builds, escolhida) {
+  const b = builds[escolhida];
+  const perfil = el("select", { name: "perfil" },
+    b.perfis.map((nome, i) => el("option", { value: String(i), ...(i === b.perfil ? { selected: "" } : {}) },
+      `${i + 1}. ${nome}`)));
+  const apelido = el("input", { name: "apelido", value: b.nome, autocomplete: "off", maxlength: "40" });
+  const botao = el("button", { type: "button", class: "botao" }, "Importar");
+  botao.addEventListener("click", () => importarMaxroll(b, Number(perfil.value), apelido.value, botao));
+
+  trocar(document.getElementById("importar-opcoes"),
+    builds.length > 1 && el("div", { class: "opcoes-builds" }, builds.map((x, i) =>
+      el("button", {
+        type: "button",
+        class: "opcao-build" + (i === escolhida ? " ativo" : ""),
+        onclick: () => desenharOpcoesDeImportar(builds, i),
+      },
+        el("span", { class: "chip-apelido" }, x.nome),
+        el("span", { class: "chip-nome" }, `${x.classe} · ${x.perfis.length} perfis`)))),
+    el("div", { class: "importar-campos" },
+      el("label", { class: "campo" }, el("span", { class: "campo-nome" }, "Perfil"), perfil),
+      el("label", { class: "campo" }, el("span", { class: "campo-nome" }, "Nome curto na janela e no selo"), apelido),
+      botao),
+  );
+}
+
+async function importarMaxroll(b, perfil, apelido, botao) {
+  const status = document.getElementById("importar-status");
+  botao.disabled = true;
+  status.className = "importar-status";
+  status.textContent = "Importando…";
+  const r = await estado.api.importar_maxroll(b.numero, perfil, apelido);
+  botao.disabled = false;
+  if (r.erro) {
+    status.className = "importar-status erro";
+    status.textContent = r.erro;
+    return;
+  }
+  // A build nova entra na lista; o overlay só lê builds/ ao abrir, então reinicia.
+  estado.builds = await estado.api.builds();
+  estado.build = Math.max(0, estado.builds.findIndex(x => x.id === r.id));
+  estado.habilidade = null;
+  fecharImportar();
+  desenharBuilds();
+  estado.api.reiniciar_overlay();
+  setTimeout(atualizarEstado, 1500);
+  trocar(document.getElementById("avaliando"),
+    el("strong", { class: "t-ok" }, `Build importada: ${estado.builds[estado.build].apelido}. `),
+    "Clique nela pro atalho avaliar só com ela. O arquivo ficou em ",
+    el("code", {}, `builds/${r.id}.json`), ".");
+}
+
 // ------------------------------------------------------------ histórico
 
 function desenharHistorico(anterior = null) {
@@ -456,6 +552,8 @@ async function iniciar(api) {
     desenharHistorico();  // trocar o filtro não faz nada "brilhar"
   }));
   document.getElementById("form-config").addEventListener("submit", salvarConfig);
+  document.getElementById("form-importar").addEventListener("submit", buscarMaxroll);
+  document.getElementById("fechar-importar").addEventListener("click", fecharImportar);
   document.getElementById("reiniciar").addEventListener("click", async () => {
     await estado.api.reiniciar_overlay();
     setTimeout(atualizarEstado, 1500);
@@ -565,6 +663,20 @@ function apiDeExemplo() {
     escolher_build: async id => { config = { ...config, BUILD_ATIVA: id }; return { erros: {} }; },
     visual: async id => visualDeExemplo(builds.find(b => b.id === id)),
     abrir_link: async url => { window.open(url, "_blank"); },
+    buscar_maxroll: async texto => /maxroll\.gg\/d3\/(guides|planner)\//.test(texto)
+      ? { builds: [
+          { numero: 236100095, nome: "Sanc Shadow Impale", classe: "Demon Hunter", perfil: 0,
+            perfis: ["Sanc: Solo Push", "Sanc: Speeds Lightning", "Sanc: Group Speeds", "Sanc: RGK"] },
+          { numero: 112481789, nome: "Impale Core (mXr)", classe: "Demon Hunter", perfil: 0,
+            perfis: ["Core Setup", "4th Cube"] },
+        ] }
+      : { erro: "Não achei a build no link. Cole o link de um guia de D3 do Maxroll (maxroll.gg/d3/guides/...) ou do planejador (maxroll.gg/d3/planner/...)." },
+    importar_maxroll: async (numero, perfil, apelido) => {
+      const nova = { ...builds[1], id: `importada_${numero}`, apelido: apelido || "Importada",
+                     nome: `Importada — perfil ${perfil + 1}` };
+      builds.push(nova);
+      return { id: nova.id };
+    },
   };
 }
 

@@ -3,7 +3,8 @@ Builds do planejador do Maxroll (maxroll.gg/d3/planner/<número>) no formato do 
 
 O Maxroll não tem API oficial. Lemos o mesmo endereço que a própria página
 do guia usa pra mostrar a build (planners.maxroll.gg/profiles/load/d3/<n>),
-uma build por vez, só quando o Arthur cola um link. Se o site mudar o formato,
+só quando o Arthur cola um link. Link de guia: lemos a página do guia uma vez
+pra achar as builds que ela mostra (as do seguidor ficam de fora). Se o site mudar o formato,
 é aqui que quebra — e a mensagem de erro diz isso.
 
 O que vem do Maxroll: itens (pelo código da Blizzard, ex. "Unique_Helm_Set_03_p2"),
@@ -14,9 +15,9 @@ Os nomes dos itens vêm do arquivo de dados do planejador (data.json, guardado
 em dados/maxroll/). Os códigos das habilidades são convertidos pros da Blizzard
 ("entanglingshot" -> "entangling-shot"), que é de onde vêm ícone e descrição.
 
-Uso:
-    python src/maxroll.py <link ou número>            # mostra os perfis e a build
-    python src/maxroll.py <link> --perfil 2 --salvar  # grava em builds/
+Uso (o link pode ser do guia ou do planejador):
+    python src/maxroll.py <link>                                # mostra as builds, os perfis e a build
+    python src/maxroll.py <link> --build 1 --perfil 2 --salvar  # grava em builds/ (sem sobrescrever)
 """
 
 import json
@@ -51,6 +52,7 @@ ESPACOS = {
     "mainhand": "Weapon", "offhand": "Off-Hand",
 }
 CUBO = {"weapon": "arma", "armor": "armadura", "jewelry": "joia"}
+RUNAS = ("a", "b", "c", "d", "e")
 
 
 class ErroMaxroll(Exception):
@@ -62,10 +64,44 @@ def id_do_link(texto: str) -> int:
     "https://maxroll.gg/d3/planner/345357607#2" -> 345357607."""
     m = re.search(r"planner/(\d+)", texto) or re.fullmatch(r"\s*(\d{6,})\s*", texto)
     if not m:
-        raise ErroMaxroll("Não achei o número da build no link. Use um link do planejador, "
-                          "tipo https://maxroll.gg/d3/planner/345357607 (no guia, clique na build "
-                          "e em \"Open in Planner\").")
+        raise ErroMaxroll("Não achei a build no link. Cole o link de um guia de D3 do Maxroll "
+                          "(maxroll.gg/d3/guides/...) ou do planejador (maxroll.gg/d3/planner/...).")
     return int(m.group(1))
+
+
+def link_de_guia(texto: str) -> str | None:
+    """O endereço do guia, se o texto for um link de guia de D3 do Maxroll."""
+    m = re.search(r"(?:https?://)?(?:www\.)?maxroll\.gg/d3/guides/([a-z0-9-]+)", texto.strip())
+    return f"https://maxroll.gg/d3/guides/{m.group(1)}" if m else None
+
+
+def planners_do_link(texto: str, abrir=urllib.request.urlopen) -> list[int]:
+    """Os números das builds que um link traz. Link de planner = uma build;
+    link de guia = as builds que a página mostra (lidas do HTML do guia)."""
+    guia = link_de_guia(texto)
+    if guia is None:
+        return [id_do_link(texto)]
+    try:
+        with abrir(urllib.request.Request(guia, headers=CABECALHO), timeout=30) as r:
+            html = r.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            raise ErroMaxroll("Esse guia não existe no Maxroll. O link está certo?") from e
+        raise ErroMaxroll(f"O Maxroll respondeu com erro {e.code}.") from e
+    except (urllib.error.URLError, TimeoutError, OSError) as e:
+        raise ErroMaxroll("Não consegui falar com o Maxroll. Está sem internet?") from e
+    numeros = list(dict.fromkeys(int(n) for n in re.findall(r'data-d3planner-id="(\d+)"', html)))
+    if not numeros:
+        raise ErroMaxroll("Não achei nenhuma build nesse guia (o site pode ter mudado).")
+    return numeros
+
+
+SEGUIDORES = re.compile(r"enchantress|templar|scoundrel|follower", re.I)
+
+
+def e_de_seguidor(planner: dict) -> bool:
+    """Build do seguidor (os guias trazem a da Enchantress junto): não é do herói."""
+    return bool(SEGUIDORES.search(planner["_nome"]))
 
 
 def _baixar(url: str, abrir=urllib.request.urlopen):
@@ -88,6 +124,9 @@ def baixar_planner(numero: int, abrir=urllib.request.urlopen) -> dict:
     bruto = _baixar(URL_PLANNER.format(numero), abrir)
     try:
         dados = json.loads(bruto["data"]) if isinstance(bruto["data"], str) else bruto["data"]
+        if "profiles" not in dados and "items" in dados:
+            # Planner de um perfil só: o próprio "data" é o perfil.
+            dados = {"profiles": [dados], "activeProfile": 0, "class": dados.get("class")}
         dados["profiles"]  # noqa: B018 — só confere que existe
     except (KeyError, TypeError, json.JSONDecodeError) as e:
         raise ErroMaxroll("O Maxroll respondeu num formato que o app não conhece "
@@ -115,6 +154,12 @@ def dados_do_planejador(pasta: Path = PASTA_CACHE, abrir=urllib.request.urlopen)
     pasta.mkdir(parents=True, exist_ok=True)
     arquivo.write_text(json.dumps(pequeno, ensure_ascii=False), encoding="utf-8")
     return pequeno
+
+
+def classe_do_planner(planner: dict) -> str | None:
+    """A classe como as builds escrevem ("Demon Hunter"), ou None se o app não conhece."""
+    classe = planner.get("class") or planner["profiles"][0].get("class")
+    return CLASSES[classe][0] if classe in CLASSES else None
 
 
 def nomes_dos_perfis(planner: dict) -> list[str]:
@@ -185,7 +230,9 @@ def converter(planner: dict, dados: dict, habilidades_da_classe: dict | None = N
     if habilidades_da_classe:
         for tipo in ("ativas", "passivas"):
             por_codigo.update({_sem_hifen(h["slug"]): h["slug"] for h in habilidades_da_classe[tipo]})
-    ativas = [{"habilidade": por_codigo.get(_sem_hifen(s[0]), s[0]), "runa": s[1] if len(s) > 1 else ""}
+    # Runa "x" no Maxroll = habilidade sem runa; vira "" (a build só aceita a-e).
+    ativas = [{"habilidade": por_codigo.get(_sem_hifen(s[0]), s[0]),
+               "runa": s[1] if len(s) > 1 and s[1] in RUNAS else ""}
               for s in (p.get("skills") or []) if s and s[0]]
     passivas = [por_codigo.get(_sem_hifen(s), s) for s in (p.get("passives") or []) if s]
 
@@ -216,43 +263,65 @@ def nome_do_arquivo(build: dict) -> str:
     return re.sub(r"[^a-z0-9]+", "_", texto.lower()).strip("_") or "build_maxroll"
 
 
+def salvar_build(build: dict, pasta: Path = RAIZ / "builds") -> Path:
+    """Grava a build em builds/<apelido>.json. Nunca sobrescreve: se o nome já
+    existe, usa _2, _3... Devolve o arquivo criado."""
+    base = nome_do_arquivo(build)
+    destino, n = pasta / f"{base}.json", 2
+    while destino.exists():
+        destino, n = pasta / f"{base}_{n}.json", n + 1
+    destino.write_text(json.dumps(build, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return destino
+
+
+def montar(planner: dict, perfil: int | None = None, apelido: str | None = None,
+           blizzard=None) -> dict:
+    """Planner já baixado -> build pronta pra salvar, com os códigos das
+    habilidades da Blizzard. Sem Blizzard (chave/internet), ficam os do Maxroll."""
+    from blizzard import Blizzard, ErroBlizzard
+    classe = classe_do_planner(planner)
+    if classe is None:
+        raise ErroMaxroll("Essa build é de uma classe que o app não conhece.")
+    try:
+        habilidades = (blizzard or Blizzard()).habilidades(classe)
+    except ErroBlizzard:
+        habilidades = None
+    build = converter(planner, dados_do_planejador(), habilidades, perfil)
+    if apelido and apelido.strip():
+        build["apelido"] = apelido.strip()
+    return build
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+
+    def opcao(nome):
+        if nome in sys.argv:
+            return int(sys.argv[sys.argv.index(nome) + 1]) - 1
+        return None
+    numeros_das_opcoes = {sys.argv[i + 1] for i, a in enumerate(sys.argv[:-1]) if a in ("--perfil", "--build")}
+    args = [a for a in sys.argv[1:] if not a.startswith("--") and a not in numeros_das_opcoes]
     if not args:
         print(__doc__)
         sys.exit(1)
-    perfil = None
-    if "--perfil" in sys.argv:
-        perfil = int(sys.argv[sys.argv.index("--perfil") + 1]) - 1
-        args = [a for a in args if a != str(perfil + 1)]
-    from blizzard import Blizzard, ErroBlizzard
     try:
-        planner = baixar_planner(id_do_link(args[0]))
-        dados = dados_do_planejador()
-        classe = CLASSES.get(planner.get("class") or planner["profiles"][0].get("class"), (None,))[0]
-        try:
-            habilidades = Blizzard().habilidades(classe) if classe else None
-        except ErroBlizzard as e:
-            print(f"(sem dados da Blizzard: {e} Os códigos das habilidades ficam os do Maxroll.)")
-            habilidades = None
-        build = converter(planner, dados, habilidades, perfil)
-    except ErroMaxroll as e:
-        print(f"❌ {e}")
+        planners = [baixar_planner(n) for n in planners_do_link(args[0])]
+        herois = [p for p in planners if not e_de_seguidor(p)] or planners
+        print("Builds no link:")
+        for i, p in enumerate(herois, 1):
+            print(f"  {i}. {p['_nome']} ({classe_do_planner(p) or p.get('class')}) — {len(p['profiles'])} perfis")
+        escolhido = herois[opcao("--build") or 0]
+        build = montar(escolhido, opcao("--perfil"))
+    except (ErroMaxroll, IndexError) as e:
+        print(f"❌ {e if isinstance(e, ErroMaxroll) else 'Esse número de build não existe no link.'}")
         sys.exit(1)
 
-    print(f"{planner['_nome']} — perfis:")
-    escolhido = build["fonte"]["perfil"]
-    for i, nome in enumerate(nomes_dos_perfis(planner), 1):
-        print(f"  {'→' if nome == escolhido else ' '} {i}. {nome}")
+    print(f"\n{escolhido['_nome']} — perfis:")
+    for i, nome in enumerate(nomes_dos_perfis(escolhido), 1):
+        print(f"  {'→' if nome == build['fonte']['perfil'] else ' '} {i}. {nome}")
     print(json.dumps(build, ensure_ascii=False, indent=2))
     if "--salvar" in sys.argv:
-        destino = RAIZ / "builds" / f"{nome_do_arquivo(build)}.json"
-        if destino.exists():
-            print(f"❌ Já existe {destino.name}; não sobrescrevi.")
-            sys.exit(1)
-        destino.write_text(json.dumps(build, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        print(f"✅ Salvo em builds/{destino.name}")
+        print(f"✅ Salvo em builds/{salvar_build(build).name}")
 
 
 if __name__ == "__main__":

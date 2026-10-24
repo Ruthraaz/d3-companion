@@ -18,9 +18,11 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
 
 from avaliador import avaliar, avaliar_todas, carregar_builds  # noqa: E402
+from builds_dos_testes import BUILDS_DOS_TESTES  # noqa: E402
 from parser import estruturar_afixo, interpretar  # noqa: E402
 
-BUILDS = {b["nome"]: b for b in carregar_builds()}
+# Só as 3 builds originais: builds importadas na pasta não podem mudar o resultado dos testes.
+BUILDS = {b["nome"]: b for b in carregar_builds() if b["id"] in BUILDS_DOS_TESTES}
 DREADLANDS = BUILDS["Gears of Dreadlands — Metralhar"]
 UNHALLOWED = BUILDS["Unhallowed Essence — Multidisparo"]
 LON = BUILDS["Legacy of Nightmares"]

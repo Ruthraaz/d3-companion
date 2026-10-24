@@ -45,7 +45,8 @@ Feitos: janela principal (pywebview), outras classes (só JSON), avaliação aut
 pronta de um site, mostrar no app e dizer o que é daquela build. Nesta ordem:
 1. Chave da Blizzard + dados do jogo (`src/blizzard.py`): habilidades, itens, ícones. ✅
 2. Tela nova: boneco com os itens da build + barra de habilidades (6 ativas + 4 passivas), com ícones. ✅
-3. Importar do Maxroll: `src/maxroll.py` pronto (CLI). Falta: campo "colar link" na janela + escolher perfil.
+3. Importar do Maxroll: botão "+ Importar" na janela (link de guia ou planner → build + perfil + nome). ✅
+   Próximo natural: transformar os afixos do Maxroll (`stats` de cada item) em regras desejáveis.
 4. Herói real vs. build: BattleTag → itens equipados pela API → o que está certo / o que falta.
    (A API só mostra o equipado, e atualiza ao sair do jogo; mochila e baú continuam no F8.)
 Não complicar: o "passar o mouse" fica parado; o F8 continua.
@@ -93,6 +94,14 @@ trabalho extra agora, não feche essa porta:
 - Build ganhou `cubo`, `habilidades`, `fonte` (conferidos em `problemas_da_build`). Item do cubo = "da build"
   no avaliador, sem olhar afixo/Ancient. Unhallowed foi completada com o perfil Solo Push Odyssey (ver `_nota`).
 - Janela: `Api.visual(id)` → `blizzard.visual_da_build` (ícones + pt); `Api.abrir_link` só aceita maxroll.gg.
+- Link de guia: lemos o HTML do guia e pegamos `data-d3planner-id="<n>"`. Guias trazem planners da
+  Enchantress (classe vem "wizard"!) → `e_de_seguidor` pelo nome. Planner de 1 perfil: `data` é o próprio
+  perfil (sem `profiles`). Runa "x" = sem runa → "".
+- `Api.buscar_maxroll` guarda os planners em memória; `Api.importar_maxroll` grava com `salvar_build`
+  (nunca sobrescreve: _2, _3) e a página reinicia o overlay (ele só lê builds/ ao abrir).
+- Testes que comparam resultados usam só `tests/builds_dos_testes.py` (as 3 originais); a conferência
+  olha todas. Assim importar uma build não quebra teste.
+- Arthur importou "Shadow Impale" (guia shadow-impale, perfil Sanc: Solo Push) em 24/10/2026.
 - Cuidado no `el()` do app.js: qualquer valor vira atributo (`disabled: null` desativa!). Use spread condicional.
 
 ### Dados da Blizzard (passo 1 do novo foco) — notas

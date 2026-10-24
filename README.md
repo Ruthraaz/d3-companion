@@ -44,7 +44,7 @@ A lógica (OCR, parser, avaliador) fica num **núcleo** sem interface (`src/nucl
 | — | Avaliação automática: passar o mouse no item, sem apertar nada | ⏸️ não funcionou no jogo, parada |
 | 8a | Dados oficiais da Blizzard: habilidades, itens, ícones (`src/blizzard.py`) | ✅ funcionando |
 | 8b | Tela nova: boneco + barra de habilidades com ícones | ✅ funcionando |
-| 8c | Importar build do Maxroll (`src/maxroll.py` pronto; falta o botão na janela) | 🔨 em andamento |
+| 8c | Importar build do Maxroll: colar o link do guia na janela | ✅ funcionando |
 | 8d | Seu herói (BattleTag) vs. a build | ⏳ |
 
 ## O que aprendemos na Etapa 1
@@ -256,11 +256,18 @@ Clicar numa habilidade mostra no painel da direita a descrição em português e
 
 ## Builds do Maxroll
 
+**Pela janela:** na aba Builds, clique em **+ Importar** e cole o link do guia (ex.: `https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide`) ou do planejador. Depois:
+1. **Build:** se o guia tiver mais de uma, escolha qual. As da seguidora (Enchantress) ficam de fora.
+2. **Perfil:** escolha a variação da build (push, speed, bounties…).
+3. **Nome curto:** é o que aparece na janela e no selo. Pode trocar.
+
+A build vai pra `builds/` (nunca sobrescreve outra) e o overlay reinicia sozinho pra já usar ela no F8.
+
 O Maxroll não tem API oficial. O app lê o mesmo endereço que a página do guia usa pra mostrar a build, **uma build por vez, só quando você pede**. Os itens vêm com o código da Blizzard, e o app acha o nome, o ícone e a descrição.
 
 ```
-python src/maxroll.py https://maxroll.gg/d3/planner/345357607               # mostra os perfis e a build
-python src/maxroll.py https://maxroll.gg/d3/planner/345357607 --perfil 3 --salvar  # grava em builds/
+python src/maxroll.py https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide                  # mostra as builds e os perfis
+python src/maxroll.py https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide --build 1 --perfil 3 --salvar
 ```
 Cada build do Maxroll tem vários **perfis** (push, speed, bounties…); `--perfil` escolhe qual. O link do planejador aparece no guia ao clicar na build e em "Open in Planner".
 
