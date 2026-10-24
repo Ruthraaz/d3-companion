@@ -1,0 +1,36 @@
+{
+  "formato": 1,
+  "nome": "Legacy of Nightmares",
+  "classe": "Demon Hunter",
+  "exige_ancient": true,
+
+  "todos_os_espacos": {
+    "obrigatorios": ["+# Dexterity"],
+    "desejaveis": ["+# Vitality"]
+  },
+
+  "espacos": {
+    "Head": { "itens": [], "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%"] },
+    "Torso": { "itens": [], "desejaveis": ["@soquete"] },
+    "Hands": {
+      "itens": [],
+      "desejaveis": ["Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+    },
+    "Legs": { "itens": [], "desejaveis": ["@soquete"] },
+    "Neck": {
+      "itens": [],
+      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+    },
+    "Finger": {
+      "itens": ["Litany of the Undaunted", "The Wailing Host"],
+      "exige_ancient": false,
+      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+    },
+    "Weapon": {
+      "itens": [],
+      "desejaveis": ["+#-# * Damage", "@soquete"]
+    }
+  },
+
+  "gemas": ["Bane of the Trapped", "Zei's Stone of Vengeance", "Bane of the Powerful"]
+}

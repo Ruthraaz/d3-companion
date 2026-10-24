@@ -30,8 +30,8 @@ Não é um planejador nem um motor de recomendação (decidido em 24/10/2026). S
 |---|---|---|
 | 1 | OCR de print salvo (`src/ocr.py`) | ✅ |
 | 2 | Parser texto → JSON (`src/parser.py`, testes em `tests/`) | ✅ (lendários, sets, raros, gemas) |
-| 3 | Formato de build em JSON + avaliador | próxima |
-| 4 | Atalho global + captura perto do cursor | |
+| 3 | Formato de build em JSON + avaliador (`builds/`, `src/avaliador.py`) | ✅ (formato aprovado em 24/10/2026) |
+| 4 | Atalho global + captura perto do cursor | próxima |
 | 5 | Overlay em cima do jogo (PySide6) | |
 
 ### Pendências da Etapa 2 — ✅ resolvidas em 24/10/2026
@@ -64,6 +64,8 @@ Gere os `.txt` em `tests/ocr/` e crie testes pra cada caso.
   encaixe, chance de crítico; peitoral/calças: encaixes; luvas: chance e dano crítico; anéis/amuleto:
   encaixe, chance e dano crítico; arma: dano alto, Destreza, encaixe.
 - Antes de codar a Etapa 3, **mostre ao Arthur o formato JSON proposto** e espere o ok.
+- ✅ Feito: formato descrito no README. Pendente do Arthur: revisar as **gemas** (palpite inicial) e
+  preencher os itens dos espaços fora do set (hoje `itens: []` = qualquer item com os afixos).
 
 ## Forma de trabalhar
 - Ao fim de cada etapa: rode os testes, atualize o README (roteiro e "o que aprendemos"),

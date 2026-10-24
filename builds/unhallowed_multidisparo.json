@@ -1,0 +1,46 @@
+{
+  "formato": 1,
+  "nome": "Unhallowed Essence — Multidisparo",
+  "classe": "Demon Hunter",
+  "exige_ancient": false,
+
+  "todos_os_espacos": {
+    "obrigatorios": ["+# Dexterity"],
+    "desejaveis": ["+# Vitality"]
+  },
+
+  "espacos": {
+    "Head": {
+      "itens": ["Accursed Visage"],
+      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%"]
+    },
+    "Shoulders": { "itens": ["Unsanctified Shoulders"] },
+    "Torso": {
+      "itens": ["Cage of the Hellborn"],
+      "desejaveis": ["@soquete"]
+    },
+    "Hands": {
+      "itens": ["Fiendish Grips"],
+      "desejaveis": ["Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+    },
+    "Legs": {
+      "itens": ["Unholy Plates"],
+      "desejaveis": ["@soquete"]
+    },
+    "Feet": { "itens": ["Hell Walkers"] },
+    "Neck": {
+      "itens": [],
+      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+    },
+    "Finger": {
+      "itens": [],
+      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+    },
+    "Weapon": {
+      "itens": [],
+      "desejaveis": ["+#-# * Damage", "@soquete"]
+    }
+  },
+
+  "gemas": ["Bane of the Trapped", "Zei's Stone of Vengeance", "Bane of the Powerful"]
+}

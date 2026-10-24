@@ -31,8 +31,8 @@ O app só **olha a tela** (captura + OCR). Ele não lê a memória do jogo nem s
 |---|---|---|
 | 1 | OCR de um print salvo | ✅ funcionando |
 | 2 | Parser: texto → item estruturado | ✅ funcionando |
-| 3 | Formato de build (JSON) + avaliador | ⏳ próxima |
-| 4 | Atalho + captura perto do cursor | |
+| 3 | Formato de build (JSON) + avaliador | ✅ funcionando |
+| 4 | Atalho + captura perto do cursor | ⏳ próxima |
 | 5 | Overlay em cima do jogo | |
 
 ## O que aprendemos na Etapa 1
@@ -76,6 +76,45 @@ Cada afixo vem com um **modelo** (os números trocados por `#`), que é o que o 
   - Erros de número do OCR passam direto: `+13% Life` virou `413% Life` (o "+" lido como "4"), `+157` virou `+187`, `+33%` virou `+39%`. O texto não tem como denunciar isso; um dia dá pra testar pré-processamento só na área dos afixos.
   - Às vezes a armadura sai `null` (o OCR não leu "Armor" ou separou os dígitos: `5 8 1`). O parser prefere `null` a um número errado.
 
+## Etapa 3: builds e avaliador
+
+As builds ficam em `builds/*.json`, num **formato próprio** do app. Se um dia entrarem builds de sites (Maxroll, Icy Veins), elas serão só *traduzidas* pra esse formato; o avaliador (`src/avaliador.py`) só conhece ele.
+
+```json
+{
+  "formato": 1,
+  "nome": "Gears of Dreadlands — Metralhar",
+  "classe": "Demon Hunter",
+  "exige_ancient": false,
+  "todos_os_espacos": { "obrigatorios": ["+# Dexterity"], "desejaveis": ["+# Vitality"] },
+  "espacos": {
+    "Head":   { "itens": ["Dystopian Goggles"],
+                "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%"] },
+    "Finger": { "itens": [],
+                "desejaveis": ["@soquete", "Critical Hit Damage Increased by #%"] }
+  },
+  "gemas": ["Bane of the Trapped", "Zei's Stone of Vengeance"]
+}
+```
+
+- **`espacos`** usa os nomes do jogo/parser (`Head`, `Hands`, `Finger`...). `Weapon` vale pra `1-Hand` e `2-Hand`.
+- **`itens`**: quais itens servem no espaço. Lista vazia = qualquer item, desde que tenha os afixos.
+- **`todos_os_espacos`**: afixos que valem pra todo espaço (Destreza sempre primeiro).
+- **Afixos** usam o `modelo` do parser. `*` vale por qualquer palavra (`+# * Resistance` aceita Cold, Fire...). `@soquete` olha os soquetes do item. Pra exigir um valor: `{ "modelo": "+# Dexterity", "minimo": 400 }`.
+- **`exige_ancient`** pode ser trocado por espaço (no Legacy of Nightmares, os anéis do set não precisam ser Ancient).
+
+**Como o avaliador decide:** o item **bate** quando é permitido no espaço, tem todos os obrigatórios, é Ancient (se exigido) e não é de outra classe. A **nota** é a fração dos desejáveis que ele tem (0 a 1). Quando não bate, o `motivo` diz a primeira regra que falhou.
+
+```
+Fiendish Grips — Set Gloves
+✅ Unhallowed Essence — Multidisparo: Item da build: Fiendish Grips (nota 0.67)
+     tem: +# Vitality, Critical Hit Chance Increased by #%
+❌ Gears of Dreadlands — Metralhar: A build pede: Gas Powered Automail Forearm (nota 0.67)
+❌ Legacy of Nightmares: Precisa ser Ancient (nota 0.67)
+```
+
+**A revisar nas builds:** só as peças dos sets (vistas nos prints) estão preenchidas; os outros espaços estão com `itens: []`. As **gemas** são um palpite inicial. A prioridade de afixos segue a referência geral do Icy Veins.
+
 ## Como rodar (Windows)
 
 O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes prontos para as versões fixadas no `requirements.txt` (Pillow 10.4, NumPy 1.26).
@@ -96,8 +135,9 @@ O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes
    ```
    python src/ocr.py samples/lendario_cloak_garwulf.png      # só o OCR (texto cru)
    python src/parser.py samples/lendario_cloak_garwulf.png   # OCR + parser (JSON)
+   python src/avaliador.py samples/set_fiendish_grips.png    # OCR + parser + avaliador
    ```
-5. Testes do parser (não precisam do Tesseract, usam os textos salvos em `tests/ocr/`):
+5. Testes do parser e do avaliador (não precisam do Tesseract, usam os textos salvos em `tests/ocr/`):
    ```
    python -m unittest discover tests
    ```

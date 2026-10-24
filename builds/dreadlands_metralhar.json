@@ -1,0 +1,46 @@
+{
+  "formato": 1,
+  "nome": "Gears of Dreadlands — Metralhar",
+  "classe": "Demon Hunter",
+  "exige_ancient": false,
+
+  "todos_os_espacos": {
+    "obrigatorios": ["+# Dexterity"],
+    "desejaveis": ["+# Vitality"]
+  },
+
+  "espacos": {
+    "Head": {
+      "itens": ["Dystopian Goggles"],
+      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%"]
+    },
+    "Shoulders": { "itens": ["Mechanical Pauldrons"] },
+    "Torso": {
+      "itens": ["Galvanized Vest"],
+      "desejaveis": ["@soquete"]
+    },
+    "Hands": {
+      "itens": ["Gas Powered Automail Forearm"],
+      "desejaveis": ["Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+    },
+    "Legs": {
+      "itens": ["Cold Cathode Trousers"],
+      "desejaveis": ["@soquete"]
+    },
+    "Feet": { "itens": ["Antique Vintage Boots"] },
+    "Neck": {
+      "itens": [],
+      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+    },
+    "Finger": {
+      "itens": [],
+      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+    },
+    "Weapon": {
+      "itens": [],
+      "desejaveis": ["+#-# * Damage", "@soquete"]
+    }
+  },
+
+  "gemas": ["Bane of the Trapped", "Zei's Stone of Vengeance", "Bane of the Powerful"]
+}
