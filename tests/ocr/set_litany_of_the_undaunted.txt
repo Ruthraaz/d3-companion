@@ -1,0 +1,31 @@
+4 LITANY)@FeTHE/UNDAUNTED 1
+ps] Set Ring Finger
+i
+*
+Primary
+» +427 Dexterity
+» 413% Life
+‘ Reduces all resource costs by 6.0%.
+Secondary
+» +187 Cold Resistance
+» +5695 Life after Each Kill
+© Empty Socket
+Legacy of Nightmares
+Litany of the Undaunted (Finger)
+The Wailing Host (Finger)
+(2) Set
+» While this is your only Item Set bonus every Ancient
+item you have equipped increases your damage dealt
+by 750% and reduces your damage taken by 4%,
+Stat Changes if Equipped:
+5.9% Damage
++5.9% Toughness
+5.0% Recovery
+The names of those who have given their lives to fight the
+scourge of the Burning Hells are inscribed on this band,
+each one giving its power to the wearer.
+Unique Equipped
+Required Level: 1
+‘Account Bound
+Sell Value: 6062 @ Durability: 31/31
+| = to equip. Hold CTRL for roll information. I

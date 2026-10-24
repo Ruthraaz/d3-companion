@@ -1,0 +1,32 @@
+4 EQUIPPED Ss
+4 CAIN'S/SCRIVENER }
+[mgm] Set Gloves Hands
+a
+551
+Armor
+*
+Primary
+» +668 Dexterity
+» +655 Vitality
+» Critical Hit Chance Increased by 9.5%
+Reduces cooldown ofall skills by 5.0%.
+Secondary
+‘ +39% Extra Gold from Monsters
+‘ Monster kills grant +192 experience.
+Cain's Destiny
+Cain's Scrivener (Hands)
+Cain's Insight (Head)
+Cain's Habit (Legs)
+Cain's Travelers (Feet)
+(2) Set
+» Attack Speed Increased by 8.0%
+» +50% Experience. (5.0% at level 70)
+(3) Set:
+» When a Greater Rift Keystone drops, there is a 25%
+chance for an extra one to drop. (Emanates)
+These wrappings are covered with Horadric symbols and
+runes, and are perfect for keeping your arms warm while
+you search for elusive arcane knowledge.
+Required Level: 1
+‘Account Bound
+| Sell Value: 7718 @ Durability: 44/44.

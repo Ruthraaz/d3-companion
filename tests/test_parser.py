@@ -62,6 +62,18 @@ class TestCloakGarwulf(unittest.TestCase):
         self.assertNotIn("Toughness", todos)
         self.assertNotIn("Recovery", todos)
 
+    def test_sem_stat_changes_ignora_descricao(self):
+        # Item já equipado: a dica não tem "Stat Changes", então nada separa os
+        # afixos da descrição em itálico ("The cloak of one with...").
+        texto = (RAIZ / "tests" / "ocr" / "lendario_cloak_garwulf.txt").read_text(encoding="utf-8")
+        linhas = texto.splitlines()
+        i = next(n for n, l in enumerate(linhas) if "Stat Changes" in l)
+        equipado = interpretar("\n".join(linhas[:i] + linhas[i + 4:]))
+        self.assertEqual(textos(equipado["secundarios"]), [
+            "+156 Physical Resistance",
+            "Companion - Wolf Companion now summons 3 wolves.",
+        ])
+
 
 class TestDemonMachine(unittest.TestCase):
     def setUp(self):
@@ -118,6 +130,99 @@ class TestGemas(unittest.TestCase):
         ])
         self.assertEqual(gema["efeitos"][0]["valores"], [2500.0, 3])
         self.assertEqual(gema["efeitos"][1]["requer_rank"], 25)
+
+
+class TestSets(unittest.TestCase):
+    def test_antique_vintage_boots(self):
+        boots = item("set_antique_vintage_boots")
+        self.assertEqual(boots["nome"], "Antique Vintage Boots")
+        self.assertEqual((boots["qualidade"], boots["tipo"], boots["slot"]), ("Set", "Boots", "Feet"))
+        self.assertEqual(boots["set"]["nome"], "Gears of Dreadlands")
+        self.assertEqual(boots["set"]["pecas"], [
+            {"nome": "Antique Vintage Boots", "slot": "Feet"},
+            {"nome": "Cold Cathode Trousers", "slot": "Legs"},
+            {"nome": "Galvanized Vest", "slot": "Torso"},
+            {"nome": "Dystopian Goggles", "slot": "Head"},
+            {"nome": "Mechanical Pauldrons", "slot": "Shoulders"},
+            {"nome": "Gas Powered Automail Forearm", "slot": "Hands"},
+        ])
+        # Os bônus "(2) Set: ..." não podem virar afixo do item.
+        self.assertEqual(textos(boots["secundarios"]), [
+            "+160 Cold Resistance",
+            "Increases Gold and Health Pickup by 2 Yards.",
+        ])
+        self.assertEqual(len(boots["primarios"]), 4)
+
+    def test_fiendish_grips(self):
+        grips = item("set_fiendish_grips")
+        self.assertEqual(grips["nome"], "Fiendish Grips")
+        self.assertEqual(grips["set"]["nome"], "Unhallowed Essence")
+        self.assertEqual(len(grips["set"]["pecas"]), 6)
+        # OCR leu "Unsanetified"; a correção vale também pras peças.
+        self.assertIn({"nome": "Unsanctified Shoulders", "slot": "Shoulders"}, grips["set"]["pecas"])
+        self.assertEqual(textos(grips["primarios"]), [
+            "+732 Dexterity",
+            "+722 Vitality",
+            "Attack Speed Increased by 5.0%",
+            "Critical Hit Chance Increased by 9.0%",
+        ])
+
+    def test_litany_nome_embaralhado_vem_da_lista(self):
+        anel = item("set_litany_of_the_undaunted")
+        # O título saiu "LITANY)@FeTHE/UNDAUNTED"; o nome vem da lista de peças.
+        self.assertEqual(anel["nome"], "Litany of the Undaunted")
+        self.assertEqual(anel["set"], {"nome": "Legacy of Nightmares", "pecas": [
+            {"nome": "Litany of the Undaunted", "slot": "Finger"},
+            {"nome": "The Wailing Host", "slot": "Finger"},
+        ]})
+        self.assertEqual(anel["soquetes"], 1)
+        # OCR leu "+157" como "+187": erro de leitura, não do parser.
+        self.assertEqual(textos(anel["secundarios"]), [
+            "+187 Cold Resistance",
+            "+5695 Life after Each Kill",
+        ])
+
+    def test_cain_equipado_sem_stat_changes(self):
+        luvas = item("set_cains_scrivener_equipado")
+        self.assertEqual(luvas["nome"], "Cain's Scrivener")  # título veio "CAIN'S/SCRIVENER"
+        self.assertEqual(luvas["armadura"], 551)
+        self.assertEqual(luvas["set"]["nome"], "Cain's Destiny")
+        self.assertEqual([p["nome"] for p in luvas["set"]["pecas"]],
+                         ["Cain's Scrivener", "Cain's Insight", "Cain's Habit", "Cain's Travelers"])
+        self.assertEqual(textos(luvas["primarios"]), [
+            "+668 Dexterity",
+            "+655 Vitality",
+            "Critical Hit Chance Increased by 9.5%",
+            "Reduces cooldown of all skills by 5.0%.",  # OCR leu "ofall"
+        ])
+        # Sem "Stat Changes", nem o bônus de set nem a descrição em itálico
+        # ("These wrappings are covered...") podem entrar como afixo.
+        self.assertEqual([a["modelo"] for a in luvas["secundarios"]], [
+            "+#% Extra Gold from Monsters",  # OCR leu +39% (o certo é +33%)
+            "Monster kills grant +# experience.",
+        ])
+
+    def test_item_sem_set(self):
+        self.assertIsNone(item("lendario_cloak_garwulf")["set"])
+
+
+class TestRaro(unittest.TestCase):
+    def test_vampiric_source(self):
+        anel = item("raro_vampiric_source_equipado")
+        self.assertIsNone(anel["nome"])  # nome de raro é aleatório e sai embaralhado
+        self.assertEqual((anel["qualidade"], anel["tipo"], anel["slot"]), ("Rare", "Ring", "Finger"))
+        self.assertIsNone(anel["set"])
+        self.assertEqual(textos(anel["primarios"]), [
+            "+403 Dexterity",
+            "+89 Resistance to All Elements",
+            "Attack Speed Increased by 5.0%",
+            "Chance to Deal 10% Area Damage on Hit.",
+        ])
+        self.assertEqual(textos(anel["secundarios"]), [
+            "+3742 Life after Each Kill",  # OCR leu "Lie after Each Kil"
+            "+31% Extra Gold from Monsters",
+        ])
+        self.assertEqual(anel["secundarios"][0]["modelo"], "+# Life after Each Kill")
 
 
 class TestLimparLinha(unittest.TestCase):

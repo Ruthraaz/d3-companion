@@ -17,6 +17,7 @@ O "modelo" é o que o avaliador (Etapa 3) vai comparar com a build.
 import json
 import re
 import sys
+from difflib import SequenceMatcher
 from pathlib import Path
 
 QUALIDADE = r"(?:Primal )?(?:Ancient )?(?:Legendary|Set)|Rare|Magic"
@@ -26,7 +27,12 @@ CLASSES = ["Barbarian", "Crusader", "Demon Hunter", "Monk", "Necromancer",
            "Witch Doctor", "Wizard"]
 
 # Palavras que o OCR erra nos atributos (visto nos prints de teste).
-CORRECOES = {"Lite": "Life"}
+CORRECOES = {"Lite": "Life", "Lie": "Life", "Kil": "Kill", "ofall": "of all",
+             "Unsanetified": "Unsanctified"}
+
+# Peça de set na lista do conjunto: "Antique Vintage Boots (Feet)".
+PECA = re.compile(r"^([A-Z][A-Za-z'’ -]+?)\s*\((%s)\)$" % "|".join(
+    map(re.escape, sorted(SLOTS | {"Main Hand", "Off Hand"}))))
 
 # Palavras que ficam minúsculas no meio do nome ("The Cloak of the Garwulf").
 MINUSCULAS = {"of", "the", "and", "a", "an", "to", "in", "on"}
@@ -84,6 +90,10 @@ def _eh_lixo(linha: str) -> bool:
     return len(linha.split()) < 2 or sum(c.isalnum() for c in linha) < 5
 
 
+def _parece_afixo(texto: str) -> bool:
+    return texto.startswith("+") or any(c.isdigit() for c in texto)
+
+
 def agrupar_afixos(linhas: list[str]) -> list[str]:
     """Limpa as linhas e junta afixos que a dica quebrou em duas linhas.
 
@@ -119,9 +129,14 @@ def _numero(texto: str) -> int | float:
     return float(texto) if "." in texto else int(texto)
 
 
-def estruturar_afixo(texto: str) -> dict:
+def _corrigir(texto: str) -> str:
     for errado, certo in CORRECOES.items():
         texto = re.sub(rf"\b{errado}\b", certo, texto)
+    return texto
+
+
+def estruturar_afixo(texto: str) -> dict:
+    texto = _corrigir(texto)
     return {
         "texto": texto,
         "modelo": re.sub(NUMERO, "#", texto),
@@ -131,6 +146,7 @@ def estruturar_afixo(texto: str) -> dict:
 
 def _nome(linha: str) -> str | None:
     """Pega o nome em MAIÚSCULAS e corrige a fonte do título ("@" -> "O")."""
+    linha = linha.replace("/", " ")  # o OCR às vezes lê o espaço como "/"
     trechos = [t.strip() for t in re.findall(r"[A-Z@][A-Z@'’ ]*[A-Z@]", linha)]
     trechos = [t for t in trechos if sum(c.isalpha() or c == "@" for c in t) >= 4]
     if not trechos:
@@ -138,6 +154,25 @@ def _nome(linha: str) -> str | None:
     palavras = max(trechos, key=len).replace("@", "O").lower().split()
     return " ".join(p if i and p in MINUSCULAS else p.capitalize()
                     for i, p in enumerate(palavras))
+
+
+def _peca(linha: str) -> dict | None:
+    m = PECA.match(limpar_linha(linha))
+    return {"nome": _corrigir(m.group(1)), "slot": m.group(2)} if m else None
+
+
+def _so_letras(texto: str) -> str:
+    return re.sub(r"[^a-z]", "", texto.replace("@", "O").lower())
+
+
+def _nome_pela_lista(titulo: str, pecas: list[dict]) -> str | None:
+    """Item de set: o próprio nome está na lista de peças, escrito em fonte
+    normal (que o OCR lê bem). Escolhe a peça mais parecida com o título.
+    Ex.: "LITANY)@FeTHE/UNDAUNTED" -> "Litany of the Undaunted"."""
+    alvo = _so_letras(titulo)
+    nota, nome = max((SequenceMatcher(None, alvo, _so_letras(p["nome"])).ratio(), p["nome"])
+                     for p in pecas)
+    return nome if nota >= 0.6 else None
 
 
 def _indice(linhas: list[str], padrao: str, inicio: int = 0) -> int | None:
@@ -178,11 +213,16 @@ def interpretar(texto: str) -> dict:
         tipo.append(palavra)
     slot = next((p for p in resto if p in SLOTS), None)
 
-    nome = None
+    nome, titulo = None, ""
     for j in range(i_qual - 1, max(i_qual - 5, -1), -1):
         nome = _nome(linhas[j])
         if nome:
+            titulo = linhas[j]
             break
+    # Nome de raro/mágico é aleatório (e o OCR embaralha: "LVAmpiRIseURCE").
+    # Não serve pra avaliar o item, então nem tentamos.
+    if qualidade in ("Rare", "Magic"):
+        nome = None
 
     texto_todo = "\n".join(linhas)
     m_nivel = re.search(r"Required Level:?\s*(\d+)", texto_todo)
@@ -196,6 +236,19 @@ def interpretar(texto: str) -> dict:
         return item | _gema(linhas, i_qual)
 
     i_fim = _indice(linhas, "|".join(FIM_DOS_ATRIBUTOS), i_qual) or len(linhas)
+
+    # Itens de set: depois dos afixos vem o nome do set (verde) e a lista de
+    # peças. A linha logo antes da primeira peça é o nome do set. Os afixos
+    # acabam ali; o resto (peças e bônus "(2) Set:") não é afixo do item.
+    conjunto = None
+    i_pecas = [i for i in range(i_qual + 1, i_fim) if _peca(linhas[i])]
+    if i_pecas:
+        pecas = [_peca(linhas[i]) for i in i_pecas]
+        conjunto = {"nome": _corrigir(limpar_linha(linhas[i_pecas[0] - 1])), "pecas": pecas}
+        i_fim = i_pecas[0] - 1
+        if "Set" in qualidade:
+            nome = _nome_pela_lista(titulo, pecas) or nome
+
     # Títulos de seção, aceitando um pouco de lixo em volta ("°S\ Secondary").
     i_prim = _indice(linhas[:i_fim], r"^.{0,6}\bPrimary\b.{0,6}$", i_qual)
     i_sec = _indice(linhas[:i_fim], r"^.{0,6}\bSecondary\b.{0,6}$", i_qual)
@@ -217,8 +270,15 @@ def interpretar(texto: str) -> dict:
         if inicio is None:
             return []
         linhas_secao = [l for l in linhas[inicio + 1:fim] if "Empty Socket" not in l]
-        return [estruturar_afixo(a) for a in agrupar_afixos(linhas_secao)]
+        afixos = agrupar_afixos(linhas_secao)
+        # A descrição em itálico vem depois dos afixos e quase nunca tem número
+        # nem "+". Só cortamos do FIM, pra não perder afixo sem número no meio
+        # (ex.: "Ignores Durability Loss").
+        while afixos and not _parece_afixo(afixos[-1]):
+            afixos.pop()
+        return [estruturar_afixo(a) for a in afixos]
 
+    item["nome"] = nome
     return item | {
         "slot": slot,
         "classe": next((c for c in CLASSES for l in cabecalho if c in l), None),
@@ -230,6 +290,7 @@ def interpretar(texto: str) -> dict:
         "secundarios": secao(i_sec, i_fim),
         "soquetes": sum("Empty Socket" in l for l in linhas[:i_fim]),
         "nivel_requerido": int(m_nivel.group(1)) if m_nivel else None,
+        "set": conjunto,
     }
 
 

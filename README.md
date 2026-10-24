@@ -45,7 +45,14 @@ O app só **olha a tela** (captura + OCR). Ele não lê a memória do jogo nem s
 
 ## Etapa 2: o parser
 
-`src/parser.py` transforma o texto do OCR num item em JSON: nome, qualidade, tipo, encaixe, classe, armadura ou DPS/dano, afixos primários e secundários, soquetes e nível. Gemas lendárias saem com rank e efeitos (o efeito do rank 25 vem marcado com `requer_rank`).
+`src/parser.py` transforma o texto do OCR num item em JSON: nome, qualidade, tipo, encaixe, classe, armadura ou DPS/dano, afixos primários e secundários, soquetes e nível. Funciona com itens **lendários, de set e raros**. Itens de set trazem o nome do set e a lista de peças:
+
+```json
+"set": { "nome": "Gears of Dreadlands",
+         "pecas": [ { "nome": "Antique Vintage Boots", "slot": "Feet" }, ... ] }
+```
+
+Gemas lendárias saem com rank e efeitos (o efeito do rank 25 vem marcado com `requer_rank`).
 
 Cada afixo vem com um **modelo** (os números trocados por `#`), que é o que o avaliador da Etapa 3 vai comparar com a build:
 
@@ -58,8 +65,16 @@ Cada afixo vem com um **modelo** (os números trocados por `#`), que é o que o 
 - **"Stat Changes if Equipped" é ignorado.** O app compara o item com a build, não com o item equipado. De quebra, some o problema do sinal de menos.
 - **O lixo fica nas bordas das linhas.** Marcadores de afixo viram `©`, `@`, `*`, e pedaços do cenário grudam no fim (`+1015-1214 Fire Damage iA`). O parser corta isso.
 - **Afixos longos quebram em duas linhas** (`...(Demon Hunter` / `Only)`). O parser junta.
-- **Correções de palavras** ficam em `CORRECOES` (por enquanto só `Lite` → `Life`). Quando aparecer um erro novo do OCR, é só adicionar lá.
-- **Limitações conhecidas:** gemas encaixadas no item ainda não são lidas (só conta os soquetes vazios); e se a dica não tiver "Stat Changes" (item já equipado), o texto em itálico da descrição pode entrar como afixo.
+- **Correções de palavras** ficam em `CORRECOES` (`Lite`/`Lie` → `Life`, `Kil` → `Kill`, `ofall` → `of all`...). Quando aparecer um erro novo do OCR, é só adicionar lá.
+- **A descrição em itálico não vira afixo.** Quando não há "Stat Changes" separando (item já equipado), o parser descarta as linhas do fim da seção que não têm número nem começam com "+". Só corta do fim, pra não perder um afixo sem número no meio da lista (ex.: "Ignores Durability Loss").
+- **Sets: a lista de peças é o ponto de apoio.** O OCR lê muito bem a lista (`Nome (Encaixe)`), e o nome do set é a linha logo acima dela. Os afixos acabam ali, então os bônus `(2) Set:` nunca viram afixo.
+- **Nome de item de set vem da lista de peças.** O título usa a fonte decorada e sai embaralhado (`LITANY)@FeTHE/UNDAUNTED`), mas a própria peça está na lista em fonte normal. O parser escolhe a peça mais parecida com o título.
+- **Raros e mágicos ficam sem nome** (`null`). O nome é aleatório (`Vampiric Source`), sai embaralhado (`LVAmpiRIseURCE`) e não serve pra avaliar o item.
+- **Limitações conhecidas:**
+  - Gemas encaixadas no item ainda não são lidas (só conta os soquetes vazios).
+  - Um afixo sem número que seja o último da lista seria cortado junto com a descrição.
+  - Erros de número do OCR passam direto: `+13% Life` virou `413% Life` (o "+" lido como "4"), `+157` virou `+187`, `+33%` virou `+39%`. O texto não tem como denunciar isso; um dia dá pra testar pré-processamento só na área dos afixos.
+  - Às vezes a armadura sai `null` (o OCR não leu "Armor" ou separou os dígitos: `5 8 1`). O parser prefere `null` a um número errado.
 
 ## Como rodar (Windows)
 

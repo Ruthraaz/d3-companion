@@ -29,13 +29,16 @@ Não é um planejador nem um motor de recomendação (decidido em 24/10/2026). S
 | Etapa | O que faz | Status |
 |---|---|---|
 | 1 | OCR de print salvo (`src/ocr.py`) | ✅ |
-| 2 | Parser texto → JSON (`src/parser.py`, testes em `tests/`) | ✅ (falta: sets e raros, ver abaixo) |
+| 2 | Parser texto → JSON (`src/parser.py`, testes em `tests/`) | ✅ (lendários, sets, raros, gemas) |
 | 3 | Formato de build em JSON + avaliador | próxima |
 | 4 | Atalho global + captura perto do cursor | |
 | 5 | Overlay em cima do jogo (PySide6) | |
 
-### Pendências da Etapa 2 (fazer antes da 3)
-Exemplos novos em `samples/` (adicionados em 24/10/2026):
+### Pendências da Etapa 2 — ✅ resolvidas em 24/10/2026
+Tudo abaixo está feito e testado (17 testes). Saída de set: campo `"set": {"nome", "pecas": [{"nome", "slot"}]}`;
+raros saem com `"nome": null`. Limitações que ficaram estão no README.
+
+Exemplos em `samples/` (adicionados em 24/10/2026):
 - `set_fiendish_grips.png` (Unhallowed Essence), `set_antique_vintage_boots.png` (Gears of Dreadlands),
   `set_litany_of_the_undaunted.png` (Legacy of Nightmares) — itens de set com "Stat Changes".
 - `set_cains_scrivener_equipado.png` — item de set **já equipado** (sem "Stat Changes").

@@ -1,0 +1,54 @@
+q FIENDISH GRIPS q
+[iggy] Set Gloves Hands
+aN
+| ke 5 8 1 Demon Hunter
+hy Armor
+[bax
+Primary
+» +732 Dexterity
+» +722 Vitality
+» Attack Speed Increased by 5.0%
+» Critical Hit Chance Increased by 9.0%
+Secondary
+» +160 Cold Resistance
+Monster kills grant +165 experience.
+Unhallowed Essence
+
+Accursed Visage (Head)
+
+Hell Walkers (Feet)
+
+Unholy Plates (Legs)
+
+Unsanetified Shoulders (Shoulders)
+
+Cage of the Hellborn (Torso)
+
+Fiendish Grips (Hands)
+
+(2) Set:
+
+> Your generators generate 2 additional Hatred and 1
+
+Discipline.
+(4) Set:
+
+» Gain 60% damage reduction and deal 60% increased
+damage for 8 seconds if no enemy is within 10 yards
+of you
+
+(6) Set
+
+> Your generators, Multishot, and Vengeance deal
+1700% increased damage for every point of Discipline
+you have.
+
+Stat Changes if Equipped:
++4.8% Damage
++4.3% Toughness
++2.6% Recovery
+“If you cannot learn to direct your hatred, it will consume
+you." -Kovan the Merciless
+Required Level: 1
+‘Account Bound
+Sell Value: 7621 @ Durability: 44/44 |
