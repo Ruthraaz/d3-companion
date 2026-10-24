@@ -35,13 +35,13 @@ from PySide6.QtCore import QObject, QTimer, Signal  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from avaliador import carregar_builds, resumo  # noqa: E402
+from atalho import ler_atalho, registrar, sugestoes_livres  # noqa: E402
 from captura import capturar_perto_do_cursor  # noqa: E402
 from nucleo import avaliar_print, caixa_na_tela, montar_selo  # noqa: E402
 from overlay import JanelaSelo  # noqa: E402
 
-TECLA = 0x77            # F8 (códigos "VK_" do Windows)
-MOD_NOREPEAT = 0x4000   # segurar a tecla não dispara várias vezes
 WM_HOTKEY = 0x0312
+ATALHO = os.getenv("ATALHO", "F8")                         # .env pode mudar
 SEGUNDOS_DO_SELO = float(os.getenv("SELO_SEGUNDOS", "6"))  # .env pode mudar
 
 
@@ -61,9 +61,9 @@ def _terminal(av) -> str:
 
 
 def ouvir_atalho(ponte: Ponte, builds: list[dict], pronto: threading.Event, falhou: list):
-    """Roda na thread do F8. O atalho fica preso a esta thread."""
+    """Roda na thread do atalho. O atalho fica preso a esta thread."""
     user32 = ctypes.windll.user32
-    if not user32.RegisterHotKey(None, 1, MOD_NOREPEAT, TECLA):
+    if not registrar(ATALHO):
         falhou.append(True)
         pronto.set()
         return
@@ -108,6 +108,12 @@ def main():
         app.exec()
         return
 
+    try:
+        ler_atalho(ATALHO)
+    except ValueError as erro:
+        print(f"ATALHO={ATALHO} no .env não é válido ({erro}). Exemplos: F8, Ctrl+F8, Alt+Q.")
+        sys.exit(1)
+
     ponte = Ponte()
     ponte.mostrar.connect(selo.mostrar)
     ponte.esconder.connect(selo.hide)
@@ -115,11 +121,14 @@ def main():
     threading.Thread(target=ouvir_atalho, args=(ponte, builds, pronto, falhou), daemon=True).start()
     pronto.wait()
     if falhou:
-        print("Não consegui registrar o F8. Outro programa já está usando essa tecla?")
+        livres = ", ".join(sugestoes_livres(evitar=ATALHO)) or "nenhuma das sugestões"
+        print(f"Não consegui registrar o {ATALHO}: outro programa já está usando essa tecla.\n"
+              f"Teclas livres agora: {livres}.\n"
+              "Escolha uma e coloque no .env, ex.: ATALHO=Ctrl+F8 (veja .env.example).")
         sys.exit(1)
 
     print(f"D3 Companion rodando com {len(builds)} builds. "
-          "Passe o mouse num item e aperte F8. (Ctrl+C pra sair)", flush=True)
+          f"Passe o mouse num item e aperte {ATALHO}. (Ctrl+C pra sair)", flush=True)
     app.exec()
     print("Até mais!")
 
