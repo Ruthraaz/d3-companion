@@ -45,8 +45,8 @@ def _padrao(modelo: str) -> re.Pattern:
 
 
 def _tem_afixo(item: dict, regra: str | dict) -> bool:
-    """A regra é um modelo ("+# Dexterity"), "@soquete", ou
-    {"modelo": ..., "minimo": N} quando o número importa."""
+    """A regra é um modelo ("+# Dexterity"), "@soquete", ou um objeto
+    {"modelo": ..., "rotulo": "Destreza", "minimo": N} (rotulo e minimo opcionais)."""
     modelo = regra["modelo"] if isinstance(regra, dict) else regra
     minimo = regra.get("minimo") if isinstance(regra, dict) else None
 
@@ -63,30 +63,39 @@ def _tem_afixo(item: dict, regra: str | dict) -> bool:
 
 
 def _rotulo(regra: str | dict) -> str:
-    if isinstance(regra, dict):
-        return f'{regra["modelo"]} (mín. {regra["minimo"]})'
-    return regra
+    """Nome curto pra mostrar (ex.: "Destreza"); sem rótulo, o próprio modelo."""
+    if isinstance(regra, str):
+        return regra
+    texto = regra.get("rotulo") or regra["modelo"]
+    if regra.get("minimo") is not None:
+        texto += f' (mín. {regra["minimo"]})'
+    return texto
 
 
 def _conferir(item: dict, regras: list) -> dict:
-    ok = [_rotulo(r) for r in regras if _tem_afixo(item, r)]
-    faltando = [_rotulo(r) for r in regras if not _tem_afixo(item, r)]
-    return {"ok": ok, "faltando": faltando}
+    lista = [{"rotulo": _rotulo(r), "ok": _tem_afixo(item, r)} for r in regras]
+    return {
+        "ok": [a["rotulo"] for a in lista if a["ok"]],
+        "faltando": [a["rotulo"] for a in lista if not a["ok"]],
+        "lista": lista,  # na ordem da build, pro selo do overlay
+    }
 
 
 # ---------------------------------------------------------------- avaliação
 
 def avaliar(item: dict, build: dict) -> dict:
     """Avalia um item contra UMA build."""
-    resultado = {"build": build["nome"]}
+    resultado = {"build": build["nome"], "apelido": build.get("apelido", build["nome"])}
 
     if item.get("tipo") == "Gem":
         bate = item.get("nome") in build.get("gemas", [])
+        vazio = {"ok": [], "faltando": [], "lista": []}
         return resultado | {
             "bate": bate,
             "motivo": "Gema da build" if bate else "Gema fora da build",
-            "obrigatorios": {"ok": [], "faltando": []},
-            "desejaveis": {"ok": [], "faltando": []},
+            "obrigatorios": vazio,
+            "desejaveis": vazio,
+            "afixos": [],
             "nota": 1.0 if bate else 0.0,
         }
 
@@ -121,6 +130,7 @@ def avaliar(item: dict, build: dict) -> dict:
         "motivo": motivo,
         "obrigatorios": obrigatorios,
         "desejaveis": desejaveis,
+        "afixos": obrigatorios["lista"] + desejaveis["lista"],
         "nota": nota,
     }
 

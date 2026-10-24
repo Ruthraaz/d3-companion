@@ -67,7 +67,15 @@ trabalho extra agora, não feche essa porta:
 | 2 | Parser texto → JSON (`src/parser.py`, testes em `tests/`) | ✅ (lendários, sets, raros, gemas) |
 | 3 | Formato de build em JSON + avaliador (`builds/`, `src/avaliador.py`) | ✅ (formato aprovado em 24/10/2026) |
 | 4 | Atalho global + captura perto do cursor (`src/app.py`, `src/captura.py`) | ✅ (falta o Arthur testar no jogo) |
-| 5 | Overlay em cima do jogo (PySide6) | próxima |
+| 5 | Overlay em cima do jogo (PySide6: `src/overlay.py`, núcleo em `src/nucleo.py`) | ✅ (falta testar no jogo) |
+| — | **Versão 1:** Arthur testa F8 + selo dentro do jogo; corrigir o que aparecer | próxima |
+
+### Etapa 5 — notas
+- Builds ganharam `apelido` (nome curto no selo) e `rotulo` por afixo (ex.: "Destreza"). Sem eles, usa nome/modelo.
+- `nucleo.py` não importa Qt: `avaliar_print`, `montar_selo`, `caixa_na_tela`, `posicao_do_selo` (testados em
+  `tests/test_nucleo.py`). `overlay.py` só desenha. A futura janela (pywebview) deve usar o mesmo núcleo.
+- `QT_ENABLE_HIGHDPI_SCALING=0` no app: o selo usa pixels reais, iguais aos do print e do mouse.
+- `SELO_SEGUNDOS` no `.env` (padrão 6).
 
 ### Etapa 4 — notas
 - Pipeline do app: F8 → print em volta do mouse → `recortar_dica` (par de bordas verticais + miolo preto,

@@ -1,34 +1,55 @@
 {
   "formato": 1,
   "nome": "Legacy of Nightmares",
+  "apelido": "LoN",
   "classe": "Demon Hunter",
   "exige_ancient": true,
 
   "todos_os_espacos": {
-    "obrigatorios": ["+# Dexterity"],
-    "desejaveis": ["+# Vitality"]
+    "obrigatorios": [{ "modelo": "+# Dexterity", "rotulo": "Destreza" }],
+    "desejaveis": [{ "modelo": "+# Vitality", "rotulo": "Vitalidade" }]
   },
 
   "espacos": {
-    "Head": { "itens": [], "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%"] },
-    "Torso": { "itens": [], "desejaveis": ["@soquete"] },
+    "Head": {
+      "itens": [],
+      "desejaveis": [
+        { "modelo": "@soquete", "rotulo": "Encaixe" },
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" }
+      ]
+    },
+    "Torso": { "itens": [], "desejaveis": [{ "modelo": "@soquete", "rotulo": "Encaixe" }] },
     "Hands": {
       "itens": [],
-      "desejaveis": ["Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+      "desejaveis": [
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
+        { "modelo": "Critical Hit Damage Increased by #%", "rotulo": "Dano crítico" }
+      ]
     },
-    "Legs": { "itens": [], "desejaveis": ["@soquete"] },
+    "Legs": { "itens": [], "desejaveis": [{ "modelo": "@soquete", "rotulo": "Encaixe" }] },
     "Neck": {
       "itens": [],
-      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+      "desejaveis": [
+        { "modelo": "@soquete", "rotulo": "Encaixe" },
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
+        { "modelo": "Critical Hit Damage Increased by #%", "rotulo": "Dano crítico" }
+      ]
     },
     "Finger": {
       "itens": ["Litany of the Undaunted", "The Wailing Host"],
       "exige_ancient": false,
-      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+      "desejaveis": [
+        { "modelo": "@soquete", "rotulo": "Encaixe" },
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
+        { "modelo": "Critical Hit Damage Increased by #%", "rotulo": "Dano crítico" }
+      ]
     },
     "Weapon": {
       "itens": [],
-      "desejaveis": ["+#-# * Damage", "@soquete"]
+      "desejaveis": [
+        { "modelo": "+#-# * Damage", "rotulo": "Dano da arma" },
+        { "modelo": "@soquete", "rotulo": "Encaixe" }
+      ]
     }
   },
 

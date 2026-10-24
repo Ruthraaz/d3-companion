@@ -102,19 +102,26 @@ def achar_dica(img: np.ndarray, cursor: tuple[int, int] | None = None
     return min(perto, key=lambda c: (distancia(c), -area(c)))
 
 
-def recortar_dica(imagem: Image.Image, cursor: tuple[int, int] | None = None
-                  ) -> Image.Image | None:
-    """Recorta só a dica de um print (PIL). None se não achou dica.
+def localizar_dica(imagem: Image.Image, cursor: tuple[int, int] | None = None
+                   ) -> tuple[int, int, int, int] | None:
+    """Caixa (x0, y0, x1, y1) da dica num print (PIL), já com a folga. None se não achou.
 
     As bordas laterais começam ABAIXO do banner do título (visto nos itens de
-    set), então o recorte sobe uma folga pra não cortar o nome do item.
+    set), então a caixa sobe uma folga pra não cortar o nome do item.
     """
     bgr = cv2.cvtColor(np.array(imagem.convert("RGB")), cv2.COLOR_RGB2BGR)
     caixa = achar_dica(bgr, cursor)
     if caixa is None:
         return None
     x0, y0, x1, y1 = caixa
-    return imagem.crop((x0, max(0, y0 - FOLGA_TOPO), x1, min(imagem.height, y1 + FOLGA_BASE)))
+    return x0, max(0, y0 - FOLGA_TOPO), x1, min(imagem.height, y1 + FOLGA_BASE)
+
+
+def recortar_dica(imagem: Image.Image, cursor: tuple[int, int] | None = None
+                  ) -> Image.Image | None:
+    """Recorta só a dica de um print (PIL). None se não achou dica."""
+    caixa = localizar_dica(imagem, cursor)
+    return imagem.crop(caixa) if caixa else None
 
 
 def texto_da_dica(imagem: Image.Image, cursor: tuple[int, int] | None = None) -> str:
@@ -145,10 +152,11 @@ def posicao_do_cursor() -> tuple[int, int]:
     return ponto.x, ponto.y
 
 
-def capturar_perto_do_cursor() -> tuple[Image.Image, tuple[int, int]]:
+def capturar_perto_do_cursor() -> tuple[Image.Image, tuple[int, int], tuple[int, int]]:
     """Print de uma faixa da tela em volta do mouse (altura inteira).
 
-    Devolve a imagem e a posição do cursor DENTRO dela.
+    Devolve a imagem, a posição do cursor DENTRO dela e onde a imagem começa
+    na tela (pra converter a caixa da dica em coordenadas de tela).
     """
     _ativar_pixels_reais()
     user32 = ctypes.windll.user32
@@ -160,7 +168,7 @@ def capturar_perto_do_cursor() -> tuple[Image.Image, tuple[int, int]]:
     x0 = max(esq, cx - MEIA_LARGURA_CAPTURA)
     x1 = min(esq + larg, cx + MEIA_LARGURA_CAPTURA)
     imagem = ImageGrab.grab(bbox=(x0, topo, x1, topo + alt), all_screens=True)
-    return imagem, (cx - x0, cy - topo)
+    return imagem, (cx - x0, cy - topo), (x0, topo)
 
 
 if __name__ == "__main__":

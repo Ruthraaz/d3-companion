@@ -3,3 +3,4 @@ pillow==10.4.0
 opencv-python==4.10.0.84
 numpy==1.26.4
 python-dotenv==1.2.4
+PySide6-Essentials==6.11.2

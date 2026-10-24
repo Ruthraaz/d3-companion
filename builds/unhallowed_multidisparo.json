@@ -1,44 +1,62 @@
 {
   "formato": 1,
   "nome": "Unhallowed Essence — Multidisparo",
+  "apelido": "Unhallowed",
   "classe": "Demon Hunter",
   "exige_ancient": false,
 
   "todos_os_espacos": {
-    "obrigatorios": ["+# Dexterity"],
-    "desejaveis": ["+# Vitality"]
+    "obrigatorios": [{ "modelo": "+# Dexterity", "rotulo": "Destreza" }],
+    "desejaveis": [{ "modelo": "+# Vitality", "rotulo": "Vitalidade" }]
   },
 
   "espacos": {
     "Head": {
       "itens": ["Accursed Visage"],
-      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%"]
+      "desejaveis": [
+        { "modelo": "@soquete", "rotulo": "Encaixe" },
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" }
+      ]
     },
     "Shoulders": { "itens": ["Unsanctified Shoulders"] },
     "Torso": {
       "itens": ["Cage of the Hellborn"],
-      "desejaveis": ["@soquete"]
+      "desejaveis": [{ "modelo": "@soquete", "rotulo": "Encaixe" }]
     },
     "Hands": {
       "itens": ["Fiendish Grips"],
-      "desejaveis": ["Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+      "desejaveis": [
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
+        { "modelo": "Critical Hit Damage Increased by #%", "rotulo": "Dano crítico" }
+      ]
     },
     "Legs": {
       "itens": ["Unholy Plates"],
-      "desejaveis": ["@soquete"]
+      "desejaveis": [{ "modelo": "@soquete", "rotulo": "Encaixe" }]
     },
     "Feet": { "itens": ["Hell Walkers"] },
     "Neck": {
       "itens": [],
-      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+      "desejaveis": [
+        { "modelo": "@soquete", "rotulo": "Encaixe" },
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
+        { "modelo": "Critical Hit Damage Increased by #%", "rotulo": "Dano crítico" }
+      ]
     },
     "Finger": {
       "itens": [],
-      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+      "desejaveis": [
+        { "modelo": "@soquete", "rotulo": "Encaixe" },
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
+        { "modelo": "Critical Hit Damage Increased by #%", "rotulo": "Dano crítico" }
+      ]
     },
     "Weapon": {
       "itens": [],
-      "desejaveis": ["+#-# * Damage", "@soquete"]
+      "desejaveis": [
+        { "modelo": "+#-# * Damage", "rotulo": "Dano da arma" },
+        { "modelo": "@soquete", "rotulo": "Encaixe" }
+      ]
     }
   },
 

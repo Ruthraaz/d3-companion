@@ -35,8 +35,18 @@ class TestItensReais(unittest.TestCase):
         r = avaliar(item("set_antique_vintage_boots"), DREADLANDS)
         self.assertTrue(r["bate"])
         self.assertEqual(r["motivo"], "Item da build: Antique Vintage Boots")
-        self.assertEqual(r["obrigatorios"]["ok"], ["+# Dexterity"])
+        self.assertEqual(r["obrigatorios"]["ok"], ["Destreza"])  # o rótulo da build
         self.assertEqual(r["nota"], 1.0)
+
+    def test_afixos_na_ordem_da_build_pro_selo(self):
+        r = avaliar(item("set_fiendish_grips"), UNHALLOWED)
+        self.assertEqual(r["apelido"], "Unhallowed")
+        self.assertEqual(r["afixos"], [
+            {"rotulo": "Destreza", "ok": True},
+            {"rotulo": "Vitalidade", "ok": True},
+            {"rotulo": "Crítico", "ok": True},
+            {"rotulo": "Dano crítico", "ok": False},
+        ])
 
     def test_peca_de_outro_set(self):
         r = avaliar(item("set_antique_vintage_boots"), UNHALLOWED)
@@ -46,8 +56,8 @@ class TestItensReais(unittest.TestCase):
     def test_luvas_unhallowed_nota_parcial(self):
         r = avaliar(item("set_fiendish_grips"), UNHALLOWED)
         self.assertTrue(r["bate"])
-        self.assertEqual(r["desejaveis"]["ok"], ["+# Vitality", "Critical Hit Chance Increased by #%"])
-        self.assertEqual(r["desejaveis"]["faltando"], ["Critical Hit Damage Increased by #%"])
+        self.assertEqual(r["desejaveis"]["ok"], ["Vitalidade", "Crítico"])
+        self.assertEqual(r["desejaveis"]["faltando"], ["Dano crítico"])
         self.assertEqual(r["nota"], 0.67)
 
     def test_lon_exige_ancient(self):
@@ -58,13 +68,13 @@ class TestItensReais(unittest.TestCase):
     def test_lon_aneis_do_set_nao_precisam_ser_ancient(self):
         r = avaliar(item("set_litany_of_the_undaunted"), LON)
         self.assertTrue(r["bate"])
-        self.assertEqual(r["desejaveis"]["ok"], ["@soquete"])
+        self.assertEqual(r["desejaveis"]["ok"], ["Encaixe"])
 
     def test_arma_qualquer_com_afixos(self):
         # "2-Hand" do parser cai no espaço "Weapon" da build.
         r = avaliar(item("lendario_demon_machine"), DREADLANDS)
         self.assertTrue(r["bate"])
-        self.assertIn("+#-# * Damage", r["desejaveis"]["ok"])  # "+#-# Fire Damage"
+        self.assertIn("Dano da arma", r["desejaveis"]["ok"])  # "+#-# * Damage" pegou "Fire Damage"
 
     def test_raro_serve_mas_com_nota_baixa(self):
         r = avaliar(item("raro_vampiric_source_equipado"), DREADLANDS)
@@ -106,6 +116,11 @@ class TestRegras(unittest.TestCase):
         r = avaliar(item_falso("+380 Dexterity"), build)
         self.assertFalse(r["bate"])
         self.assertEqual(r["motivo"], "Falta: +# Dexterity (mín. 400)")
+
+    def test_sem_rotulo_usa_o_modelo(self):
+        r = avaliar(item_falso("+458 Dexterity"), build_falsa(desejaveis=["+# Dexterity"]))
+        self.assertEqual(r["afixos"], [{"rotulo": "+# Dexterity", "ok": True}])
+        self.assertEqual(r["apelido"], "Teste")  # sem apelido, usa o nome
 
     def test_soquete(self):
         build = build_falsa(obrigatorios=["@soquete"])

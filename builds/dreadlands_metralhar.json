@@ -1,44 +1,62 @@
 {
   "formato": 1,
   "nome": "Gears of Dreadlands — Metralhar",
+  "apelido": "Dreadlands",
   "classe": "Demon Hunter",
   "exige_ancient": false,
 
   "todos_os_espacos": {
-    "obrigatorios": ["+# Dexterity"],
-    "desejaveis": ["+# Vitality"]
+    "obrigatorios": [{ "modelo": "+# Dexterity", "rotulo": "Destreza" }],
+    "desejaveis": [{ "modelo": "+# Vitality", "rotulo": "Vitalidade" }]
   },
 
   "espacos": {
     "Head": {
       "itens": ["Dystopian Goggles"],
-      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%"]
+      "desejaveis": [
+        { "modelo": "@soquete", "rotulo": "Encaixe" },
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" }
+      ]
     },
     "Shoulders": { "itens": ["Mechanical Pauldrons"] },
     "Torso": {
       "itens": ["Galvanized Vest"],
-      "desejaveis": ["@soquete"]
+      "desejaveis": [{ "modelo": "@soquete", "rotulo": "Encaixe" }]
     },
     "Hands": {
       "itens": ["Gas Powered Automail Forearm"],
-      "desejaveis": ["Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+      "desejaveis": [
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
+        { "modelo": "Critical Hit Damage Increased by #%", "rotulo": "Dano crítico" }
+      ]
     },
     "Legs": {
       "itens": ["Cold Cathode Trousers"],
-      "desejaveis": ["@soquete"]
+      "desejaveis": [{ "modelo": "@soquete", "rotulo": "Encaixe" }]
     },
     "Feet": { "itens": ["Antique Vintage Boots"] },
     "Neck": {
       "itens": [],
-      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+      "desejaveis": [
+        { "modelo": "@soquete", "rotulo": "Encaixe" },
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
+        { "modelo": "Critical Hit Damage Increased by #%", "rotulo": "Dano crítico" }
+      ]
     },
     "Finger": {
       "itens": [],
-      "desejaveis": ["@soquete", "Critical Hit Chance Increased by #%", "Critical Hit Damage Increased by #%"]
+      "desejaveis": [
+        { "modelo": "@soquete", "rotulo": "Encaixe" },
+        { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
+        { "modelo": "Critical Hit Damage Increased by #%", "rotulo": "Dano crítico" }
+      ]
     },
     "Weapon": {
       "itens": [],
-      "desejaveis": ["+#-# * Damage", "@soquete"]
+      "desejaveis": [
+        { "modelo": "+#-# * Damage", "rotulo": "Dano da arma" },
+        { "modelo": "@soquete", "rotulo": "Encaixe" }
+      ]
     }
   },
 

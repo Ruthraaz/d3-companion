@@ -4,7 +4,9 @@ App de desktop pessoal pro **Diablo 3**: quando um item cai, você aperta um ata
 
 O app só **olha a tela** (captura + OCR). Ele não lê a memória do jogo nem se injeta nele, então não viola os termos da Blizzard.
 
-## Como vai funcionar
+![Selo do overlay ao lado da dica do item](docs/previa_selo.png)
+
+## Como funciona
 
 ```
 [F8 com o mouse no item]
@@ -22,8 +24,10 @@ O app só **olha a tela** (captura + OCR). Ele não lê a memória do jogo nem s
  4. Avaliador ──► compara com as builds (arquivos JSON)
         │
         ▼
- 5. Overlay ──► ✅ "Bate com Dreadlands" / ❌ "Não serve"
+ 5. Overlay ──► ✅ Dreadlands · Destreza ✓ Crítico ✓ Encaixe ✗
 ```
+
+A lógica (OCR, parser, avaliador) fica num **núcleo** sem interface (`src/nucleo.py`); o overlay só desenha o que o núcleo entrega.
 
 ## Roteiro
 
@@ -32,8 +36,9 @@ O app só **olha a tela** (captura + OCR). Ele não lê a memória do jogo nem s
 | 1 | OCR de um print salvo | ✅ funcionando |
 | 2 | Parser: texto → item estruturado | ✅ funcionando |
 | 3 | Formato de build (JSON) + avaliador | ✅ funcionando |
-| 4 | Atalho + captura perto do cursor | ✅ funcionando (falta testar dentro do jogo) |
-| 5 | Overlay em cima do jogo | ⏳ próxima |
+| 4 | Atalho + captura perto do cursor | ✅ funcionando |
+| 5 | Overlay em cima do jogo | ✅ funcionando |
+| | **Versão 1:** testar tudo dentro do jogo | ⏳ próxima |
 
 ## O que aprendemos na Etapa 1
 
@@ -138,6 +143,23 @@ O atalho usa o `RegisterHotKey` do próprio Windows: nada de ler memória ou se 
 - **A moldura do título vira letra solta** (`E PAIN ENHANCER`). O parser descarta letra isolada nas pontas do nome.
 - A armadura (número grande, fonte serifada) ainda falha às vezes; o parser devolve `null` em vez de um número errado.
 
+## Etapa 5: o overlay
+
+`src/overlay.py` (PySide6) desenha o **selo**: fundo escuro semitransparente, borda verde (serve) ou vermelha (não serve), nome da build em dourado e os afixos com ✓/✗. Ele aparece **à direita da dica** (ou à esquerda, se não couber) e some sozinho depois de `SELO_SEGUNDOS` (padrão 6, ajustável no `.env`).
+
+O selo é uma janela separada do jogo: fica sempre por cima, **deixa o clique passar** e **nunca pega o foco** — senão o jogo em tela cheia poderia minimizar. Antes de cada print, o selo anterior é escondido pra não confundir a detecção da dica.
+
+**Rótulos e apelidos nas builds:** pra caber no selo, cada afixo pode ter um `rotulo` curto e cada build um `apelido`:
+
+```json
+"apelido": "Dreadlands",
+"obrigatorios": [{ "modelo": "+# Dexterity", "rotulo": "Destreza" }]
+```
+
+Sem `rotulo`, o selo mostra o próprio modelo; sem `apelido`, o nome da build. Tudo fica no JSON, nada no código.
+
+**Como as partes conversam:** o F8 é ouvido numa thread separada, que faz o trabalho pesado (print + OCR, ~1 s) sem travar a interface e manda o resultado pro selo por um *sinal* do Qt. O núcleo (`src/nucleo.py`) monta o texto e a posição do selo sem depender de interface, então tudo isso tem teste sem abrir janela.
+
 ## Como rodar (Windows)
 
 O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes prontos para as versões fixadas no `requirements.txt` (Pillow 10.4, NumPy 1.26).
@@ -159,9 +181,9 @@ O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes
    python src/ocr.py samples/lendario_cloak_garwulf.png      # só o OCR (texto cru)
    python src/parser.py samples/lendario_cloak_garwulf.png   # OCR + parser (JSON)
    python src/avaliador.py samples/set_fiendish_grips.png    # recorte + OCR + parser + avaliador
-   python src/app.py --testar samples/set_fiendish_grips.png # o caminho do app, com um print salvo
+   python src/app.py --testar samples/set_fiendish_grips.png # mostra o selo desse print no meio da tela
    ```
-5. **No jogo:** deixe o Diablo 3 em **Tela cheia em janela** (Windowed Fullscreen), rode `python src/app.py`, passe o mouse num item e aperte **F8**. O resultado aparece no terminal.
+5. **No jogo:** deixe o Diablo 3 em **Tela cheia em janela** (Windowed Fullscreen), rode `python src/app.py`, passe o mouse num item e aperte **F8**. O selo aparece ao lado da dica (e o resumo no terminal).
 6. Testes (não precisam do Tesseract, usam os textos salvos em `tests/ocr/` e `tests/ocr_recorte/`):
    ```
    python -m unittest discover tests
