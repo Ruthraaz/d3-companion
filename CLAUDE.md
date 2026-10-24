@@ -66,9 +66,12 @@ trabalho extra agora, não feche essa porta:
 | 1 | OCR de print salvo (`src/ocr.py`) | ✅ |
 | 2 | Parser texto → JSON (`src/parser.py`, testes em `tests/`) | ✅ (lendários, sets, raros, gemas) |
 | 3 | Formato de build em JSON + avaliador (`builds/`, `src/avaliador.py`) | ✅ (formato aprovado em 24/10/2026) |
-| 4 | Atalho global + captura perto do cursor (`src/app.py`, `src/captura.py`) | ✅ (falta o Arthur testar no jogo) |
-| 5 | Overlay em cima do jogo (PySide6: `src/overlay.py`, núcleo em `src/nucleo.py`) | ✅ (falta testar no jogo) |
-| — | **Versão 1:** Arthur testa F8 + selo dentro do jogo; corrigir o que aparecer | próxima |
+| 4 | Atalho global + captura perto do cursor (`src/app.py`, `src/captura.py`) | ✅ (testado no jogo em 24/10/2026) |
+| 5 | Overlay em cima do jogo (PySide6: `src/overlay.py`, núcleo em `src/nucleo.py`) | ✅ (testado no jogo com gemas) |
+| — | **Versão 1:** Arthur testa F8 + selo dentro do jogo; corrigir o que aparecer | falta só testar um **equipamento** no jogo |
+
+Em 24/10/2026 o selo dos 7 equipamentos de `samples/` foi conferido fora do jogo (mesmo caminho do F8)
+e saiu certo: sets da build certa, lendário fora da build com "Não serve" + motivo, raro com ✓/✗ por afixo.
 
 ### Etapa 5 — notas
 - Builds ganharam `apelido` (nome curto no selo) e `rotulo` por afixo (ex.: "Destreza"). Sem eles, usa nome/modelo.
