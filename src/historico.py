@@ -16,11 +16,13 @@ from nucleo import PASTA_CAPTURAS, Avaliacao, Selo
 ARQUIVO = PASTA_CAPTURAS / "historico.jsonl"
 
 
-def registrar(av: Avaliacao, selo: Selo, arquivo: Path = ARQUIVO) -> dict:
-    """Acrescenta a avaliação no histórico e devolve o que foi gravado."""
+def registrar(av: Avaliacao, selo: Selo, arquivo: Path = ARQUIVO, com: str = "Todas") -> dict:
+    """Acrescenta a avaliação no histórico e devolve o que foi gravado.
+    `com` = com qual build o item foi avaliado ("Todas" ou o apelido)."""
     item = av.item or {}
     entrada = {
         "quando": datetime.now().isoformat(timespec="seconds"),
+        "com": com,
         "titulo": selo.titulo,
         "qualidade": item.get("qualidade"),
         "tipo": item.get("tipo"),

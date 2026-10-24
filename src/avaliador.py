@@ -156,6 +156,7 @@ def ficha_da_build(build: dict) -> dict:
             "exige_ancient": espaco.get("exige_ancient", build.get("exige_ancient", False)),
         }
     return {
+        "id": build.get("id"),
         "nome": build["nome"],
         "apelido": build.get("apelido", build["nome"]),
         "classe": build.get("classe"),
@@ -170,7 +171,20 @@ def ficha_da_build(build: dict) -> dict:
 
 
 def carregar_builds(pasta: Path = PASTA_BUILDS) -> list[dict]:
-    return [json.loads(p.read_text(encoding="utf-8")) for p in sorted(pasta.glob("*.json"))]
+    """Lê builds/*.json. Cada build ganha um "id" = nome do arquivo sem .json
+    (ex.: "legacy_of_nightmares"), que não muda se o apelido mudar."""
+    builds = []
+    for p in sorted(pasta.glob("*.json")):
+        build = json.loads(p.read_text(encoding="utf-8"))
+        build["id"] = p.stem
+        builds.append(build)
+    return builds
+
+
+def builds_escolhidas(builds: list[dict], escolha: str) -> list[dict]:
+    """A build que a pessoa escolheu na janela (pelo id). Vazio = todas.
+    Se o id não existir mais (arquivo renomeado/apagado), volta pra todas."""
+    return [b for b in builds if b["id"] == escolha] or builds
 
 
 def avaliar_todas(item: dict, builds: list[dict]) -> list[dict]:

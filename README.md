@@ -173,6 +173,7 @@ Sem `rotulo`, o selo mostra o próprio modelo; sem `apelido`, o nome da build. T
 
 `python src/janela.py` abre a janela e **liga o overlay junto** (fechar a janela desliga os dois). Três abas:
 
+- **Escolher a build:** clicar numa build faz o atalho avaliar **só com ela** (o selo fala só dela); "Todas" avalia com todas. Vale na hora, sem reiniciar: a escolha vai pro `.env` (`BUILD_ATIVA`) e o overlay relê a cada F8. O histórico mostra com qual build cada item foi avaliado.
 - **Builds:** cada build num "boneco" com os 12 espaços. Verde = a build pede um item específico; dourado = qualquer item com os afixos; tracejado = a build não fala do espaço, então valem só as regras gerais (`todos_os_espacos`). Clicando num espaço aparecem os afixos obrigatórios, os desejáveis e as gemas.
 - **Histórico:** cada item avaliado no jogo, com a miniatura do recorte e o mesmo selo do overlay. Filtro "Serve / Não serve". Item novo chega sozinho (a janela confere a cada 1,5 s).
 - **Configurações:** atalho e tempo do selo, gravados no `.env` (o resto do arquivo fica intacto). Valor inválido não é gravado e a mensagem diz o porquê. As mensagens do overlay (ex.: "F8 ocupado") aparecem aqui também.

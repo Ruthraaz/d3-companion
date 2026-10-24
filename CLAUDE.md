@@ -78,6 +78,9 @@ trabalho extra agora, não feche essa porta:
 - Overlay → janela: `capturas/historico.jsonl` (`src/historico.py`). Janela → .env: `src/config.py`
   (só ATALHO e SELO_SEGUNDOS; o resto do arquivo fica intacto). Build pra tela: `avaliador.ficha_da_build`.
 - Página: só `textContent` (nome de item vem do OCR). Fora do pywebview usa dados de exemplo (`apiDeExemplo`).
+- **Build escolhida** (pedido do Arthur, 24/10/2026): clicar numa build na janela = o F8 avalia só com ela;
+  "Todas" = todas. Fica em `BUILD_ATIVA` no .env (id = nome do arquivo da build); `app.py` relê a cada F8
+  (`avaliador.builds_escolhidas`). Id que sumiu → volta pra todas.
 - Ainda não tem: editar build pela janela (decisão da v1: builds só no JSON), screenshot no README.
 
 Em 24/10/2026 o selo dos 7 equipamentos de `samples/` foi conferido fora do jogo (mesmo caminho do F8)

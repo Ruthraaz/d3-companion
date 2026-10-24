@@ -140,6 +140,19 @@ h3 {
   background: linear-gradient(var(--painel-2), var(--painel));
   box-shadow: 0 0 0 1px rgba(201, 162, 90, .25), 0 0 18px rgba(201, 162, 90, .08);
 }
+.chip-build.vendo { border-color: var(--borda-forte); border-style: dashed; }
+.chip-build.ativo .chip-apelido::after {
+  content: "avaliando";
+  margin-left: 8px;
+  font: 10px var(--sans);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ok);
+  vertical-align: 2px;
+}
+.chip-todas { min-width: 96px; }
+.avaliando { margin: -10px 0 18px; font-size: 13px; color: var(--mudo); }
+.avaliando strong { color: var(--ouro-claro); font-weight: 600; }
 .chip-apelido { display: block; font-family: var(--serifa); font-size: 16px; color: var(--ouro-claro); }
 .chip-nome { display: block; font-size: 12px; color: var(--mudo); }
 

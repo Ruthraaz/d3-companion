@@ -23,7 +23,8 @@ const BONECO = [
 const estado = {
   api: null,
   builds: [],
-  build: 0,          // índice da build escolhida
+  build: 0,          // índice da build mostrada no boneco
+  ativa: "",         // id da build que o atalho usa ("" = todas); fica no .env (BUILD_ATIVA)
   espaco: "Head",    // espaço aberto no painel de detalhe
   historico: [],
   filtro: "todos",
@@ -75,16 +76,46 @@ function desenharBuilds() {
     trocar(caixa, el("p", { class: "mudo" }, "Nenhuma build em builds/. Crie um arquivo JSON lá (veja o README)."));
     return;
   }
-  trocar(caixa, estado.builds.map((b, i) =>
+  // Clicar numa build = o F8 passa a avaliar só com ela. "Todas" = com todas.
+  // Com "Todas", o boneco continua mostrando a última build olhada (contorno fino).
+  const todas = estado.ativa === "";
+  trocar(caixa,
     el("button", {
-      class: "chip-build" + (i === estado.build ? " ativo" : ""),
-      onclick: () => { estado.build = i; desenharBuilds(); },
+      class: "chip-build chip-todas" + (todas ? " ativo" : ""),
+      title: "O atalho avalia o item com todas as builds",
+      onclick: () => escolherBuild(""),
     },
-      el("span", { class: "chip-apelido" }, b.apelido),
-      el("span", { class: "chip-nome" }, b.nome),
-    )));
+      el("span", { class: "chip-apelido" }, "Todas"),
+      el("span", { class: "chip-nome" }, `${estado.builds.length} builds`),
+    ),
+    estado.builds.map((b, i) =>
+      el("button", {
+        class: "chip-build" + (b.id === estado.ativa ? " ativo" : "") + (todas && i === estado.build ? " vendo" : ""),
+        title: `O atalho avalia o item só com ${b.apelido}`,
+        onclick: () => { estado.build = i; escolherBuild(b.id); },
+      },
+        el("span", { class: "chip-apelido" }, b.apelido),
+        el("span", { class: "chip-nome" }, b.nome),
+      )),
+  );
+  const com = todas ? "todas as builds" : estado.builds[estado.build].apelido;
+  trocar(document.getElementById("avaliando"),
+    "O atalho avalia o item com ", el("strong", {}, com), ".");
   desenharBoneco();
   desenharDetalhe();
+}
+
+async function escolherBuild(id) {
+  estado.ativa = id;
+  desenharBuilds();
+  const { erros } = await estado.api.escolher_build(id);
+  if (erros && erros.BUILD_ATIVA) alert(erros.BUILD_ATIVA);
+  atualizarEstado();
+}
+
+function apelidoAtivo(config) {
+  const b = estado.builds.find(x => x.id === config.BUILD_ATIVA);
+  return b ? b.apelido : "todas as builds";
 }
 
 function desenharBoneco() {
@@ -166,7 +197,9 @@ function registro(h, anterior) {
     mini,
     el("div", {},
       el("p", { class: "registro-titulo" }, h.titulo),
-      tipo && el("p", { class: "registro-tipo" }, tipo),
+      el("p", { class: "registro-tipo" },
+        [tipo, h.com && `avaliado com ${h.com === "Todas" ? "todas as builds" : h.com}`]
+          .filter(Boolean).join(" · ")),
       h.linhas.map(linha => el("p", { class: "registro-linha" },
         linha.map(([texto, estilo]) => el("span", { class: `t-${estilo}` }, texto)))),
     ),
@@ -204,7 +237,7 @@ async function atualizarEstado() {
   caixa.classList.toggle("ligado", e.rodando);
   caixa.classList.toggle("parado", !e.rodando);
   caixa.querySelector(".estado-texto").textContent = e.rodando
-    ? `Overlay ativo · ${e.config.ATALHO}`
+    ? `Overlay ativo · ${e.config.ATALHO} · ${apelidoAtivo(e.config)}`
     : "Overlay parado — veja Configurações";
   document.getElementById("log").textContent = e.log.join("\n") || "(sem mensagens)";
 }
@@ -254,6 +287,9 @@ async function iniciar(api) {
   });
 
   estado.builds = await api.builds();
+  const { BUILD_ATIVA } = await api.config();
+  const i = estado.builds.findIndex(b => b.id === BUILD_ATIVA);
+  if (i >= 0) { estado.ativa = BUILD_ATIVA; estado.build = i; }
   desenharBuilds();
   await Promise.all([atualizarHistorico(), atualizarEstado()]);
   // O overlay é outro processo: de tempos em tempos, vê se chegou item novo.
@@ -283,7 +319,7 @@ function apiDeExemplo() {
     for (const chave of Object.keys(ESPACOS)) {
       espacos[chave] = espacos[chave] || { ...esp([], [], ancient), definido: false };
     }
-    return { nome, apelido, classe: "Demon Hunter", exige_ancient: ancient,
+    return { id: apelido.toLowerCase(), nome, apelido, classe: "Demon Hunter", exige_ancient: ancient,
              gerais: { obrigatorios: ["Destreza"], desejaveis: ["Vitalidade"] }, espacos, gemas };
   };
   const critico = afixo("Encaixe", "Crítico", "Dano crítico");
@@ -312,7 +348,7 @@ function apiDeExemplo() {
   const agora = Date.now();
   const quando = min => new Date(agora - min * 60000).toISOString().slice(0, 19);
   const historico = [
-    { quando: quando(1), titulo: "Antique Vintage Boots", qualidade: "Set", tipo: "Boots", serve: true,
+    { quando: quando(1), com: "Dreadlands", titulo: "Antique Vintage Boots", qualidade: "Set", tipo: "Boots", serve: true,
       linhas: [[["✅ ", "normal"], ["Dreadlands", "build"], [" · ", "normal"], ["Destreza ✓", "ok"], ["  ", "normal"], ["Vitalidade ✓", "ok"]]] },
     { quando: quando(3), titulo: "Cain's Scrivener", qualidade: "Set", tipo: "Gloves", serve: false,
       linhas: [[["❌ Não serve", "build"]], [["Dreadlands: A build pede: Gas Powered Automail Forearm", "motivo"]]] },
@@ -320,7 +356,7 @@ function apiDeExemplo() {
       linhas: [[["✅ ", "normal"], ["Dreadlands", "build"], [" · Gema da build", "normal"]],
                [["✅ ", "normal"], ["LoN", "build"], [" · Gema da build", "normal"]]] },
   ];
-  let config = { ATALHO: "F8", SELO_SEGUNDOS: "6" };
+  let config = { ATALHO: "F8", SELO_SEGUNDOS: "6", BUILD_ATIVA: "" };
   return {
     builds: async () => builds,
     historico: async () => historico,
@@ -332,10 +368,11 @@ function apiDeExemplo() {
         erros.ATALHO = `Atalho inválido: '${m.ATALHO}'. Exemplos: F8, Ctrl+F8, Alt+Q.`;
       const s = parseFloat(String(m.SELO_SEGUNDOS).replace(",", "."));
       if (!(s >= 1 && s <= 60)) erros.SELO_SEGUNDOS = "Tempo do selo precisa ficar entre 1 e 60 segundos.";
-      if (!Object.keys(erros).length) config = m;
+      if (!Object.keys(erros).length) config = { ...config, ...m };
       return { erros };
     },
     estado: async () => ({ rodando: true, config, log: ["(modo de exemplo: aberto fora do app)"] }),
     reiniciar_overlay: async () => ({}),
+    escolher_build: async id => { config = { ...config, BUILD_ATIVA: id }; return { erros: {} }; },
   };
 }

@@ -35,7 +35,8 @@ from PySide6.QtCore import QObject, QTimer, Signal  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 import historico  # noqa: E402
-from avaliador import carregar_builds, resumo  # noqa: E402
+from avaliador import builds_escolhidas, carregar_builds, resumo  # noqa: E402
+from config import ler_config  # noqa: E402
 from atalho import ler_atalho, registrar, sugestoes_livres  # noqa: E402
 from captura import capturar_perto_do_cursor  # noqa: E402
 from nucleo import avaliar_print, caixa_na_tela, montar_selo  # noqa: E402
@@ -78,10 +79,13 @@ def ouvir_atalho(ponte: Ponte, builds: list[dict], pronto: threading.Event, falh
         ponte.esconder.emit()
         time.sleep(0.12)
         imagem, cursor, origem = capturar_perto_do_cursor()
-        av = avaliar_print(imagem, cursor, builds)
+        # A build escolhida na janela vale na hora: o .env é lido a cada F8.
+        usadas = builds_escolhidas(builds, ler_config()["BUILD_ATIVA"])
+        av = avaliar_print(imagem, cursor, usadas)
         print("\n" + _terminal(av), flush=True)
         selo = montar_selo(av)
-        historico.registrar(av, selo)  # a janela principal lê daqui
+        com = usadas[0].get("apelido", usadas[0]["nome"]) if len(usadas) == 1 else "Todas"
+        historico.registrar(av, selo, com=com)  # a janela principal lê daqui
         ponte.mostrar.emit(selo, caixa_na_tela(av, origem, cursor))
 
 

@@ -15,9 +15,10 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
 
 import historico  # noqa: E402
-from avaliador import ESPACOS, carregar_builds, ficha_da_build  # noqa: E402
+from avaliador import (ESPACOS, avaliar_todas, builds_escolhidas, carregar_builds,  # noqa: E402
+                       ficha_da_build)
 from config import ler_config, salvar_config  # noqa: E402
-from nucleo import Avaliacao, Selo  # noqa: E402
+from nucleo import Avaliacao, Selo, montar_selo, texto_do_selo  # noqa: E402
 
 
 class TestHistorico(unittest.TestCase):
@@ -56,7 +57,7 @@ class TestConfig(unittest.TestCase):
         self.pasta.cleanup()
 
     def test_padroes_sem_env(self):
-        self.assertEqual(ler_config(self.env), {"ATALHO": "F8", "SELO_SEGUNDOS": "6"})
+        self.assertEqual(ler_config(self.env), {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": ""})
 
     def test_salva_sem_mexer_no_resto(self):
         self.env.write_text("# meu comentário\nTESSERACT_CMD=C:\\Tess\\tesseract.exe\nATALHO=F8\n",
@@ -65,13 +66,58 @@ class TestConfig(unittest.TestCase):
         texto = self.env.read_text(encoding="utf-8")
         self.assertIn("# meu comentário", texto)
         self.assertIn("TESSERACT_CMD=C:\\Tess\\tesseract.exe", texto)
-        self.assertEqual(ler_config(self.env), {"ATALHO": "Ctrl+F9", "SELO_SEGUNDOS": "4.5"})
+        self.assertEqual(ler_config(self.env), {"ATALHO": "Ctrl+F9", "SELO_SEGUNDOS": "4.5", "BUILD_ATIVA": ""})
 
     def test_invalido_nao_grava_nada(self):
         self.env.write_text("ATALHO=F8\n", encoding="utf-8")
         erros = salvar_config({"ATALHO": "Ctrl+Banana", "SELO_SEGUNDOS": "90"}, self.env)
         self.assertEqual(set(erros), {"ATALHO", "SELO_SEGUNDOS"})
         self.assertEqual(self.env.read_text(encoding="utf-8"), "ATALHO=F8\n")
+
+
+class TestBuildEscolhida(unittest.TestCase):
+    """Na janela, clicar numa build faz o atalho avaliar só com ela."""
+
+    def setUp(self):
+        self.builds = carregar_builds()
+        self.pasta = tempfile.TemporaryDirectory()
+        self.env = Path(self.pasta.name) / ".env"
+
+    def tearDown(self):
+        self.pasta.cleanup()
+
+    def test_id_e_o_nome_do_arquivo(self):
+        self.assertIn("legacy_of_nightmares", {b["id"] for b in self.builds})
+
+    def test_escolhida_vazia_ou_que_sumiu_usa_todas(self):
+        self.assertEqual(builds_escolhidas(self.builds, ""), self.builds)
+        self.assertEqual(builds_escolhidas(self.builds, "build_apagada"), self.builds)
+
+    def test_so_a_escolhida(self):
+        usadas = builds_escolhidas(self.builds, "legacy_of_nightmares")
+        self.assertEqual([b["apelido"] for b in usadas], ["LoN"])
+
+    def test_gema_fora_da_lon_mostra_o_motivo_da_lon(self):
+        # O caso do Arthur: com LoN escolhida, o selo não pode falar da Dreadlands.
+        gema = {"nome": "Gem of Ease", "qualidade": "Legendary", "tipo": "Gem"}
+        usadas = builds_escolhidas(self.builds, "legacy_of_nightmares")
+        selo = montar_selo(Avaliacao(item=gema, resultados=avaliar_todas(gema, usadas)))
+        self.assertIn("LoN: Gema fora da build", texto_do_selo(selo))
+        self.assertNotIn("Dreadlands", texto_do_selo(selo))
+
+    def test_config_aceita_build_que_existe_e_vazio(self):
+        self.assertEqual(salvar_config({"BUILD_ATIVA": "legacy_of_nightmares"}, self.env), {})
+        self.assertEqual(ler_config(self.env)["BUILD_ATIVA"], "legacy_of_nightmares")
+        self.assertEqual(salvar_config({"BUILD_ATIVA": ""}, self.env), {})
+        self.assertEqual(ler_config(self.env)["BUILD_ATIVA"], "")
+
+    def test_config_recusa_build_que_nao_existe(self):
+        self.assertIn("BUILD_ATIVA", salvar_config({"BUILD_ATIVA": "inventada"}, self.env))
+
+    def test_historico_guarda_com_qual_build(self):
+        arquivo = Path(self.pasta.name) / "historico.jsonl"
+        historico.registrar(Avaliacao(), Selo(False, "X", []), arquivo, com="LoN")
+        self.assertEqual(historico.ler(1, arquivo)[0]["com"], "LoN")
 
 
 class TestFichaDaBuild(unittest.TestCase):

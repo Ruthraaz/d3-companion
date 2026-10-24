@@ -105,6 +105,11 @@ class Api:
             self._overlay.ligar()  # o overlay lê o .env só ao abrir
         return {"erros": erros}
 
+    def escolher_build(self, id_build: str) -> dict:
+        """Build que o F8 usa ("" = todas). Não reinicia o overlay: ele relê a
+        escolha a cada F8."""
+        return {"erros": salvar_config({"BUILD_ATIVA": id_build})}
+
     def estado(self) -> dict:
         return self._overlay.estado() | {"config": ler_config()}
 
