@@ -25,6 +25,9 @@ PASTA_BUILDS = Path(__file__).resolve().parent.parent / "builds"
 
 # O parser devolve o encaixe da arma ("1-Hand", "2-Hand"); a build usa "Weapon".
 ESPACO_DA_BUILD = {"1-Hand": "Weapon", "2-Hand": "Weapon"}
+# Todos os espaços que uma build pode definir (nomes do JSON).
+ESPACOS = ["Head", "Shoulders", "Neck", "Torso", "Hands", "Wrists", "Waist",
+           "Legs", "Feet", "Finger", "Weapon", "Off-Hand"]
 
 SOQUETE = "@soquete"
 
@@ -132,6 +135,37 @@ def avaliar(item: dict, build: dict) -> dict:
         "desejaveis": desejaveis,
         "afixos": obrigatorios["lista"] + desejaveis["lista"],
         "nota": nota,
+    }
+
+
+def ficha_da_build(build: dict) -> dict:
+    """A build do jeito que a janela mostra: por espaço, os itens e os rótulos
+    já somados com as regras de "todos_os_espacos" (as mesmas que o avaliador usa)."""
+    geral = build.get("todos_os_espacos", {})
+    definidos = build.get("espacos", {})
+    espacos = {}
+    # Espaço que a build não define NÃO é "não serve": o avaliador ainda aplica
+    # as regras de todos_os_espacos nele. "definido" diferencia os dois na tela.
+    for nome in ESPACOS + [n for n in definidos if n not in ESPACOS]:
+        espaco = definidos.get(nome, {})
+        espacos[nome] = {
+            "definido": nome in definidos,
+            "itens": espaco.get("itens", []),
+            "obrigatorios": [_rotulo(r) for r in geral.get("obrigatorios", []) + espaco.get("obrigatorios", [])],
+            "desejaveis": [_rotulo(r) for r in geral.get("desejaveis", []) + espaco.get("desejaveis", [])],
+            "exige_ancient": espaco.get("exige_ancient", build.get("exige_ancient", False)),
+        }
+    return {
+        "nome": build["nome"],
+        "apelido": build.get("apelido", build["nome"]),
+        "classe": build.get("classe"),
+        "exige_ancient": build.get("exige_ancient", False),
+        "gerais": {
+            "obrigatorios": [_rotulo(r) for r in geral.get("obrigatorios", [])],
+            "desejaveis": [_rotulo(r) for r in geral.get("desejaveis", [])],
+        },
+        "espacos": espacos,
+        "gemas": build.get("gemas", []),
     }
 
 

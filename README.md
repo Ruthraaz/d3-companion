@@ -38,7 +38,9 @@ A lógica (OCR, parser, avaliador) fica num **núcleo** sem interface (`src/nucl
 | 3 | Formato de build (JSON) + avaliador | ✅ funcionando |
 | 4 | Atalho + captura perto do cursor | ✅ funcionando |
 | 5 | Overlay em cima do jogo | ✅ funcionando |
-| | **Versão 1:** testar tudo dentro do jogo | ⏳ próxima |
+| | **Versão 1:** testar tudo dentro do jogo | ✅ testada em 24/10/2026 |
+| 6 | Janela principal (pywebview): builds no boneco, histórico, configurações | ✅ primeira versão |
+| 7 | Outras classes (só JSON de build novo) | ⏳ próxima |
 
 ## O que aprendemos na Etapa 1
 
@@ -167,6 +169,22 @@ Sem `rotulo`, o selo mostra o próprio modelo; sem `apelido`, o nome da build. T
 
 **Como as partes conversam:** o F8 é ouvido numa thread separada, que faz o trabalho pesado (print + OCR, ~1 s) sem travar a interface e manda o resultado pro selo por um *sinal* do Qt. O núcleo (`src/nucleo.py`) monta o texto e a posição do selo sem depender de interface, então tudo isso tem teste sem abrir janela.
 
+## Etapa 6: a janela principal
+
+`python src/janela.py` abre a janela e **liga o overlay junto** (fechar a janela desliga os dois). Três abas:
+
+- **Builds:** cada build num "boneco" com os 12 espaços. Verde = a build pede um item específico; dourado = qualquer item com os afixos; tracejado = a build não fala do espaço, então valem só as regras gerais (`todos_os_espacos`). Clicando num espaço aparecem os afixos obrigatórios, os desejáveis e as gemas.
+- **Histórico:** cada item avaliado no jogo, com a miniatura do recorte e o mesmo selo do overlay. Filtro "Serve / Não serve". Item novo chega sozinho (a janela confere a cada 1,5 s).
+- **Configurações:** atalho e tempo do selo, gravados no `.env` (o resto do arquivo fica intacto). Valor inválido não é gravado e a mensagem diz o porquê. As mensagens do overlay (ex.: "F8 ocupado") aparecem aqui também.
+
+**Como as partes conversam.** O overlay (Qt) e a janela (pywebview) querem, os dois, a thread principal — então são **dois processos**. A janela liga o `app.py` como processo filho; o overlay grava cada avaliação em `capturas/historico.jsonl` (uma linha JSON por item) e a janela lê esse arquivo. O JavaScript chama o Python pela ponte do pywebview (`window.pywebview.api`). Nada de rede nem servidor.
+
+**O que aprendemos:**
+- **O `python.exe` da `.venv` é só um lançador:** ele abre *outro* `python.exe`, e é esse filho que segura o atalho. Desligar só o processo que a janela abriu deixava o F8 ocupado; por isso o desligamento usa `taskkill /T` (derruba a árvore).
+- **Espaço que a build não define não é "não serve".** O avaliador ainda aplica as regras gerais nele (ex.: Destreza). A primeira versão da tela dizia o contrário; a `ficha_da_build` (no avaliador, testada) agora devolve os 12 espaços com `definido: true/false`.
+- **Nome de item vem do OCR**, então a página monta tudo com `textContent`, nunca `innerHTML`.
+- **Aberta no navegador comum, a página usa dados de exemplo** — dá pra mexer no visual sem jogo nem app.
+
 ## Como rodar (Windows)
 
 O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes prontos para as versões fixadas no `requirements.txt` (Pillow 10.4, NumPy 1.26).
@@ -190,7 +208,7 @@ O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes
    python src/avaliador.py samples/set_fiendish_grips.png    # recorte + OCR + parser + avaliador
    python src/app.py --testar samples/set_fiendish_grips.png # mostra o selo desse print no meio da tela
    ```
-5. **No jogo:** deixe o Diablo 3 em **Tela cheia em janela** (Windowed Fullscreen), rode `python src/app.py`, passe o mouse num item e aperte **F8**. O selo aparece ao lado da dica (e o resumo no terminal).
+5. **No jogo:** deixe o Diablo 3 em **Tela cheia em janela** (Windowed Fullscreen), rode `python src/janela.py` (janela + overlay) ou só `python src/app.py` (só o overlay), passe o mouse num item e aperte **F8**. O selo aparece ao lado da dica (e o resumo no terminal).
    Se outro programa já usar o F8, o app avisa quais teclas estão livres; troque com `ATALHO=` no `.env` (ex.: `ATALHO=Ctrl+F8`).
 6. Testes (não precisam do Tesseract, usam os textos salvos em `tests/ocr/` e `tests/ocr_recorte/`):
    ```

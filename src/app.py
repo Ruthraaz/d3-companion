@@ -34,6 +34,7 @@ from PIL import Image  # noqa: E402
 from PySide6.QtCore import QObject, QTimer, Signal  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
+import historico  # noqa: E402
 from avaliador import carregar_builds, resumo  # noqa: E402
 from atalho import ler_atalho, registrar, sugestoes_livres  # noqa: E402
 from captura import capturar_perto_do_cursor  # noqa: E402
@@ -79,7 +80,9 @@ def ouvir_atalho(ponte: Ponte, builds: list[dict], pronto: threading.Event, falh
         imagem, cursor, origem = capturar_perto_do_cursor()
         av = avaliar_print(imagem, cursor, builds)
         print("\n" + _terminal(av), flush=True)
-        ponte.mostrar.emit(montar_selo(av), caixa_na_tela(av, origem, cursor))
+        selo = montar_selo(av)
+        historico.registrar(av, selo)  # a janela principal lê daqui
+        ponte.mostrar.emit(selo, caixa_na_tela(av, origem, cursor))
 
 
 def main():

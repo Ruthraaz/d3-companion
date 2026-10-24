@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>D3 Companion</title>
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="marca">
+      <span class="marca-runa" aria-hidden="true"></span>
+      <span class="marca-nome">D3 Companion</span>
+    </div>
+    <nav class="abas" role="tablist">
+      <button class="aba ativa" data-aba="builds" role="tab">Builds</button>
+      <button class="aba" data-aba="historico" role="tab">Histórico</button>
+      <button class="aba" data-aba="config" role="tab">Configurações</button>
+    </nav>
+    <div class="estado" id="estado">
+      <span class="estado-ponto"></span>
+      <span class="estado-texto">Ligando o overlay…</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- BUILDS -->
+    <section class="painel ativo" id="painel-builds">
+      <div class="escolha-build" id="escolha-build"></div>
+      <div class="builds-corpo">
+        <div class="boneco-moldura">
+          <div class="boneco" id="boneco"></div>
+          <p class="legenda">
+            <span class="leg leg-item">item da build</span>
+            <span class="leg leg-livre">qualquer item com os afixos</span>
+            <span class="leg leg-geral">só as regras gerais</span>
+          </p>
+        </div>
+        <aside class="detalhe" id="detalhe"></aside>
+      </div>
+    </section>
+
+    <!-- HISTÓRICO -->
+    <section class="painel" id="painel-historico">
+      <div class="cabeca-painel">
+        <h2>Últimos itens avaliados</h2>
+        <p class="mudo">Cada vez que você aperta o atalho no jogo, o item aparece aqui.</p>
+      </div>
+      <div class="filtros" id="filtros">
+        <button class="filtro ativo" data-filtro="todos">Todos</button>
+        <button class="filtro" data-filtro="serve">Serve</button>
+        <button class="filtro" data-filtro="nao">Não serve</button>
+      </div>
+      <ol class="lista-historico" id="lista-historico"></ol>
+    </section>
+
+    <!-- CONFIGURAÇÕES -->
+    <section class="painel" id="painel-config">
+      <div class="cabeca-painel">
+        <h2>Configurações</h2>
+        <p class="mudo">Ficam no arquivo <code>.env</code>. Ao salvar, o overlay reinicia sozinho.</p>
+      </div>
+      <form class="form-config" id="form-config" novalidate>
+        <label class="campo">
+          <span class="campo-nome">Atalho</span>
+          <input name="ATALHO" autocomplete="off" spellcheck="false">
+          <span class="campo-dica">Tecla que avalia o item sob o mouse. Ex.: F8, Ctrl+F8, Alt+Q.</span>
+          <span class="campo-erro" data-erro="ATALHO"></span>
+        </label>
+        <label class="campo">
+          <span class="campo-nome">Tempo do selo (segundos)</span>
+          <input name="SELO_SEGUNDOS" inputmode="decimal" autocomplete="off">
+          <span class="campo-dica">Quanto tempo o selo fica na tela, de 1 a 60.</span>
+          <span class="campo-erro" data-erro="SELO_SEGUNDOS"></span>
+        </label>
+        <div class="acoes">
+          <button type="submit" class="botao">Salvar</button>
+          <button type="button" class="botao botao-leve" id="reiniciar">Reiniciar overlay</button>
+          <span class="aviso" id="aviso-config" role="status"></span>
+        </div>
+      </form>
+      <details class="log">
+        <summary>Mensagens do overlay</summary>
+        <pre id="log"></pre>
+      </details>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -69,12 +69,22 @@ trabalho extra agora, não feche essa porta:
 | 4 | Atalho global + captura perto do cursor (`src/app.py`, `src/captura.py`) | ✅ (testado no jogo em 24/10/2026) |
 | 5 | Overlay em cima do jogo (PySide6: `src/overlay.py`, núcleo em `src/nucleo.py`) | ✅ (testado no jogo com gemas) |
 | — | **Versão 1:** Arthur testa F8 + selo dentro do jogo; corrigir o que aparecer | ✅ testado no jogo em 24/10/2026 (gemas + equipamentos) |
+| 6 | Janela principal (pywebview: `src/janela.py`, página em `src/web/`) | ✅ primeira versão (falta o Arthur usar) |
+| 7 | Outras classes: só builds novas em JSON | próxima |
+
+### Etapa 6 — notas
+- `python src/janela.py` liga o overlay (`app.py`) como **processo filho**: Qt e pywebview querem a thread
+  principal. Desligar usa `taskkill /T` (o python.exe da .venv é lançador; o filho segura o atalho).
+- Overlay → janela: `capturas/historico.jsonl` (`src/historico.py`). Janela → .env: `src/config.py`
+  (só ATALHO e SELO_SEGUNDOS; o resto do arquivo fica intacto). Build pra tela: `avaliador.ficha_da_build`.
+- Página: só `textContent` (nome de item vem do OCR). Fora do pywebview usa dados de exemplo (`apiDeExemplo`).
+- Ainda não tem: editar build pela janela (decisão da v1: builds só no JSON), screenshot no README.
 
 Em 24/10/2026 o selo dos 7 equipamentos de `samples/` foi conferido fora do jogo (mesmo caminho do F8)
 e saiu certo: sets da build certa, lendário fora da build com "Não serve" + motivo, raro com ✓/✗ por afixo.
 No jogo (mesmo dia): corrigidos nome de set com "Ignores Durability Loss", gema lendária encaixada
 (conta como encaixe) e selo tampando a dica do item equipado (`grupo_de_dicas`). Limitação aberta:
-gema comum encaixada é lida como afixo. Próximo: Arthur revisar gemas/itens das builds; depois, janela principal.
+gema comum encaixada é lida como afixo. Pendente do Arthur: revisar gemas/itens das builds.
 
 ### Etapa 5 — notas
 - Builds ganharam `apelido` (nome curto no selo) e `rotulo` por afixo (ex.: "Destreza"). Sem eles, usa nome/modelo.
