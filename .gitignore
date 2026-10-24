@@ -8,3 +8,6 @@ __pycache__/
 
 # Prints e recortes salvos pelo app (Etapa 4)
 capturas/
+
+# Dados da API da Blizzard guardados pelo app (src/blizzard.py)
+dados/

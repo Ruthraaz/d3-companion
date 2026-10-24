@@ -37,12 +37,18 @@ Na versão 1 as builds são editadas direto nos arquivos JSON (sem janela).
 - Estilo pode lembrar o Diablo (escuro, dourado, cores de raridade), mas sem
   copiar logo, fonte ou arte da Blizzard.
 
-### Depois da versão 1 (nesta ordem)
-1. Janela principal (pywebview).
-2. Outras classes: só escrever novas builds em JSON, sem mudar código.
-3. Importar builds de sites (Maxroll etc.) como tradutores pro formato próprio.
-4. Avaliação automática: detectar a dica sozinho, sem atalho.
-5. Ler os itens equipados pela API da Battle.net.
+### Depois da versão 1
+Feitos: janela principal (pywebview), outras classes (só JSON), avaliação automática
+(feita mas **não funcionou no jogo**; ver notas).
+
+**Novo foco (decidido pelo Arthur em 24/10/2026: "estamos complicando"):** puxar uma build
+pronta de um site, mostrar no app e dizer o que é daquela build. Nesta ordem:
+1. Chave da Blizzard + dados do jogo (`src/blizzard.py`): habilidades, itens, ícones. ✅
+2. Tela nova: boneco com os itens da build + barra de habilidades (6 ativas + 4 passivas), com ícones.
+3. Importar do Maxroll: colar o link, a build aparece no boneco (falta ver como o site guarda os dados).
+4. Herói real vs. build: BattleTag → itens equipados pela API → o que está certo / o que falta.
+   (A API só mostra o equipado, e atualiza ao sair do jogo; mochila e baú continuam no F8.)
+Não complicar: o "passar o mouse" fica parado; o F8 continua.
 
 ### Quem usa
 Por enquanto só o Arthur. Se ficar bom, pode virar público. Então, sem fazer
@@ -57,6 +63,7 @@ trabalho extra agora, não feche essa porta:
 - O overlay é uma **janela separada**, transparente, sempre por cima e que deixa o clique passar.
   O jogo precisa estar em **Tela cheia em janela** (Windowed Fullscreen).
 - Segredos (caminhos locais, chaves da Battle.net) ficam no `.env`, que nunca vai pro Git.
+  Nunca mostrar o valor das chaves (nem em log/terminal); no máximo "existe, N caracteres".
 - **Python 3.12** (o 3.15 não tem pacotes pras versões fixadas). Projeto fica em `D:\Projetos\d3-companion`.
 - A seção **"Stat Changes if Equipped"** é ignorada: o app compara com a build, não com o item equipado.
 
@@ -74,7 +81,23 @@ trabalho extra agora, não feche essa porta:
 | — | Avaliação automática ao passar o mouse (`src/vigia.py`, `captura.olhada_rapida`) | ✅ (falta o Arthur testar no jogo) |
 | 8 | Importar builds de sites (Maxroll etc.) como tradutores | próxima |
 
+### Dados da Blizzard (passo 1 do novo foco) — notas
+- `src/blizzard.py`: token client_credentials em `https://oauth.battle.net/token`, API em
+  `https://us.api.blizzard.com/d3/data/...`. Só biblioteca padrão (urllib), sem `requests`.
+- Cache de cada resposta em `dados/blizzard/<locale>/` (fora do Git). Índice de itens (~2192, de
+  135 tipos, ~20 s na 1ª vez) em `dados/blizzard/indice_de_itens.json`. `--atualizar` apaga o cache.
+- Nomes em inglês (como o jogo/OCR/builds); `nome_pt`/`descricao_pt` (pt_BR) pra mostrar.
+- Ícones: só o endereço (`blzmedia-a.akamaihd.net/d3/icons/{skills/64|items/large}/<icon>.png`),
+  carregado direto da Blizzard; **nunca salvar a imagem no projeto** (proposto ao Arthur, falta ele confirmar).
+- `chave_do_nome`: troca apóstrofo curvo ANTES de tirar acento (senão o ’ some e "Zei’s" não acha).
+- `python src/blizzard.py` confere os itens/gemas das builds contra o índice (com sugestão).
+- Testes com uma Blizzard falsa (`FalsaBlizzard`), sem internet nem chaves.
+
 ### Avaliação automática — notas
+- **Não mostrou selo no jogo do Arthur** (24/10/2026). Overlay subia sem erro; a simulação com
+  print de samples/ funcionava. Suspeita: na tela inteira, o fundo escuro/inventário gruda na
+  dica e o bloco preto não passa no filtro. Diagnóstico ficou em `capturas/diagnostico.bat`,
+  mas o Arthur decidiu focar em outra coisa. Retomar só se ele pedir.
 - Pedido do Arthur (24/10/2026): "só passar o mouse por cima do item" em vez de apertar F8.
 - `app.vigiar` (thread): a cada 0,25 s, print + `olhada_rapida` (~40 ms) → assinatura (posição,
   tamanho, hash do bloco preto, prefixada com BUILD_ATIVA) → `Vigia.olhar` decide

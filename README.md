@@ -41,8 +41,11 @@ A lógica (OCR, parser, avaliador) fica num **núcleo** sem interface (`src/nucl
 | | **Versão 1:** testar tudo dentro do jogo | ✅ testada em 24/10/2026 |
 | 6 | Janela principal (pywebview): builds no boneco, histórico, configurações | ✅ primeira versão |
 | 7 | Outras classes (só JSON de build novo) + conferência das builds | ✅ funcionando |
-| — | Avaliação automática: passar o mouse no item, sem apertar nada | ✅ falta testar no jogo |
-| 8 | Importar builds de sites (Maxroll etc.) | ⏳ próxima |
+| — | Avaliação automática: passar o mouse no item, sem apertar nada | ⏸️ não funcionou no jogo, parada |
+| 8a | Dados oficiais da Blizzard: habilidades, itens, ícones (`src/blizzard.py`) | ✅ funcionando |
+| 8b | Tela nova: boneco + barra de habilidades com ícones | ⏳ próxima |
+| 8c | Importar build do Maxroll (colar o link) | ⏳ |
+| 8d | Seu herói (BattleTag) vs. a build | ⏳ |
 
 ## O que aprendemos na Etapa 1
 
@@ -208,7 +211,29 @@ Chave que começa com `_` é comentário (`"_nota": "..."`): o JSON não tem com
 
 O que a conferência **não** pega: um `modelo` escrito certo no formato mas que não bate com nenhum afixo do jogo (ex.: `"+# Strenght"`). Pra isso não tem lista oficial de afixos no projeto; o jeito é testar com um print (`python src/avaliador.py <print.png>`).
 
+## Dados oficiais da Blizzard
+
+O app busca na API oficial da Blizzard as habilidades (com runas), os itens e os ícones do jogo, com nome e descrição em português. É a base pra mostrar o boneco e a barra de habilidades de cada build.
+
+**Pegar as chaves (uma vez só):**
+1. Entre em https://develop.battle.net com a sua conta Battle.net. Pode pedir o autenticador.
+2. **API Access → Create Client**. Nome: `D3 Companion`. Redirect URL: `http://localhost`. Marque que não tem Service URL.
+3. Copie o **Client ID** e o **Client Secret** para o `.env`:
+   ```
+   BLIZZARD_CLIENT_ID=...
+   BLIZZARD_CLIENT_SECRET=...
+   ```
+   Essas chaves são como senha: ficam só no `.env` (fora do Git).
+
+**Testar:**
+```
+python src/blizzard.py
+```
+Na primeira vez ele baixa a lista de itens do jogo (~2200 itens, ~20 s) e guarda em `dados/blizzard/` (fora do Git). Depois é instantâneo. Ele também confere se os itens e gemas das suas builds existem no jogo e sugere o nome certo se tiver erro de digitação. Os ícones não são baixados: o app guarda só o endereço da imagem no servidor da Blizzard.
+
 ## Avaliação automática (passar o mouse)
+
+> ⚠️ Feita, mas **não funcionou no jogo** no primeiro teste. Está parada; o F8 continua sendo o jeito de avaliar.
 
 Não precisa apertar nada: com o Diablo III na frente, **passe o mouse num item** e o selo aparece sozinho. Ele fica enquanto a dica estiver na tela e some quando ela some. O F8 continua funcionando junto. Liga e desliga em **Configurações → Avaliar sozinho ao passar o mouse** (ou `AUTOMATICO=sim`/`nao` no `.env`).
 
