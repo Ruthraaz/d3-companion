@@ -183,6 +183,16 @@ def e_de_seguidor(planner: dict) -> bool:
     return bool(SEGUIDORES.search(planner["_nome"]))
 
 
+def builds_do_heroi(planners: list[dict], texto: str) -> list[dict]:
+    """Só as builds de herói que o app conhece. Num guia, só as da classe do
+    guia: o de Witch Doctor traz um "DH Speed" de Demon Hunter de exemplo."""
+    herois = [p for p in planners if not e_de_seguidor(p) and classe_do_planner(p)]
+    guia = guia_do_link(link_de_guia(texto) or "")
+    if guia:
+        herois = [p for p in herois if classe_do_planner(p) == guia["classe"]]
+    return herois
+
+
 def _baixar(url: str, abrir=urllib.request.urlopen):
     try:
         with abrir(urllib.request.Request(url, headers=CABECALHO), timeout=30) as r:

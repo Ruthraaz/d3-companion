@@ -20,7 +20,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
 
 from avaliador import problemas_da_build  # noqa: E402
-from maxroll import (ErroMaxroll, baixar_planner, catalogo, classe_do_planner, converter,  # noqa: E402
+from maxroll import (ErroMaxroll, baixar_planner, builds_do_heroi, catalogo, classe_do_planner, converter,  # noqa: E402
                      dados_do_planejador, e_de_seguidor, guia_do_link, link_de_guia, planners_do_link,
                      salvar_build,
                      id_do_link, modelo_do_formato, nome_do_arquivo, nomes_dos_perfis, regras_do_item)
@@ -285,6 +285,16 @@ class TestTiposDePlanner(unittest.TestCase):
         self.assertTrue(e_de_seguidor({"_nome": "GR Speed Enchantress"}))
         self.assertTrue(e_de_seguidor({"_nome": "T16 templar"}))
         self.assertFalse(e_de_seguidor({"_nome": "Sanc Shadow Impale"}))
+
+    def test_guia_so_traz_builds_da_classe_dele(self):
+        # O guia de Arachyr Spiders (Witch Doctor) mostra um "DH Speed" de Demon Hunter no meio.
+        wd = {"_nome": "Arachyr Spiders S27", "class": "witchdoctor", "profiles": [{}]}
+        dh = {"_nome": "DH Speed (non-Resource)", "class": "demonhunter", "profiles": [{}]}
+        seguidor = {"_nome": "GR Speed Enchantress", "class": "wizard", "profiles": [{}]}
+        guia = "https://maxroll.gg/d3/guides/arachyr-corpse-spiders-witch-doctor-guide"
+        self.assertEqual(builds_do_heroi([wd, dh, seguidor], guia), [wd])
+        # Link de planner: não tem classe do guia, vale qualquer herói.
+        self.assertEqual(builds_do_heroi([dh], "https://maxroll.gg/d3/planner/1"), [dh])
 
     def test_classe_desconhecida(self):
         self.assertIsNone(classe_do_planner({"class": "paladin", "profiles": [{}]}))
