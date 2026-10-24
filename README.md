@@ -43,8 +43,8 @@ A lógica (OCR, parser, avaliador) fica num **núcleo** sem interface (`src/nucl
 | 7 | Outras classes (só JSON de build novo) + conferência das builds | ✅ funcionando |
 | — | Avaliação automática: passar o mouse no item, sem apertar nada | ⏸️ não funcionou no jogo, parada |
 | 8a | Dados oficiais da Blizzard: habilidades, itens, ícones (`src/blizzard.py`) | ✅ funcionando |
-| 8b | Tela nova: boneco + barra de habilidades com ícones | ⏳ próxima |
-| 8c | Importar build do Maxroll (colar o link) | ⏳ |
+| 8b | Tela nova: boneco + barra de habilidades com ícones | ✅ funcionando |
+| 8c | Importar build do Maxroll (`src/maxroll.py` pronto; falta o botão na janela) | 🔨 em andamento |
 | 8d | Seu herói (BattleTag) vs. a build | ⏳ |
 
 ## O que aprendemos na Etapa 1
@@ -230,6 +230,45 @@ O app busca na API oficial da Blizzard as habilidades (com runas), os itens e os
 python src/blizzard.py
 ```
 Na primeira vez ele baixa a lista de itens do jogo (~2200 itens, ~20 s) e guarda em `dados/blizzard/` (fora do Git). Depois é instantâneo. Ele também confere se os itens e gemas das suas builds existem no jogo e sugere o nome certo se tiver erro de digitação. Os ícones não são baixados: o app guarda só o endereço da imagem no servidor da Blizzard.
+
+## A tela da build
+
+Na aba **Builds**, cada build aparece:
+- **no boneco**: cada espaço com o ícone do item (os dois anéis separados, um de cada lado);
+- **embaixo**: o cubo de Kanai e as gemas lendárias;
+- **na barra de habilidades**: as 6 ativas (botão esquerdo, botão direito, 1 a 4) com a runa, e as 4 passivas.
+
+Clicar numa habilidade mostra no painel da direita a descrição em português e o que a runa faz. Ícones e textos vêm da Blizzard. Se faltar a chave ou a internet, a tela aparece sem ícones, com um aviso. Build que veio do Maxroll mostra a fonte e um botão pra abrir o guia no navegador.
+
+**Item do cubo conta como "da build":** se o item que você avaliar com o F8 for um dos itens do cubo da build, o selo diz "Vai no cubo de Kanai". Afixos e Ancient não importam nesse caso, porque o que vale é o poder lendário.
+
+### Campos novos no JSON da build (todos opcionais)
+```json
+"cubo": { "arma": "Odyssey's End", "armadura": "Mantle of Channeling", "joia": "Ring of Royal Grandeur" },
+"habilidades": {
+  "ativas": [{ "habilidade": "multishot", "runa": "a" }],
+  "passivas": ["cull-the-weak"]
+},
+"fonte": { "site": "maxroll", "planner": 345357607, "perfil": "Sanc: Solo Push Odyssey", "link": "https://maxroll.gg/d3/planner/345357607" }
+```
+- **Habilidades:** o código da Blizzard em inglês com hífen (`smoke-screen`), até 6 ativas e 4 passivas, na ordem botão esquerdo, botão direito, 1, 2, 3, 4.
+- **Runa:** uma letra de `a` a `e`, a mesma que a Blizzard e o Maxroll usam.
+
+## Builds do Maxroll
+
+O Maxroll não tem API oficial. O app lê o mesmo endereço que a página do guia usa pra mostrar a build, **uma build por vez, só quando você pede**. Os itens vêm com o código da Blizzard, e o app acha o nome, o ícone e a descrição.
+
+```
+python src/maxroll.py https://maxroll.gg/d3/planner/345357607               # mostra os perfis e a build
+python src/maxroll.py https://maxroll.gg/d3/planner/345357607 --perfil 3 --salvar  # grava em builds/
+```
+Cada build do Maxroll tem vários **perfis** (push, speed, bounties…); `--perfil` escolhe qual. O link do planejador aparece no guia ao clicar na build e em "Open in Planner".
+
+A build **Unhallowed** já recebeu do guia UE Multishot do Maxroll (perfil *Solo Push Odyssey*):
+- as habilidades e o cubo;
+- os itens que faltavam: amuleto, cintura, braçadeiras, anéis, arma e mão secundária.
+
+Os itens, regras e gemas que você já tinha ficaram como estavam; a diferença com o guia está anotada no arquivo (`_nota`).
 
 ## Avaliação automática (passar o mouse)
 

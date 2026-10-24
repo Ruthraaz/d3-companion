@@ -44,8 +44,8 @@ Feitos: janela principal (pywebview), outras classes (só JSON), avaliação aut
 **Novo foco (decidido pelo Arthur em 24/10/2026: "estamos complicando"):** puxar uma build
 pronta de um site, mostrar no app e dizer o que é daquela build. Nesta ordem:
 1. Chave da Blizzard + dados do jogo (`src/blizzard.py`): habilidades, itens, ícones. ✅
-2. Tela nova: boneco com os itens da build + barra de habilidades (6 ativas + 4 passivas), com ícones.
-3. Importar do Maxroll: colar o link, a build aparece no boneco (falta ver como o site guarda os dados).
+2. Tela nova: boneco com os itens da build + barra de habilidades (6 ativas + 4 passivas), com ícones. ✅
+3. Importar do Maxroll: `src/maxroll.py` pronto (CLI). Falta: campo "colar link" na janela + escolher perfil.
 4. Herói real vs. build: BattleTag → itens equipados pela API → o que está certo / o que falta.
    (A API só mostra o equipado, e atualiza ao sair do jogo; mochila e baú continuam no F8.)
 Não complicar: o "passar o mouse" fica parado; o F8 continua.
@@ -80,6 +80,20 @@ trabalho extra agora, não feche essa porta:
 | 7 | Outras classes: só builds novas em JSON (+ conferência das builds) | ✅ |
 | — | Avaliação automática ao passar o mouse (`src/vigia.py`, `captura.olhada_rapida`) | ✅ (falta o Arthur testar no jogo) |
 | 8 | Importar builds de sites (Maxroll etc.) como tradutores | próxima |
+
+### Maxroll + tela da build (passos 2 e 3) — notas
+- Ícones da Blizzard: Arthur aprovou ("pode prosseguir"). Só o endereço, carregado da Blizzard; nunca salvar.
+- Maxroll: `https://planners.maxroll.gg/profiles/load/d3/<n>` (o mesmo que o embed do guia usa); `data` é
+  JSON em texto com `profiles[]` (skills `[slug_sem_hifen, letra]`, passives, kanai, items por espaço com
+  id da Blizzard e gems). Nomes: `assets-ng.maxroll.gg/d3planner/data.json` (items é LISTA com `ids`
+  alternativos; legendaryGems por chave curta "zei"), guardado reduzido em `dados/maxroll/`.
+- Letra da runa do Maxroll = `type` da runa na Blizzard (conferido: multishot a=Full Broadside, d=Fire at Will).
+- Ordem das ativas no Maxroll: botão esq., dir., 1–4 (`TECLAS` no app.js).
+- Guias atuais do Maxroll não têm Dreadlands Strafe nem LoN de DH: essas builds seguem sem habilidades.
+- Build ganhou `cubo`, `habilidades`, `fonte` (conferidos em `problemas_da_build`). Item do cubo = "da build"
+  no avaliador, sem olhar afixo/Ancient. Unhallowed foi completada com o perfil Solo Push Odyssey (ver `_nota`).
+- Janela: `Api.visual(id)` → `blizzard.visual_da_build` (ícones + pt); `Api.abrir_link` só aceita maxroll.gg.
+- Cuidado no `el()` do app.js: qualquer valor vira atributo (`disabled: null` desativa!). Use spread condicional.
 
 ### Dados da Blizzard (passo 1 do novo foco) — notas
 - `src/blizzard.py`: token client_credentials em `https://oauth.battle.net/token`, API em

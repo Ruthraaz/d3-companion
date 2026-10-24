@@ -40,8 +40,9 @@ class TestSelo(unittest.TestCase):
         selo = montar_selo(avaliacao("lendario_demon_machine"))
         linhas = texto_do_selo(selo).splitlines()
         self.assertEqual(linhas[1], "✅ Dreadlands · Destreza ✓  Vitalidade ✓  Dano da arma ✓  Encaixe ✗")
-        self.assertEqual(linhas[2], "✅ Unhallowed · Destreza ✓  Vitalidade ✓  Dano da arma ✓  Encaixe ✗")
-        self.assertEqual(len(linhas), 3)  # LoN não bate (precisa ser Ancient)
+        # LoN não bate (precisa ser Ancient) e a Unhallowed pede Yang's Recurve
+        # (arma do guia do Maxroll).
+        self.assertEqual(len(linhas), 2)
 
     def test_nao_serve_mostra_o_motivo(self):
         selo = montar_selo(avaliacao("lendario_cloak_garwulf"))

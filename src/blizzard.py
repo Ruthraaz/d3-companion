@@ -172,11 +172,12 @@ class Blizzard:
         return resultado
 
     def runas(self, classe: str, slug: str) -> list[dict]:
-        """As 5 runas de uma habilidade ativa: slug, nome, nome_pt, descricao_pt."""
+        """As 5 runas de uma habilidade ativa: letra (a-e, como a build guarda),
+        slug, nome, nome_pt, descricao_pt."""
         caminho = f"/d3/data/hero/{CLASSES[classe]}/skill/{slug}"
         en, pt = self.pegar(caminho, "en_US"), self.pegar(caminho, "pt_BR")
         em_pt = {r["type"]: r for r in pt.get("runes", [])}
-        return [{"slug": r["slug"], "nome": r["name"],
+        return [{"letra": r["type"], "slug": r["slug"], "nome": r["name"],
                  "nome_pt": em_pt.get(r["type"], r)["name"],
                  "descricao_pt": em_pt.get(r["type"], r).get("description", "")}
                 for r in en.get("runes", [])]
@@ -215,6 +216,43 @@ class Blizzard:
         """O item completo (atributos, set, etc.) pelo nome, ou None."""
         achado = self.item(nome)
         return self.pegar("/d3/data/" + achado["caminho"]) if achado else None
+
+
+def visual_da_build(build: dict, api: "Blizzard") -> dict:
+    """Ícones e textos em português pra janela mostrar a build:
+
+      itens: {nome do item: {"nome", "icone"}} (espaços, cubo e gemas);
+             item que a Blizzard não conhece fica com icone None;
+      habilidades: {"ativas": [...], "passivas": [...]}, cada uma com nome,
+             nome_pt, icone, descricao_pt e, nas ativas, a runa escolhida.
+    """
+    indice = api.indice_de_itens()
+    nomes = [n for e in build.get("espacos", {}).values() for n in e.get("itens", [])]
+    nomes += list(build.get("cubo", {}).values()) + build.get("gemas", [])
+    itens = {}
+    for nome in nomes:
+        achado = indice.get(chave_do_nome(nome))
+        itens[nome] = {"nome": nome, "icone": achado["icone"] if achado else None}
+
+    escolhidas = build.get("habilidades", {})
+    habilidades = {"ativas": [], "passivas": []}
+    if escolhidas.get("ativas") or escolhidas.get("passivas"):
+        da_classe = api.habilidades(build["classe"])
+        por_slug = {h["slug"]: h for tipo in ("ativas", "passivas") for h in da_classe[tipo]}
+        for ativa in escolhidas.get("ativas", []):
+            h = por_slug.get(ativa["habilidade"])
+            if h is None:  # escrita errada na build: mostra o nome cru, sem ícone
+                habilidades["ativas"].append({"slug": ativa["habilidade"], "nome": ativa["habilidade"],
+                                              "nome_pt": ativa["habilidade"], "icone": None,
+                                              "descricao_pt": "", "runa": None})
+                continue
+            runa = next((r for r in api.runas(build["classe"], h["slug"])
+                         if r["letra"] == ativa.get("runa")), None)
+            habilidades["ativas"].append(h | {"runa": runa})
+        for slug in escolhidas.get("passivas", []):
+            habilidades["passivas"].append(por_slug.get(slug) or {
+                "slug": slug, "nome": slug, "nome_pt": slug, "icone": None, "descricao_pt": ""})
+    return {"itens": itens, "habilidades": habilidades}
 
 
 def itens_desconhecidos(build: dict, indice: dict[str, dict]) -> list[str]:

@@ -26,6 +26,8 @@ const estado = {
   build: 0,          // índice da build mostrada no boneco
   ativa: "",         // id da build que o atalho usa ("" = todas); fica no .env (BUILD_ATIVA)
   espaco: "Head",    // espaço aberto no painel de detalhe
+  habilidade: null,  // {tipo: "ativas"|"passivas", i}: habilidade aberta no detalhe (no lugar do espaço)
+  visual: {},        // id da build -> ícones e textos da Blizzard ("carregando" enquanto busca)
   historico: [],
   filtro: "todos",
   miniaturas: {},    // nome do arquivo -> data URI (pede ao Python uma vez só)
@@ -51,6 +53,18 @@ function el(tag, props = {}, ...filhos) {
 
 function trocar(no, ...filhos) {
   no.replaceChildren(...filhos.flat(Infinity).filter(Boolean));
+}
+
+// Ícone carregado do servidor da Blizzard (nunca salvo no projeto). Sem
+// endereço, ou se a imagem não abrir, fica um quadrado vazio do mesmo tamanho.
+function icone(url, classe = "") {
+  const caixa = el("span", { class: `icone ${classe}`, "aria-hidden": "true" });
+  if (url) {
+    const img = el("img", { src: url, alt: "", loading: "lazy", draggable: "false" });
+    img.addEventListener("error", () => img.remove());
+    caixa.append(img);
+  }
+  return caixa;
 }
 
 function hora(iso) {
@@ -115,10 +129,47 @@ function desenharBuilds() {
       )),
   );
   const com = todas ? "todas as builds" : estado.builds[estado.build].apelido;
+  const fonte = estado.builds[estado.build].fonte;
   trocar(document.getElementById("avaliando"),
-    "O atalho avalia o item com ", el("strong", {}, com), ".");
+    "O atalho avalia o item com ", el("strong", {}, com), ".",
+    fonte && fonte.link && el("span", { class: "fonte" },
+      ` Fonte: ${fonte.site === "maxroll" ? "Maxroll" : fonte.site}`,
+      fonte.perfil && ` · ${fonte.perfil}`, " ",
+      el("button", { class: "link", type: "button", onclick: () => estado.api.abrir_link(fonte.link) },
+        "abrir no navegador")));
+  desenharVisual();
+  carregarVisual(estado.builds[estado.build]);
+}
+
+function desenharVisual() {
   desenharBoneco();
+  desenharExtras();
+  desenharHabilidades();
   desenharDetalhe();
+  const v = visualDa(estado.builds[estado.build]);
+  const aviso = document.getElementById("aviso-visual");
+  aviso.hidden = !v.erro;
+  aviso.textContent = v.erro ? `Sem ícones da Blizzard: ${v.erro}` : "";
+}
+
+// Ícones e textos em português vêm da Blizzard pelo Python (com cache em
+// dados/). Desenha primeiro sem ícone e redesenha quando chegam.
+async function carregarVisual(build) {
+  if (build.id in estado.visual) return;
+  estado.visual[build.id] = "carregando";
+  const v = await estado.api.visual(build.id);
+  estado.visual[build.id] = v;
+  if (estado.builds[estado.build].id === build.id) desenharVisual();
+}
+
+function visualDa(build) {
+  const v = estado.visual[build.id];
+  return v && v !== "carregando" ? v : { itens: {}, habilidades: { ativas: [], passivas: [] }, carregando: v === "carregando" };
+}
+
+function iconeDoItem(nome) {
+  const v = visualDa(estado.builds[estado.build]);
+  return (v.itens && v.itens[nome] && v.itens[nome].icone) || null;
 }
 
 async function escolherBuild(id) {
@@ -134,26 +185,99 @@ function apelidoAtivo(config) {
   return b ? b.apelido : "todas as builds";
 }
 
+// Os itens que aparecem num lugar do boneco. Com dois anéis na build (ex.:
+// Focus e Restraint), cada mão mostra um; senão, as duas mostram a lista.
+function itensDoLugar(espaco, area) {
+  if (area.startsWith("Finger") && espaco.itens.length === 2) {
+    return [espaco.itens[area === "FingerL" ? 0 : 1]];
+  }
+  return espaco.itens;
+}
+
 function desenharBoneco() {
   const build = estado.builds[estado.build];
   trocar(document.getElementById("boneco"), BONECO.map(([chave, area]) => {
     const espaco = build.espacos[chave];
-    const classe = !espaco.definido ? "geral" : espaco.itens.length ? "com-item" : "livre";
-    const item = espaco.itens.length ? espaco.itens.join(" ou ") : "Qualquer item";
+    const itens = itensDoLugar(espaco, area);
+    const classe = !espaco.definido ? "geral" : itens.length ? "com-item" : "livre";
+    const item = itens.length ? itens.join(" ou ") : "Qualquer item";
     const n = espaco.obrigatorios.length + espaco.desejaveis.length;
     const afixos = n ? `${n} afixo${n > 1 ? "s" : ""}` : "";
+    const selecionado = chave === estado.espaco && !estado.habilidade;
     return el("button", {
-      class: `espaco ${classe}` + (chave === estado.espaco ? " selecionado" : ""),
+      class: `espaco ${classe}` + (selecionado ? " selecionado" : ""),
       style: `grid-area: ${area}`,
       title: espaco.definido ? item : "A build não fala deste espaço: valem só as regras gerais",
-      onclick: () => { estado.espaco = chave; desenharBoneco(); desenharDetalhe(); },
+      onclick: () => { estado.espaco = chave; estado.habilidade = null; desenharVisual(); },
     },
-      el("span", { class: "espaco-nome" }, ESPACOS[chave] || chave),
-      el("span", { class: "espaco-item" }, item),
-      afixos && el("span", { class: "espaco-afixos" }, afixos),
+      icone(itens.length ? iconeDoItem(itens[0]) : null, "icone-item"),
+      el("span", { class: "espaco-texto" },
+        el("span", { class: "espaco-nome" }, ESPACOS[chave] || chave),
+        el("span", { class: "espaco-item" }, item),
+        afixos && el("span", { class: "espaco-afixos" }, afixos),
+      ),
       espaco.exige_ancient && el("span", { class: "selo-ancient", title: "Precisa ser Ancient" }, "ANC"),
     );
   }));
+}
+
+const PARTES_DO_CUBO = { arma: "Arma", armadura: "Armadura", joia: "Joia" };
+
+function desenharExtras() {
+  const build = estado.builds[estado.build];
+  const cubo = build.cubo || {};
+  trocar(document.getElementById("cubo"), Object.keys(cubo).length
+    ? Object.entries(PARTES_DO_CUBO).filter(([parte]) => cubo[parte]).map(([parte, rotulo]) =>
+        el("div", { class: "mini-item", title: `${rotulo}: ${cubo[parte]}` },
+          icone(iconeDoItem(cubo[parte]), "icone-mini"),
+          el("span", {}, el("span", { class: "mini-rotulo" }, rotulo), cubo[parte])))
+    : el("p", { class: "nada" }, "A build não diz."));
+  trocar(document.getElementById("gemas"), build.gemas.length
+    ? build.gemas.map(g => el("div", { class: "mini-item", title: g },
+        icone(iconeDoItem(g), "icone-mini"), el("span", { class: "t-lendario" }, g)))
+    : el("p", { class: "nada" }, "A build não diz."));
+}
+
+// Tecla de cada lugar da barra, na ordem em que o Maxroll guarda as habilidades
+// (botão esquerdo e direito do mouse, depois 1 a 4).
+const TECLAS = ["Esq.", "Dir.", "1", "2", "3", "4"];
+
+function desenharHabilidades() {
+  const build = estado.builds[estado.build];
+  const v = visualDa(build);
+  const escolhidas = build.habilidades || { ativas: [], passivas: [] };
+  const vazio = !escolhidas.ativas.length && !escolhidas.passivas.length;
+  const botao = (tipo, i, h, rotulo) => el("button", {
+    class: "habilidade" + (h ? "" : " vazia")
+      + (estado.habilidade && estado.habilidade.tipo === tipo && estado.habilidade.i === i ? " selecionado" : ""),
+    ...(h ? {} : { disabled: "" }),  // el() grava qualquer valor; só põe quando vazio
+    title: h ? h.nome_pt : "",
+    onclick: () => { estado.habilidade = { tipo, i }; desenharVisual(); },
+  },
+    icone(h && h.icone, tipo === "passivas" ? "icone-passiva" : "icone-habilidade"),
+    rotulo && el("span", { class: "tecla" }, rotulo),
+    el("span", { class: "habilidade-nome" }, h ? h.nome_pt : ""),
+    h && h.runa && el("span", { class: "habilidade-runa" }, h.runa.nome_pt),
+  );
+
+  // Enquanto a Blizzard não respondeu, mostra o código da build (sem ícone).
+  const daBuild = (tipo, i) => {
+    if (v.habilidades[tipo][i]) return v.habilidades[tipo][i];
+    const cru = escolhidas[tipo][i];
+    if (!cru) return null;
+    const slug = typeof cru === "string" ? cru : cru.habilidade;
+    return { slug, nome: slug, nome_pt: slug, icone: null, descricao_pt: "", runa: null };
+  };
+  const ativas = document.getElementById("barra-ativas");
+  const passivas = document.getElementById("barra-passivas");
+  if (vazio) {
+    trocar(ativas, el("p", { class: "nada" },
+      "Esta build ainda não tem habilidades. Elas vêm junto quando a build é importada do Maxroll."));
+    trocar(passivas);
+    return;
+  }
+  trocar(ativas, TECLAS.map((tecla, i) => botao("ativas", i, daBuild("ativas", i), tecla)));
+  trocar(passivas, [0, 1, 2, 3].map(i => botao("passivas", i, daBuild("passivas", i), null)));
 }
 
 function etiquetas(lista, classe) {
@@ -162,6 +286,7 @@ function etiquetas(lista, classe) {
 }
 
 function desenharDetalhe() {
+  if (estado.habilidade) return desenharDetalheDaHabilidade();
   const build = estado.builds[estado.build];
   const espaco = build.espacos[estado.espaco];
   const nome = ESPACOS[estado.espaco] || estado.espaco;
@@ -181,6 +306,35 @@ function desenharDetalhe() {
     el("p", { class: "nota" },
       "Obrigatório que falta = \"não serve\". Desejáveis só dão nota. ",
       "Pra mudar, edite o arquivo da build em ", el("code", {}, "builds/"), "."),
+  );
+}
+
+function desenharDetalheDaHabilidade() {
+  const { tipo, i } = estado.habilidade;
+  const v = visualDa(estado.builds[estado.build]);
+  const h = v.habilidades[tipo][i];
+  const caixa = document.getElementById("detalhe");
+  if (!h) {
+    trocar(caixa, el("p", { class: "mudo" }, v.carregando ? "Buscando na Blizzard…" : "Sem dados desta habilidade."));
+    return;
+  }
+  trocar(caixa,
+    el("div", { class: "detalhe-slot" },
+      tipo === "passivas" ? "Passiva" : `Habilidade · tecla ${TECLAS[i]}`),
+    el("div", { class: "detalhe-cabeca" },
+      icone(h.icone, tipo === "passivas" ? "icone-passiva icone-grande" : "icone-habilidade icone-grande"),
+      el("div", {},
+        el("p", { class: "detalhe-titulo livre" }, h.nome_pt),
+        h.nome !== h.nome_pt && el("p", { class: "mudo nome-ingles" }, `No jogo em inglês: ${h.nome}`))),
+    h.descricao_pt && el("p", { class: "descricao" }, h.descricao_pt),
+    h.runa && [
+      el("h3", {}, "Runa"),
+      el("p", { class: "runa-nome" }, h.runa.nome_pt,
+        h.runa.nome !== h.runa.nome_pt && el("span", { class: "mudo" }, ` (${h.runa.nome})`)),
+      el("p", { class: "descricao" }, h.runa.descricao_pt),
+    ],
+    tipo === "ativas" && !h.runa && el("p", { class: "mudo" }, "A build não diz qual runa."),
+    el("p", { class: "nota" }, "Textos e ícones da API oficial da Blizzard."),
   );
 }
 
@@ -356,12 +510,21 @@ function apiDeExemplo() {
       Neck: esp([], critico), Finger: esp([], critico),
       Weapon: esp([], ["Dano da arma", "Encaixe"]),
     }, ["Bane of the Trapped", "Zei's Stone of Vengeance", "Bane of the Powerful"]),
-    build("Unhallowed Essence — Multidisparo", "Unhallowed", {
+    Object.assign(build("Unhallowed Essence — Multidisparo", "Unhallowed", {
       Head: esp(["Accursed Visage"], ["Encaixe", "Crítico"]),
       Torso: esp(["Cage of the Hellborn"], ["Encaixe"]),
       Hands: esp(["Fiendish Grips"], ["Crítico", "Dano crítico"]),
-      Finger: esp([], critico),
-    }, ["Bane of the Trapped", "Zei's Stone of Vengeance"]),
+      Finger: esp(["Focus", "Restraint"], critico),
+      Weapon: esp(["Yang's Recurve"], ["Dano da arma", "Encaixe"]),
+    }, ["Bane of the Trapped", "Zei's Stone of Vengeance"]), {
+      fonte: { site: "maxroll", perfil: "Sanc: Solo Push Odyssey", link: "https://maxroll.gg/d3/planner/345357607" },
+      cubo: { arma: "Odyssey's End", armadura: "Mantle of Channeling", joia: "Ring of Royal Grandeur" },
+      habilidades: {
+        ativas: ["entangling-shot", "multishot", "strafe", "preparation", "smoke-screen", "vengeance"]
+          .map(habilidade => ({ habilidade, runa: "a" })),
+        passivas: ["cull-the-weak", "ambush", "tactical-advantage", "steady-aim"],
+      },
+    }),
     build("Legacy of Nightmares", "LoN", {
       Head: esp([], ["Encaixe", "Crítico"], true),
       Finger: esp(["Litany of the Undaunted", "The Wailing Host"], critico, false),
@@ -400,5 +563,43 @@ function apiDeExemplo() {
     estado: async () => ({ rodando: true, config, log: ["(modo de exemplo: aberto fora do app)"] }),
     reiniciar_overlay: async () => ({}),
     escolher_build: async id => { config = { ...config, BUILD_ATIVA: id }; return { erros: {} }; },
+    visual: async id => visualDeExemplo(builds.find(b => b.id === id)),
+    abrir_link: async url => { window.open(url, "_blank"); },
+  };
+}
+
+// Ícones de verdade (endereços da Blizzard) pra ver o visual fora do app.
+function visualDeExemplo(build) {
+  const ICONES = "https://blzmedia-a.akamaihd.net/d3/icons";
+  const itemIcone = {
+    "Accursed Visage": "unique_helm_set_03_p2_demonhunter_male", "Cage of the Hellborn": "unique_chest_set_03_p2_demonhunter_male",
+    "Fiendish Grips": "unique_gloves_set_03_p2_demonhunter_male", "Focus": "unique_ring_set_001_x1_demonhunter_male",
+    "Restraint": "unique_ring_set_002_x1_demonhunter_male", "Yang's Recurve": "p61_unique_bow_104_x1_demonhunter_male",
+    "Zei's Stone of Vengeance": "unique_gem_012_x1_demonhunter_male",
+    "Bane of the Trapped": "unique_gem_002_x1_demonhunter_male",
+    "Odyssey's End": "p69_unique_bow_102_demonhunter_male",
+    "Mantle of Channeling": "p4_unique_shoulder_103_demonhunter_male",
+    "Ring of Royal Grandeur": "unique_ring_107_x1_demonhunter_male",
+  };
+  const itens = Object.fromEntries(Object.entries(itemIcone).map(([nome, i]) =>
+    [nome, { nome, icone: `${ICONES}/items/large/${i}.png` }]));
+  const pt = {
+    "entangling-shot": "Tiro Enredante", multishot: "Tiro Múltiplo", strafe: "Metralhar", preparation: "Preparação",
+    "smoke-screen": "Cortina de Fumaça", vengeance: "Vingança", "cull-the-weak": "Abater os Fracos",
+    ambush: "Emboscada", "tactical-advantage": "Vantagem Tática", "steady-aim": "Mira Firme",
+  };
+  const comX1 = ["entangling-shot", "vengeance", "ambush"];  // ícones da expansão têm "x1_"
+  const habilidade = (slug, passiva) => ({
+    slug, nome: slug, nome_pt: pt[slug] || slug,
+    icone: `${ICONES}/skills/64/${comX1.includes(slug) ? "x1_" : ""}demonhunter_${passiva ? "passive_" : ""}${slug.replace(/-/g, "")}.png`,
+    descricao_pt: "Descrição de exemplo (no app vem da Blizzard, em português).",
+  });
+  const h = build.habilidades || { ativas: [], passivas: [] };
+  return {
+    itens,
+    habilidades: {
+      ativas: h.ativas.map(a => ({ ...habilidade(a.habilidade), runa: { letra: "a", nome: "Rune", nome_pt: "Runa de exemplo", descricao_pt: "O que a runa muda." } })),
+      passivas: h.passivas.map(p => habilidade(p, true)),
+    },
   };
 }

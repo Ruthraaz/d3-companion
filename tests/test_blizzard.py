@@ -19,7 +19,8 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
 
-from blizzard import Blizzard, ErroBlizzard, chave_do_nome, itens_desconhecidos  # noqa: E402
+from blizzard import (Blizzard, ErroBlizzard, chave_do_nome, itens_desconhecidos,  # noqa: E402
+                      visual_da_build)
 
 CLASSE_EN = {"slug": "demon-hunter", "name": "Demon Hunter", "skills": {
     "active": [{"slug": "multishot", "name": "Multishot", "icon": "demonhunter_multishot",
@@ -34,6 +35,12 @@ CLASSE_PT = {"slug": "demon-hunter", "name": "Caçador de Demônios", "skills": 
 RESPOSTAS = {
     "/d3/data/hero/demon-hunter?locale=en_US": CLASSE_EN,
     "/d3/data/hero/demon-hunter?locale=pt_BR": CLASSE_PT,
+    "/d3/data/hero/demon-hunter/skill/multishot?locale=en_US": {"skill": {}, "runes": [
+        {"slug": "full broadside", "type": "a", "name": "Full Broadside", "description": "More damage"},
+        {"slug": "arsenal", "type": "c", "name": "Arsenal", "description": "Rockets"}]},
+    "/d3/data/hero/demon-hunter/skill/multishot?locale=pt_BR": {"skill": {}, "runes": [
+        {"slug": "full broadside", "type": "a", "name": "Banda de Artilharia", "description": "Mais dano"},
+        {"slug": "arsenal", "type": "c", "name": "Arsenal", "description": "Foguetes"}]},
     "/d3/data/item-type?locale=en_US": [{"path": "item-type/ring"}, {"path": "item-type/gem"}],
     "/d3/data/item-type/ring?locale=en_US": [
         {"id": "Unique_Ring_021_x1", "name": "Litany of the Undaunted", "icon": "litany", "path": "item/litany"}],
@@ -123,6 +130,43 @@ class TestBlizzard(unittest.TestCase):
         build = {"espacos": {"Finger": {"itens": ["Litany of the Undaunted", "Litany of the Undaunte"]}},
                  "gemas": ["zei's stone of vengeance"]}
         self.assertEqual(itens_desconhecidos(build, self.api.indice_de_itens()), ["Litany of the Undaunte"])
+
+
+class TestVisualDaBuild(unittest.TestCase):
+    """O que a janela recebe pra desenhar o boneco e a barra de habilidades."""
+
+    def setUp(self):
+        pasta = tempfile.TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.api = Blizzard("id", "segredo", Path(pasta.name), abrir=FalsaBlizzard())
+
+    def test_itens_habilidade_com_runa_e_passiva(self):
+        build = {"classe": "Demon Hunter",
+                 "espacos": {"Finger": {"itens": ["Litany of the Undaunted", "Anel Inventado"]}},
+                 "gemas": ["Zei's Stone of Vengeance"],
+                 "habilidades": {"ativas": [{"habilidade": "multishot", "runa": "c"}],
+                                 "passivas": ["archery"]}}
+        v = visual_da_build(build, self.api)
+        self.assertTrue(v["itens"]["Litany of the Undaunted"]["icone"].endswith("/litany.png"))
+        self.assertIsNone(v["itens"]["Anel Inventado"]["icone"])  # sem ícone, mas aparece
+        multi = v["habilidades"]["ativas"][0]
+        self.assertEqual(multi["nome_pt"], "Tiro Múltiplo")
+        self.assertEqual((multi["runa"]["nome_pt"], multi["runa"]["descricao_pt"]), ("Arsenal", "Foguetes"))
+        self.assertEqual(v["habilidades"]["passivas"][0]["nome_pt"], "Arquearia")
+
+    def test_habilidade_escrita_errada_aparece_sem_icone(self):
+        build = {"classe": "Demon Hunter", "espacos": {},
+                 "habilidades": {"ativas": [{"habilidade": "multishoot", "runa": "a"}], "passivas": []}}
+        [h] = visual_da_build(build, self.api)["habilidades"]["ativas"]
+        self.assertEqual((h["nome"], h["icone"], h["runa"]), ("multishoot", None, None))
+
+    def test_build_sem_habilidades_nem_pede_a_classe(self):
+        falsa = FalsaBlizzard()
+        with tempfile.TemporaryDirectory() as pasta:
+            api = Blizzard("id", "segredo", Path(pasta), abrir=falsa)
+            v = visual_da_build({"classe": "Demon Hunter", "espacos": {}}, api)
+        self.assertEqual(v["habilidades"], {"ativas": [], "passivas": []})
+        self.assertFalse(any("/hero/" in p for p in falsa.pedidos))
 
 
 class TestChaveDoNome(unittest.TestCase):

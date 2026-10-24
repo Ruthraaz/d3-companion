@@ -36,15 +36,17 @@
     },
     "Feet": { "itens": ["Hell Walkers"] },
     "Neck": {
-      "itens": [],
+      "itens": ["Squirt's Necklace"],
       "desejaveis": [
         { "modelo": "@soquete", "rotulo": "Encaixe" },
         { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
         { "modelo": "Critical Hit Damage Increased by #%", "rotulo": "Dano crítico" }
       ]
     },
+    "Waist": { "itens": ["Captain Crimson's Silk Girdle"] },
+    "Wrists": { "itens": ["Wraps of Clarity"] },
     "Finger": {
-      "itens": [],
+      "itens": ["Focus", "Restraint"],
       "desejaveis": [
         { "modelo": "@soquete", "rotulo": "Encaixe" },
         { "modelo": "Critical Hit Chance Increased by #%", "rotulo": "Crítico" },
@@ -52,13 +54,34 @@
       ]
     },
     "Weapon": {
-      "itens": [],
+      "itens": ["Yang's Recurve"],
       "desejaveis": [
         { "modelo": "+#-# * Damage", "rotulo": "Dano da arma" },
         { "modelo": "@soquete", "rotulo": "Encaixe" }
       ]
-    }
+    },
+    "Off-Hand": { "itens": ["Dead Man's Legacy"] }
   },
 
-  "gemas": ["Bane of the Trapped", "Zei's Stone of Vengeance", "Bane of the Powerful"]
+  "gemas": ["Bane of the Trapped", "Zei's Stone of Vengeance", "Bane of the Powerful"],
+
+  "_nota": "Habilidades, cubo e os itens de Neck, Waist, Wrists, Finger, Weapon e Off-Hand vieram do guia do Maxroll (perfil Solo Push Odyssey). O Maxroll usa Captain Crimson's Waders nos pés e Bane of the Stricken no lugar da Powerful.",
+  "fonte": {
+    "site": "maxroll",
+    "planner": 345357607,
+    "perfil": "Sanc: Solo Push Odyssey",
+    "link": "https://maxroll.gg/d3/planner/345357607"
+  },
+  "cubo": { "arma": "Odyssey's End", "armadura": "Mantle of Channeling", "joia": "Ring of Royal Grandeur" },
+  "habilidades": {
+    "ativas": [
+      { "habilidade": "entangling-shot", "runa": "b" },
+      { "habilidade": "multishot", "runa": "a" },
+      { "habilidade": "strafe", "runa": "c" },
+      { "habilidade": "preparation", "runa": "b" },
+      { "habilidade": "smoke-screen", "runa": "d" },
+      { "habilidade": "vengeance", "runa": "b" }
+    ],
+    "passivas": ["cull-the-weak", "ambush", "tactical-advantage", "steady-aim"]
+  }
 }

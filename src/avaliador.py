@@ -32,6 +32,8 @@ ESPACOS = ["Head", "Shoulders", "Neck", "Torso", "Hands", "Wrists", "Waist",
 
 SOQUETE = "@soquete"
 
+PARTES_DO_CUBO = ("arma", "armadura", "joia")
+
 
 # ---------------------------------------------------------------- afixos
 
@@ -103,6 +105,21 @@ def avaliar(item: dict, build: dict) -> dict:
             "nota": 1.0 if bate else 0.0,
         }
 
+    nome = item.get("nome") or ""
+    cubo = {n.lower(): parte for parte, n in build.get("cubo", {}).items()}
+    if nome.lower() in cubo and not (item.get("classe") and item["classe"] != build.get("classe")):
+        # Item do cubo: o que vale é o poder lendário (extraído no cubo de Kanai),
+        # então afixos e Ancient não importam.
+        vazio = {"ok": [], "faltando": [], "lista": []}
+        return resultado | {
+            "bate": True,
+            "motivo": f"Vai no cubo de Kanai ({cubo[nome.lower()]})",
+            "obrigatorios": vazio,
+            "desejaveis": vazio,
+            "afixos": [],
+            "nota": 1.0,
+        }
+
     nome_espaco = ESPACO_DA_BUILD.get(item.get("slot"), item.get("slot"))
     espaco = build.get("espacos", {}).get(nome_espaco, {})
     geral = build.get("todos_os_espacos", {})
@@ -114,7 +131,6 @@ def avaliar(item: dict, build: dict) -> dict:
 
     itens = espaco.get("itens", [])
     exige_ancient = espaco.get("exige_ancient", build.get("exige_ancient", False))
-    nome = item.get("nome") or ""
 
     # A primeira regra que falhar explica o "não serve".
     if item.get("classe") and item["classe"] != build.get("classe"):
@@ -168,6 +184,9 @@ def ficha_da_build(build: dict) -> dict:
         },
         "espacos": espacos,
         "gemas": build.get("gemas", []),
+        "cubo": build.get("cubo", {}),
+        "habilidades": build.get("habilidades", {"ativas": [], "passivas": []}),
+        "fonte": build.get("fonte"),
     }
 
 
@@ -177,7 +196,10 @@ def ficha_da_build(build: dict) -> dict:
 # fazia a regra sumir calada; e uma vírgula faltando derrubava o app inteiro.
 
 CHAVES_DA_BUILD = {"formato", "nome", "apelido", "classe", "exige_ancient",
-                   "todos_os_espacos", "espacos", "gemas"}
+                   "todos_os_espacos", "espacos", "gemas", "cubo", "habilidades", "fonte"}
+CHAVES_DAS_HABILIDADES = {"ativas", "passivas"}
+CHAVES_DA_ATIVA = {"habilidade", "runa"}
+RUNAS = {"", "a", "b", "c", "d", "e"}  # a letra que a Blizzard e o Maxroll usam pra cada runa
 CHAVES_DO_ESPACO = {"itens", "obrigatorios", "desejaveis", "exige_ancient"}
 CHAVES_GERAIS = {"obrigatorios", "desejaveis"}
 CHAVES_DA_REGRA = {"modelo", "rotulo", "minimo"}
@@ -263,6 +285,44 @@ def problemas_da_build(build) -> list[str]:
 
     if "gemas" in build:
         problemas += _lista_de_textos("gemas", build["gemas"])
+    problemas += _problemas_do_cubo(build.get("cubo", {}))
+    problemas += _problemas_das_habilidades(build.get("habilidades", {}))
+    if not isinstance(build.get("fonte", {}), dict):
+        problemas.append('"fonte" precisa ser um objeto { ... }.')
+    return problemas
+
+
+def _problemas_do_cubo(cubo) -> list[str]:
+    if not isinstance(cubo, dict):
+        return ['"cubo" precisa ser um objeto, ex.: { "arma": "...", "armadura": "...", "joia": "..." }.']
+    problemas = _chaves_desconhecidas("cubo", cubo, set(PARTES_DO_CUBO))
+    for parte in set(PARTES_DO_CUBO) & set(cubo):
+        if not isinstance(cubo[parte], str) or not cubo[parte].strip():
+            problemas.append(f"cubo.{parte}: precisa ser o nome do item.")
+    return problemas
+
+
+def _problemas_das_habilidades(hab) -> list[str]:
+    if not isinstance(hab, dict):
+        return ['"habilidades" precisa ser um objeto { "ativas": [...], "passivas": [...] }.']
+    problemas = _chaves_desconhecidas("habilidades", hab, CHAVES_DAS_HABILIDADES)
+    ativas = hab.get("ativas", [])
+    if not isinstance(ativas, list) or len(ativas) > 6:
+        problemas.append("habilidades.ativas: precisa ser uma lista com até 6 habilidades.")
+    else:
+        for i, ativa in enumerate(ativas, 1):
+            onde = f"habilidades.ativas[{i}]"
+            if not isinstance(ativa, dict) or not isinstance(ativa.get("habilidade"), str):
+                problemas.append(f'{onde}: precisa ser {{ "habilidade": "multishot", "runa": "a" }}.')
+                continue
+            problemas += _chaves_desconhecidas(onde, ativa, CHAVES_DA_ATIVA)
+            if ativa.get("runa", "") not in RUNAS:
+                problemas.append(f"{onde}: runa {ativa['runa']!r} não existe. Use uma letra de a até e.")
+    passivas = hab.get("passivas", [])
+    if not isinstance(passivas, list) or len(passivas) > 4:
+        problemas.append("habilidades.passivas: precisa ser uma lista com até 4 passivas.")
+    else:
+        problemas += _lista_de_textos("habilidades.passivas", passivas)
     return problemas
 
 

@@ -23,6 +23,7 @@ import io
 import subprocess
 import sys
 import threading
+import webbrowser
 from collections import deque
 from pathlib import Path
 
@@ -42,6 +43,7 @@ from PIL import Image
 
 import historico
 from avaliador import ficha_da_build, ler_builds
+from blizzard import Blizzard, ErroBlizzard, visual_da_build
 from config import ler_config, salvar_config
 from nucleo import PASTA_CAPTURAS
 
@@ -92,9 +94,27 @@ class Api:
 
     def __init__(self, overlay: Overlay):
         self._overlay = overlay  # com "_" o pywebview não expõe pro JavaScript
+        self._blizzard = Blizzard()  # um só: o token vale 24 h
 
     def builds(self) -> list[dict]:
         return [ficha_da_build(b) for b in ler_builds()[0]]
+
+    def visual(self, id_build: str) -> dict:
+        """Ícones e textos em português da build (API da Blizzard, com cache).
+        {"erro": mensagem} se faltar chave ou internet: a tela mostra sem ícones."""
+        build = next((b for b in ler_builds()[0] if b["id"] == id_build), None)
+        if build is None:
+            return {"erro": f"Build {id_build!r} não encontrada."}
+        try:
+            return visual_da_build(build, self._blizzard)
+        except ErroBlizzard as e:
+            return {"erro": str(e)}
+
+    def abrir_link(self, url: str) -> None:
+        """Abre o guia da build no navegador do Windows (não dentro da janela).
+        Só links do Maxroll: o endereço vem do arquivo da build."""
+        if isinstance(url, str) and url.startswith("https://maxroll.gg/"):
+            webbrowser.open(url)
 
     def problemas_das_builds(self) -> dict[str, list[str]]:
         """{arquivo: [o que corrigir]} das builds que ficaram de fora."""

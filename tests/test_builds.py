@@ -100,6 +100,58 @@ class TestConferencia(unittest.TestCase):
         self.assertEqual(len(problemas_da_build({"classe": "Monk"})), 2)  # formato e nome
         self.assertEqual(problemas_da_build([]), ["O arquivo precisa ser um objeto JSON { ... }."])
 
+    def test_habilidades_cubo_e_fonte_certos(self):
+        build = build_minima(
+            habilidades={"ativas": [{"habilidade": "multishot", "runa": "a"}], "passivas": ["ambush"]},
+            cubo={"arma": "Odyssey's End", "joia": "Ring of Royal Grandeur"},
+            fonte={"site": "maxroll", "link": "https://maxroll.gg/d3/planner/1"})
+        self.assertEqual(problemas_da_build(build), [])
+
+    def test_habilidades_erradas(self):
+        problemas = problemas_da_build(build_minima(habilidades={
+            "ativas": [{"habilidade": "multishot", "runa": "z"}, "strafe", {"habilidade": "x", "rune": "a"}],
+            "pasivas": [],
+        }))
+        self.assertEqual(len(problemas), 4, problemas)
+        self.assertTrue(any("runa 'z' não existe" in p for p in problemas))
+        self.assertTrue(any("'pasivas' não existe" in p and "'passivas'" in p for p in problemas))
+
+    def test_limite_de_habilidades(self):
+        sete = [{"habilidade": f"h{i}"} for i in range(7)]
+        [problema] = problemas_da_build(build_minima(habilidades={"ativas": sete}))
+        self.assertIn("até 6", problema)
+
+    def test_cubo_errado(self):
+        problemas = problemas_da_build(build_minima(cubo={"arma": "", "anel": "Focus"}))
+        self.assertEqual(len(problemas), 2, problemas)
+
+
+class TestCubo(unittest.TestCase):
+    """Item do cubo de Kanai é da build mesmo sem os afixos (vale o poder lendário)."""
+
+    def setUp(self):
+        self.build = build_minima(
+            todos_os_espacos={"obrigatorios": [{"modelo": "+# Dexterity", "rotulo": "Destreza"}]},
+            espacos={"Weapon": {"itens": ["Yang's Recurve"]}},
+            cubo={"arma": "Odyssey's End"})
+
+    def arma(self, nome, classe=None):
+        return {"nome": nome, "qualidade": "Legendary", "tipo": "Bow", "slot": "2-Hand",
+                "classe": classe, "soquetes": 0, "primarios": [], "secundarios": []}
+
+    def test_item_do_cubo_serve_sem_afixos(self):
+        r = avaliar(self.arma("Odyssey's End"), self.build)
+        self.assertTrue(r["bate"])
+        self.assertEqual(r["motivo"], "Vai no cubo de Kanai (arma)")
+
+    def test_outra_arma_continua_nao_servindo(self):
+        r = avaliar(self.arma("Kridershot"), self.build)
+        self.assertFalse(r["bate"])
+        self.assertEqual(r["motivo"], "A build pede: Yang's Recurve")
+
+    def test_item_do_cubo_de_outra_classe_nao_serve(self):
+        self.assertFalse(avaliar(self.arma("Odyssey's End", classe="Barbarian"), self.build)["bate"])
+
 
 class TestBuildComErroFicaDeFora(unittest.TestCase):
     def test_json_quebrado_nao_derruba_as_outras(self):
