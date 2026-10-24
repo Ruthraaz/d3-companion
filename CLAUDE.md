@@ -112,6 +112,11 @@ trabalho extra agora, não feche essa porta:
 - Catálogo: `guia_do_link` tira nome e classe do endereço ("-demon-hunter-guide"; suporte usa
   "zbarb", "zmonk", "zwiz", "znecromancer"). Um guia não termina em "-guide" (skeletal-mage-rat).
   `fonte.guia` = link do guia de onde a build veio (a aba Guias marca "No app").
+- Guia mostra só builds da classe dele (`builds_do_heroi`): o de Arachyr Spiders (WD) tem um "DH Speed".
+- A classe escolhida (`estado.classe` no app.js) é a mesma nas abas Guias e Builds; Builds só lista
+  as builds dela. "Todas" continua sendo todas as builds, de todas as classes.
+- Overlay recebe `D3_JANELA_PID` e fecha sozinho se a janela morrer (`processo_vivo`). Antes, fechar
+  o terminal do abrir.bat deixava o overlay órfão segurando a trava → o próximo ficava "parado".
 - Afixos: `stats` do data.json tem name/format/secondary/args. `format` "%.1f%%" → "#%" (`modelo_do_formato`).
   `wpn*` (dano elemental da arma) vem SEM format e args 2 → "+#-# Cold Damage". `skill_<classe>_<skill>` →
   "Increases <Nome> Damage by #% *" (o "*" engole o "(Demon Hunter Only)"). Mudou o que guardamos do

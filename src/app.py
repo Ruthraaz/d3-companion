@@ -45,7 +45,7 @@ from avaliador import builds_escolhidas, ler_builds, resumo, texto_dos_problemas
 from config import ler_config  # noqa: E402
 from atalho import ler_atalho, registrar, sugestoes_livres  # noqa: E402
 from captura import capturar_perto_do_cursor, jogo_em_foco, olhada_rapida  # noqa: E402
-from nucleo import avaliar_print, caixa_na_tela, montar_selo  # noqa: E402
+from nucleo import avaliar_print, caixa_na_tela, montar_selo, processo_vivo  # noqa: E402
 from overlay import JanelaSelo  # noqa: E402
 from vigia import AVALIAR, ESCONDER, GUARDADO, Vigia  # noqa: E402
 
@@ -171,6 +171,19 @@ def main():
     acordar = QTimer()
     acordar.timeout.connect(lambda: None)
     acordar.start(200)
+
+    # Aberto pela janela: fecha junto com ela. Sem isso, se a janela morre sem
+    # avisar (ex.: fechar o terminal do abrir.bat), o overlay fica órfão,
+    # segura a trava e o da próxima janela aparece "parado" (24/10/2026).
+    pid_da_janela = os.environ.get("D3_JANELA_PID")
+    if pid_da_janela:
+        def conferir_janela():
+            if not processo_vivo(int(pid_da_janela)):
+                print("A janela fechou: fechando o overlay junto.", flush=True)
+                app.quit()
+        vigia_da_janela = QTimer()
+        vigia_da_janela.timeout.connect(conferir_janela)
+        vigia_da_janela.start(2000)
 
     if len(sys.argv) >= 3 and sys.argv[1] == "--testar":
         # Mesmo caminho do F8, mas com um print salvo; o selo aparece no meio da tela.

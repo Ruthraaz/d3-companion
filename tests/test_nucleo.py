@@ -17,7 +17,7 @@ sys.path.insert(0, str(RAIZ / "src"))
 from avaliador import avaliar_todas, carregar_builds  # noqa: E402
 from builds_dos_testes import BUILDS_DOS_TESTES  # noqa: E402
 from nucleo import (Avaliacao, caixa_na_tela, montar_selo, posicao_do_selo,  # noqa: E402
-                    texto_do_selo)
+                    processo_vivo, texto_do_selo)
 from parser import interpretar  # noqa: E402
 
 # Só as 3 builds originais: builds importadas na pasta não podem mudar o resultado dos testes.
@@ -65,6 +65,18 @@ class TestSelo(unittest.TestCase):
         selo = montar_selo(Avaliacao(erro="Não achei a dica perto do mouse."))
         self.assertFalse(selo.serve)
         self.assertIn("Não achei a dica", texto_do_selo(selo))
+
+
+class TestProcessoVivo(unittest.TestCase):
+    """O overlay usa isso pra fechar junto com a janela."""
+
+    def test_vivo_e_morto(self):
+        import os
+        import subprocess
+        self.assertTrue(processo_vivo(os.getpid()))
+        filho = subprocess.Popen([sys.executable, "-c", "pass"])
+        filho.wait()
+        self.assertFalse(processo_vivo(filho.pid))
 
 
 class TestPosicao(unittest.TestCase):

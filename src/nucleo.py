@@ -22,6 +22,20 @@ from parser import interpretar
 
 PASTA_CAPTURAS = Path(__file__).resolve().parent.parent / "capturas"
 
+
+def processo_vivo(pid: int) -> bool:
+    """O processo ainda está rodando? (Windows: abre só pra esperar, sem mexer nele.)"""
+    import ctypes
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.restype = ctypes.c_void_p
+    processo = kernel32.OpenProcess(0x00100000, False, int(pid))  # SYNCHRONIZE
+    if not processo:
+        return False  # não existe mais
+    try:
+        return kernel32.WaitForSingleObject(ctypes.c_void_p(processo), 0) == 0x102  # WAIT_TIMEOUT: rodando
+    finally:
+        kernel32.CloseHandle(ctypes.c_void_p(processo))
+
 Caixa = tuple[int, int, int, int]  # (x0, y0, x1, y1)
 
 

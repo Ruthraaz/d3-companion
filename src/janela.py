@@ -20,6 +20,7 @@ Fechar a janela desliga o overlay junto.
 
 import base64
 import io
+import os
 import subprocess
 import sys
 import threading
@@ -69,6 +70,7 @@ class Overlay:
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, encoding="utf-8", errors="replace",
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            env=os.environ | {"D3_JANELA_PID": str(os.getpid())},  # o overlay fecha se a janela sumir
         )
         threading.Thread(target=self._ler_saida, args=(self._processo,), daemon=True).start()
 

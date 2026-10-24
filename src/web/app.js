@@ -39,7 +39,7 @@ const estado = {
   miniaturas: {},    // nome do arquivo -> data URI (pede ao Python uma vez só)
   ultimoVisto: null, // "quando" do registro mais novo já mostrado (ISO, compara como texto)
   guias: null,       // lista de guias do Maxroll (pede ao Python na 1ª vez que abre a aba)
-  classe: null,      // classe escolhida na aba Guias
+  classe: null,      // classe do boneco: filtra as abas Guias e Builds (as duas usam a mesma)
 };
 
 // ------------------------------------------------------------ utilidades
@@ -88,7 +88,8 @@ function abrirAba(nome) {
   document.querySelectorAll(".aba").forEach(a => a.classList.toggle("ativa", a.dataset.aba === nome));
   document.querySelectorAll(".painel").forEach(p => p.classList.toggle("ativo", p.id === `painel-${nome}`));
   if (nome === "config") carregarConfig();
-  if (nome === "guias" && !estado.guias) carregarGuias();
+  if (nome === "guias") estado.guias ? desenharGuias() : carregarGuias();
+  if (nome === "builds" && estado.api) desenharBuilds();  // a classe pode ter mudado na aba Guias
 }
 
 // ------------------------------------------------------------ guias do Maxroll
@@ -105,11 +106,6 @@ async function carregarGuias(atualizar = false) {
   }
   status.textContent = "";
   estado.guias = r.guias;
-  if (!estado.classe) {
-    // Começa pela classe da build que está no boneco.
-    const b = estado.builds[estado.build];
-    estado.classe = b && CLASSES[b.classe] ? b.classe : "Demon Hunter";
-  }
   desenharGuias();
 }
 
@@ -118,7 +114,7 @@ function desenharGuias() {
   trocar(document.getElementById("classes"), Object.entries(CLASSES).map(([cl, pt]) =>
     el("button", {
       class: "classe" + (cl === estado.classe ? " ativo" : ""), role: "tab",
-      onclick: () => { estado.classe = cl; desenharGuias(); },
+      onclick: () => { trocarClasse(cl); desenharGuias(); },
     }, el("span", { class: "classe-nome" }, pt), el("span", { class: "classe-qtd" }, `${porClasse(cl).length} guias`))));
 
   // Guia já importado: a build guarda o link do guia de onde veio.
@@ -166,13 +162,41 @@ function desenharProblemas(problemas) {
   ]);
 }
 
+// Troca a classe do boneco. O boneco passa a mostrar uma build dessa classe
+// (só pra ver: a build que o atalho usa não muda).
+function trocarClasse(cl) {
+  estado.classe = cl;
+  const atual = estado.builds[estado.build];
+  if (!atual || atual.classe !== cl) {
+    const i = estado.builds.findIndex(b => b.classe === cl);
+    if (i >= 0) { estado.build = i; estado.habilidade = null; }
+  }
+}
+
+function desenharClassesDasBuilds() {
+  trocar(document.getElementById("classes-builds"), Object.entries(CLASSES).map(([cl, pt]) => {
+    const n = estado.builds.filter(b => b.classe === cl).length;
+    return el("button", {
+      class: "filtro" + (cl === estado.classe ? " ativo" : "") + (n ? "" : " sem-build"), role: "tab",
+      title: n ? `${n} build${n > 1 ? "s" : ""} de ${pt}` : `Nenhuma build de ${pt} ainda`,
+      onclick: () => { trocarClasse(cl); desenharBuilds(); },
+    }, pt, n ? ` · ${n}` : "");
+  }));
+}
+
 function desenharBuilds() {
+  desenharClassesDasBuilds();
   const caixa = document.getElementById("escolha-build");
-  if (!estado.builds.length) {
+  const daClasse = estado.builds.map((b, i) => [b, i]).filter(([b]) => b.classe === estado.classe);
+  const corpo = document.getElementById("builds-corpo");
+  corpo.hidden = !daClasse.length;
+  if (!daClasse.length) {
     trocar(caixa,
-      el("p", { class: "mudo" }, "Nenhuma build ainda."),
+      el("p", { class: "mudo" }, `Nenhuma build de ${CLASSES[estado.classe] || estado.classe} ainda. `,
+        el("button", { class: "link", type: "button", onclick: () => abrirAba("guias") }, "Ver os guias dessa classe")),
       el("button", { class: "chip-build chip-importar", onclick: () => abrirImportar() },
         el("span", { class: "chip-apelido" }, "+ Importar"), el("span", { class: "chip-nome" }, "do Maxroll")));
+    trocar(document.getElementById("avaliando"));
     return;
   }
   // Clicar numa build = o F8 passa a avaliar só com ela. "Todas" = com todas.
@@ -185,11 +209,11 @@ function desenharBuilds() {
       onclick: () => escolherBuild(""),
     },
       el("span", { class: "chip-apelido" }, "Todas"),
-      el("span", { class: "chip-nome" }, `${estado.builds.length} builds`),
+      el("span", { class: "chip-nome" }, `${estado.builds.length} builds, de todas as classes`),
     ),
-    estado.builds.map((b, i) =>
+    daClasse.map(([b, i]) =>
       el("button", {
-        class: "chip-build" + (b.id === estado.ativa ? " ativo" : "") + (todas && i === estado.build ? " vendo" : ""),
+        class: "chip-build" + (b.id === estado.ativa ? " ativo" : "") + (i === estado.build && b.id !== estado.ativa ? " vendo" : ""),
         title: `O atalho avalia o item só com ${b.apelido}`,
         onclick: () => { estado.build = i; escolherBuild(b.id); },
       },
@@ -202,7 +226,8 @@ function desenharBuilds() {
     title: "Trazer uma build pronta de um guia do Maxroll",
     onclick: () => abrirImportar(),
   }, el("span", { class: "chip-apelido" }, "+ Importar"), el("span", { class: "chip-nome" }, "do Maxroll")));
-  const com = todas ? "todas as builds" : estado.builds[estado.build].apelido;
+  // A build do atalho pode ser de outra classe que a que está no boneco.
+  const com = apelidoAtivo({ BUILD_ATIVA: estado.ativa });
   const fonte = estado.builds[estado.build].fonte;
   trocar(document.getElementById("avaliando"),
     "O atalho avalia o item com ", el("strong", {}, com), ".",
@@ -496,6 +521,7 @@ async function importarMaxroll(b, perfil, apelido, botao) {
   // A build nova entra na lista; o overlay só lê builds/ ao abrir, então reinicia.
   estado.builds = await estado.api.builds();
   estado.build = Math.max(0, estado.builds.findIndex(x => x.id === r.id));
+  estado.classe = estado.builds[estado.build].classe;
   if (estado.guias) desenharGuias();
   estado.habilidade = null;
   fecharImportar();
@@ -635,6 +661,7 @@ async function iniciar(api) {
   const { BUILD_ATIVA } = await api.config();
   const i = estado.builds.findIndex(b => b.id === BUILD_ATIVA);
   if (i >= 0) { estado.ativa = BUILD_ATIVA; estado.build = i; }
+  estado.classe = (estado.builds[estado.build] && estado.builds[estado.build].classe) || "Demon Hunter";
   desenharBuilds();
   await Promise.all([atualizarHistorico(), atualizarEstado()]);
   // O overlay é outro processo: de tempos em tempos, vê se chegou item novo.

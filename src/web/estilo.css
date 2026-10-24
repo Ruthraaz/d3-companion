@@ -486,6 +486,9 @@ h3 {
   color: var(--mudo);
 }
 .filtro.ativo { color: var(--ouro-claro); border-color: var(--ouro); }
+.filtro-classes { flex-wrap: wrap; }
+.filtro.sem-build:not(.ativo) { color: var(--apagado); }
+.builds-corpo[hidden] { display: none; }
 
 .lista-historico { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .registro {
