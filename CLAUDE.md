@@ -16,6 +16,41 @@ bate com alguma das builds dele e quais afixos batem.
 
 Não é um planejador nem um motor de recomendação (decidido em 24/10/2026). Só "dropou → avaliou".
 
+## Até onde vamos
+### Versão 1 (definição de pronto)
+A versão 1 está pronta quando: no jogo, com o mouse num item, aperto o atalho e
+aparece um selo no overlay com o veredito e os afixos, ex.:
+"✅ Dreadlands · Destreza ✓ Crítico ✓ Encaixe ✗".
+Vale pras 3 builds de Demon Hunter (Dreadlands, Unhallowed Essence, Legacy of Nightmares).
+Na versão 1 as builds são editadas direto nos arquivos JSON (sem janela).
+
+### Visual (decidido em 24/10/2026)
+- Overlay (versão 1): PySide6. Selo pequeno, fundo escuro semitransparente,
+  borda verde (serve) ou vermelha (não serve), nome da build em destaque,
+  afixos com ✓/✗. Aparece ao lado da dica e some sozinho após alguns segundos.
+- Janela principal (depois da versão 1): HTML/CSS via pywebview (usa o WebView2
+  do Windows, leve, sem Chromium embutido). Mostra o boneco com os espaços,
+  as builds, o histórico de itens avaliados e as configurações (atalho, tempo do selo).
+  Visual no nível de sites de build (Mobalytics/d4builds).
+- Overlay e janela são partes separadas que conversam entre si; a lógica
+  (OCR, parser, avaliador) fica num núcleo que as duas usam, sem depender de interface.
+- Estilo pode lembrar o Diablo (escuro, dourado, cores de raridade), mas sem
+  copiar logo, fonte ou arte da Blizzard.
+
+### Depois da versão 1 (nesta ordem)
+1. Janela principal (pywebview).
+2. Outras classes: só escrever novas builds em JSON, sem mudar código.
+3. Importar builds de sites (Maxroll etc.) como tradutores pro formato próprio.
+4. Avaliação automática: detectar a dica sozinho, sem atalho.
+5. Ler os itens equipados pela API da Battle.net.
+
+### Quem usa
+Por enquanto só o Arthur. Se ficar bom, pode virar público. Então, sem fazer
+trabalho extra agora, não feche essa porta:
+- builds em arquivos JSON separados, nunca dentro do código;
+- o avaliador não pode ter nada fixo de Demon Hunter;
+- nada de caminho fixo do PC do Arthur no código (usar .env).
+
 ## Regras que não mudam
 - **Nunca ler a memória do jogo, injetar DLL nem fazer hook de DirectX.** Viola os termos da Blizzard
   e pode banir a conta. O app só **olha a tela**.
