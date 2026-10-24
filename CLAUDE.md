@@ -31,8 +31,15 @@ Não é um planejador nem um motor de recomendação (decidido em 24/10/2026). S
 | 1 | OCR de print salvo (`src/ocr.py`) | ✅ |
 | 2 | Parser texto → JSON (`src/parser.py`, testes em `tests/`) | ✅ (lendários, sets, raros, gemas) |
 | 3 | Formato de build em JSON + avaliador (`builds/`, `src/avaliador.py`) | ✅ (formato aprovado em 24/10/2026) |
-| 4 | Atalho global + captura perto do cursor | próxima |
-| 5 | Overlay em cima do jogo (PySide6) | |
+| 4 | Atalho global + captura perto do cursor (`src/app.py`, `src/captura.py`) | ✅ (falta o Arthur testar no jogo) |
+| 5 | Overlay em cima do jogo (PySide6) | próxima |
+
+### Etapa 4 — notas
+- Pipeline do app: F8 → print em volta do mouse → `recortar_dica` (par de bordas verticais + miolo preto,
+  folga de 70 px em cima) → OCR **ampliado 2x** → parser → avaliador. Medido: 52/53 no gabarito.
+- `tests/ocr_recorte/` = saída REAL do app; `tests/test_captura.py` compara com o gabarito das imagens.
+  Se mudar o recorte ou o OCR, **regenere** esses textos (`texto_da_dica`) e rode os testes.
+- Recortes do app ficam em `capturas/` (fora do Git). Prints do jogo com erro de leitura viram exemplos novos.
 
 ### Pendências da Etapa 2 — ✅ resolvidas em 24/10/2026
 Tudo abaixo está feito e testado (17 testes). Saída de set: campo `"set": {"nome", "pecas": [{"nome", "slot"}]}`;

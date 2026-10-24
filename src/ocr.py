@@ -33,7 +33,7 @@ pytesseract.pytesseract.tesseract_cmd = os.getenv(
 )
 
 
-def preprocessar(caminho: Path) -> Image.Image:
+def preprocessar(imagem: Image.Image) -> Image.Image:
     """Prepara a imagem pro OCR.
 
     O Tesseract foi feito pra texto PRETO em fundo BRANCO (tipo página de livro).
@@ -43,7 +43,7 @@ def preprocessar(caminho: Path) -> Image.Image:
       2. Tons de cinza         -> cor não importa pra ler, só o brilho.
       3. Inverter + limiarizar -> vira texto preto em fundo branco.
     """
-    img = cv2.imread(str(caminho))
+    img = cv2.cvtColor(np.array(imagem.convert("RGB")), cv2.COLOR_RGB2BGR)
     img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
     cinza = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     invertida = cv2.bitwise_not(cinza)
@@ -52,8 +52,18 @@ def preprocessar(caminho: Path) -> Image.Image:
     return Image.fromarray(binaria)
 
 
-def ler_texto(caminho: Path, pre: bool = False) -> str:
-    imagem = preprocessar(caminho) if pre else Image.open(caminho)
+def ler_texto(origem: Path | Image.Image, pre: bool = False, ampliar: int = 1) -> str:
+    """Lê o texto de um arquivo de imagem ou de uma imagem já na memória
+    (a captura da Etapa 4 entrega a imagem direto, sem salvar).
+
+    ampliar=2 aumenta a imagem antes do OCR (a letra da dica é pequena).
+    """
+    imagem = origem if isinstance(origem, Image.Image) else Image.open(origem)
+    if ampliar != 1:
+        imagem = imagem.convert("RGB").resize(
+            (imagem.width * ampliar, imagem.height * ampliar), Image.LANCZOS)
+    if pre:
+        imagem = preprocessar(imagem)
     # --psm 6 = "trate a imagem como um bloco de texto uniforme" (bom pra dicas).
     return pytesseract.image_to_string(imagem, lang="eng", config="--psm 6")
 

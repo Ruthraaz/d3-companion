@@ -1,0 +1,29 @@
+_ Dexter
+ Intellig
+= Vitality:
+[ DEM@N MACHINE ;
+, if Legendary Crossbow 2-Hand
+Bs ig ANS
+2,174.2
+if ~ }| Damage Per Second
+(sak
+1794-2159 Damage
+1.10 Attacks per Second
+Primary
++1015-1214 Fire Damage
++743 Dexterity
++741 Vitality
+# Chance to Deal 23% Area Damage on Hit.
+Secondary
+¢# +10 Maximum Discipline (Demon Hunter Only)
+© 54% chance to shoot explosive bolts when attacking.
+Stat Changes if Equipped:
+-26.8°> Damage
+- 12.2%. Toughness
+- 14.5% Recovery
+“All maddening angles and gnashing gears. These
+crossbows! How do they work?!" —Sergeant at Arms
+Carlavoie
+Required Level: 1
+Account Bound
+Sell Value: 6867 @ Durability: 44/44

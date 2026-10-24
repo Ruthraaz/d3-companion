@@ -32,8 +32,8 @@ O app só **olha a tela** (captura + OCR). Ele não lê a memória do jogo nem s
 | 1 | OCR de um print salvo | ✅ funcionando |
 | 2 | Parser: texto → item estruturado | ✅ funcionando |
 | 3 | Formato de build (JSON) + avaliador | ✅ funcionando |
-| 4 | Atalho + captura perto do cursor | ⏳ próxima |
-| 5 | Overlay em cima do jogo | |
+| 4 | Atalho + captura perto do cursor | ✅ funcionando (falta testar dentro do jogo) |
+| 5 | Overlay em cima do jogo | ⏳ próxima |
 
 ## O que aprendemos na Etapa 1
 
@@ -73,7 +73,7 @@ Cada afixo vem com um **modelo** (os números trocados por `#`), que é o que o 
 - **Limitações conhecidas:**
   - Gemas encaixadas no item ainda não são lidas (só conta os soquetes vazios).
   - Um afixo sem número que seja o último da lista seria cortado junto com a descrição.
-  - Erros de número do OCR passam direto: `+13% Life` virou `413% Life` (o "+" lido como "4"), `+157` virou `+187`, `+33%` virou `+39%`. O texto não tem como denunciar isso; um dia dá pra testar pré-processamento só na área dos afixos.
+  - Erros de número do OCR passam direto: `+13% Life` virou `413% Life` (o "+" lido como "4"), `+157` virou `+187`, `+33%` virou `+39%`. O texto não tem como denunciar isso. **Resolvido na Etapa 4:** com o recorte da dica e o OCR ampliado 2x, os três saem certos.
   - Às vezes a armadura sai `null` (o OCR não leu "Armor" ou separou os dígitos: `5 8 1`). O parser prefere `null` a um número errado.
 
 ## Etapa 3: builds e avaliador
@@ -115,6 +115,29 @@ Fiendish Grips — Set Gloves
 
 **A revisar nas builds:** só as peças dos sets (vistas nos prints) estão preenchidas; os outros espaços estão com `itens: []`. As **gemas** são um palpite inicial. A prioridade de afixos segue a referência geral do Icy Veins.
 
+## Etapa 4: atalho e captura
+
+`src/app.py` espera o **F8**. Ao apertar, tira um print de uma faixa da tela em volta do mouse, recorta só a dica (`src/captura.py`), lê com OCR e mostra no terminal o veredito de cada build. Cada recorte fica salvo em `capturas/` (fora do Git) pra investigar erros e virar exemplo de teste.
+
+O atalho usa o `RegisterHotKey` do próprio Windows: nada de ler memória ou se injetar no jogo.
+
+**Como a dica é achada:** o miolo da dica é quase **preto puro** (valores 0–4) e as bordas da esquerda e da direita são linhas claras que vão de cima a baixo. O app procura um **par de colunas** com linhas claras longas e da mesma altura, com o miolo majoritariamente preto entre elas, e sem outra borda longa no meio. Se houver duas dicas (a do item e a do equipado), fica com a mais perto do mouse.
+
+**O que aprendemos (medido nos 9 prints, contra um gabarito conferido nas imagens):**
+
+| Como o OCR recebe a imagem | Acertos (afixos + nomes + armadura) |
+|---|---|
+| Imagem inteira (como era antes) | 49/53 |
+| Recorte justo da dica | 40/53 |
+| Recorte + folga de 70 px em cima | 44/53 |
+| **Recorte + folga + ampliar 2x** | **52/53** |
+
+- **"A maior área preta" não funciona.** O fundo do jogo e as grades do inventário encostam na dica e a área vaza pra tela toda. As bordas verticais são o que separa a dica do resto.
+- **O título fica acima das bordas laterais** (nos itens de set), então o recorte precisa de folga em cima.
+- **Ampliar 2x foi o que mais ajudou.** Com isso, todos os afixos e nomes saem certos, inclusive os números que antes saíam errados (`413% Life` → `+13% Life`, `+187` → `+157`). Ampliar 3x piorou.
+- **A moldura do título vira letra solta** (`E PAIN ENHANCER`). O parser descarta letra isolada nas pontas do nome.
+- A armadura (número grande, fonte serifada) ainda falha às vezes; o parser devolve `null` em vez de um número errado.
+
 ## Como rodar (Windows)
 
 O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes prontos para as versões fixadas no `requirements.txt` (Pillow 10.4, NumPy 1.26).
@@ -135,9 +158,11 @@ O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes
    ```
    python src/ocr.py samples/lendario_cloak_garwulf.png      # só o OCR (texto cru)
    python src/parser.py samples/lendario_cloak_garwulf.png   # OCR + parser (JSON)
-   python src/avaliador.py samples/set_fiendish_grips.png    # OCR + parser + avaliador
+   python src/avaliador.py samples/set_fiendish_grips.png    # recorte + OCR + parser + avaliador
+   python src/app.py --testar samples/set_fiendish_grips.png # o caminho do app, com um print salvo
    ```
-5. Testes do parser e do avaliador (não precisam do Tesseract, usam os textos salvos em `tests/ocr/`):
+5. **No jogo:** deixe o Diablo 3 em **Tela cheia em janela** (Windowed Fullscreen), rode `python src/app.py`, passe o mouse num item e aperte **F8**. O resultado aparece no terminal.
+6. Testes (não precisam do Tesseract, usam os textos salvos em `tests/ocr/` e `tests/ocr_recorte/`):
    ```
    python -m unittest discover tests
    ```

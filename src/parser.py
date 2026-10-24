@@ -147,11 +147,18 @@ def estruturar_afixo(texto: str) -> dict:
 def _nome(linha: str) -> str | None:
     """Pega o nome em MAIÚSCULAS e corrige a fonte do título ("@" -> "O")."""
     linha = linha.replace("/", " ")  # o OCR às vezes lê o espaço como "/"
+    linha = linha.replace("®", "@")  # e o "O" decorado também sai como "®"
     trechos = [t.strip() for t in re.findall(r"[A-Z@][A-Z@'’ ]*[A-Z@]", linha)]
     trechos = [t for t in trechos if sum(c.isalpha() or c == "@" for c in t) >= 4]
     if not trechos:
         return None
     palavras = max(trechos, key=len).replace("@", "O").lower().split()
+    # A moldura do título vira letra solta nas pontas ("E PAIN ENHANCER",
+    # "VENGEANCE J"). Nome de item não começa nem termina com 1 letra só.
+    while len(palavras) > 1 and len(palavras[0]) == 1:
+        palavras.pop(0)
+    while len(palavras) > 1 and len(palavras[-1]) == 1:
+        palavras.pop()
     return " ".join(p if i and p in MINUSCULAS else p.capitalize()
                     for i, p in enumerate(palavras))
 
@@ -190,6 +197,25 @@ def _valor_acima(linhas: list[str], i: int | None, padrao: str) -> str | None:
         m = re.search(padrao, linhas[j])
         if m:
             return m.group(1)
+    return None
+
+
+def _armadura(cabecalho: list[str]) -> str | None:
+    """A armadura é o número grande (fonte serifada) acima do rótulo "Armor".
+
+    O OCR erra bastante aqui: o rótulo vira "- rmor", sobra lixo antes do
+    número ("<2 | 670") e os dígitos saem separados ("5 5 1"). Então pegamos
+    o MAIOR número de 3+ dígitos nas 3 linhas acima, juntando dígitos soltos.
+    Se não achar, None — melhor que um número errado.
+    """
+    i = _indice(cabecalho, r"rmor\b")
+    if i is None:
+        return None
+    for j in range(i - 1, max(i - 4, -1), -1):
+        linha = re.sub(r"\b\d(?: \d){2,3}\b", lambda m: m.group().replace(" ", ""), cabecalho[j])
+        numeros = re.findall(r"\b\d{1,3}(?:,\d{3})+\b|\b\d{3,}\b", linha)
+        if numeros:
+            return max(numeros, key=_numero)
     return None
 
 
@@ -260,8 +286,7 @@ def interpretar(texto: str) -> dict:
     # tela de personagem que o OCR mistura no meio (ex.: "244,377").
     dps = _valor_acima(cabecalho, _indice(cabecalho, r"Damage Per Second"),
                        r"\b(\d{1,3}(?:,\d{3})*\.\d)\b")
-    armadura = _valor_acima(cabecalho, _indice(cabecalho, r"\bArmor\b"),
-                            r"^\W*(\d{1,3}(?:,\d{3})*)\b")
+    armadura = _armadura(cabecalho)
     # Dano da arma: "1794-2159 Damage", sem "+" na frente (com "+" é afixo).
     m_dano = re.search(r"^[^\w+]*(\d+)\s*-\s*(\d+)\s+Damage\b", "\n".join(cabecalho), re.M)
     m_aps = re.search(r"(\d+\.\d+)\s+Attacks per Second", "\n".join(cabecalho))
@@ -323,7 +348,8 @@ if __name__ == "__main__":
     if arquivo.suffix == ".txt":
         texto = arquivo.read_text(encoding="utf-8")
     else:
-        from ocr import ler_texto
-        texto = ler_texto(arquivo)
+        from PIL import Image
+        from captura import texto_da_dica  # recorta a dica antes do OCR
+        texto = texto_da_dica(Image.open(arquivo))
     sys.stdout.reconfigure(encoding="utf-8")
     print(json.dumps(interpretar(texto), indent=2, ensure_ascii=False))

@@ -135,6 +135,17 @@ def avaliar_todas(item: dict, builds: list[dict]) -> list[dict]:
     return sorted(resultados, key=lambda r: (not r["bate"], -r["nota"]))
 
 
+def resumo(item: dict, resultados: list[dict]) -> str:
+    """Texto curto com o veredito de cada build (terminal; depois, o overlay)."""
+    linhas = [f"{item.get('nome') or '(sem nome)'} — {item.get('qualidade')} {item.get('tipo')}"]
+    for r in resultados:
+        selo = "✅" if r["bate"] else "❌"
+        linhas.append(f"{selo} {r['build']}: {r['motivo']} (nota {r['nota']:.2f})")
+        if r["bate"] and r["desejaveis"]["ok"]:
+            linhas.append("     tem: " + ", ".join(r["desejaveis"]["ok"]))
+    return "\n".join(linhas)
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Uso: python src/avaliador.py <imagem.png | texto.txt>")
@@ -145,14 +156,10 @@ if __name__ == "__main__":
     if arquivo.suffix == ".txt":
         texto = arquivo.read_text(encoding="utf-8")
     else:
-        from ocr import ler_texto
-        texto = ler_texto(arquivo)
+        from PIL import Image
+        from captura import texto_da_dica  # recorta a dica antes do OCR
+        texto = texto_da_dica(Image.open(arquivo))
     item = interpretar(texto)
 
     sys.stdout.reconfigure(encoding="utf-8")
-    print(f"{item.get('nome') or '(sem nome)'} — {item.get('qualidade')} {item.get('tipo')}")
-    for r in avaliar_todas(item, carregar_builds()):
-        selo = "✅" if r["bate"] else "❌"
-        print(f"{selo} {r['build']}: {r['motivo']} (nota {r['nota']:.2f})")
-        if r["bate"] and r["desejaveis"]["ok"]:
-            print("     tem: " + ", ".join(r["desejaveis"]["ok"]))
+    print(resumo(item, avaliar_todas(item, carregar_builds())))

@@ -5,3 +5,6 @@ __pycache__/
 
 # Segredos (chaves da Battle.net, etc.) NUNCA vão pro GitHub
 .env
+
+# Prints e recortes salvos pelo app (Etapa 4)
+capturas/
