@@ -14,17 +14,23 @@ virou "-C.2°. Damage". Por isso o padrão é ler cru, e o pré-processamento
 fica como opção pra gente melhorar depois.
 """
 
+import os
 import sys
 from pathlib import Path
 
 import cv2
 import numpy as np
 import pytesseract
+from dotenv import load_dotenv
 from PIL import Image
 
 # No Windows o pytesseract não acha o Tesseract sozinho.
-# Descomente a linha abaixo e ajuste o caminho se der erro "tesseract is not installed".
-# pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# O caminho vem do .env (TESSERACT_CMD, veja .env.example); sem ele,
+# usamos o caminho padrão do instalador da UB Mannheim.
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+pytesseract.pytesseract.tesseract_cmd = os.getenv(
+    "TESSERACT_CMD", r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+)
 
 
 def preprocessar(caminho: Path) -> Image.Image:

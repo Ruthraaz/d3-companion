@@ -45,14 +45,20 @@ O app só **olha a tela** (captura + OCR). Ele não lê a memória do jogo nem s
 
 ## Como rodar (Windows)
 
-1. Instale o **Tesseract** (instalador da UB Mannheim) e anote a pasta.
+O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes prontos para as versões fixadas no `requirements.txt` (Pillow 10.4, NumPy 1.26).
+
+1. Instale o **Python 3.12** e o **Tesseract** (instalador da UB Mannheim):
+   ```
+   winget install --id Python.Python.3.12 -e
+   winget install --id UB-Mannheim.TesseractOCR -e
+   ```
 2. No terminal, dentro da pasta do projeto:
    ```
-   python -m venv .venv
+   py -3.12 -m venv .venv
    .venv\Scripts\activate
    pip install -r requirements.txt
    ```
-3. Se der erro "tesseract is not installed", abra `src/ocr.py` e descomente a linha do `tesseract_cmd` com o caminho certo.
+3. Se o Tesseract não estiver em `C:\Program Files\Tesseract-OCR\`, copie `.env.example` para `.env` e ajuste o `TESSERACT_CMD` com o caminho certo.
 4. Rode:
    ```
    python src/ocr.py samples/lendario_cloak_garwulf.png
