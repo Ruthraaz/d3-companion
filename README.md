@@ -139,6 +139,7 @@ O atalho usa o `RegisterHotKey` do próprio Windows: nada de ler memória ou se 
 
 - **"A maior área preta" não funciona.** O fundo do jogo e as grades do inventário encostam na dica e a área vaza pra tela toda. As bordas verticais são o que separa a dica do resto.
 - **O título fica acima das bordas laterais** (nos itens de set), então o recorte precisa de folga em cima.
+- **"Linha clara longa" também engana (visto no jogo).** Quando a dica encosta no painel do inventário, a moldura do painel emenda na borda da dica e a "borda" subia até o topo da tela. Agora um pixel só conta como borda se a **maioria dos 10 pixels ao lado (pra dentro) for preta**: ao lado do miolo da dica são 7–10; ao lado da grade do inventário, ~3. No topo, o enfeite do banner do título tapa o miolo, então a borda é esticada pra cima enquanto o vão estreito da moldura dupla continua preto. O print real ficou em `samples/jogo_zei_abaixo_do_inventario.png`, com teste.
 - **Ampliar 2x foi o que mais ajudou.** Com isso, todos os afixos e nomes saem certos, inclusive os números que antes saíam errados (`413% Life` → `+13% Life`, `+187` → `+157`). Ampliar 3x piorou.
 - **A moldura do título vira letra solta** (`E PAIN ENHANCER`). O parser descarta letra isolada nas pontas do nome.
 - A armadura (número grande, fonte serifada) ainda falha às vezes; o parser devolve `null` em vez de um número errado.

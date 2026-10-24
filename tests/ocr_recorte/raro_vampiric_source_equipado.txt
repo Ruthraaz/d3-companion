@@ -1,16 +1,17 @@
-< EQUIPPED —
-VATMIPIRIC SBURCE 4
-lf _ Rare Ring Finger
+<4 EQUIPPED —
+E . ae
+VATMIPIRIC SBURCE
+i _ Rare Ring Finger
+ney
 Primary
-2 +403 Dexterity
+| +403 Dexterity
 » +89 Resistance to All Elements
-| ® Attack Speed Increased by 5.0%
+» Attack Speed Increased by 5.0%
 ¢ Chance to Deal 10% Area Damage on Hit.
-|
 Secondary
 | © +3742 Life after Each Kill
-| © +31% Extra Gold from Monsters
+|  +31% Extra Gold from Monsters
+|
 | Required Level: 1
-| Account Bound
-| Sell Value: 5260 @ Durability: 36/37
-SS
+Account Bound
+Sell Value: 5260 & Durability: 36/37

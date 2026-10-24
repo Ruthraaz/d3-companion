@@ -1,12 +1,12 @@
-_ Dexter
+Dexter
  Intellig
 = Vitality:
 [ DEM@N MACHINE ;
 , if Legendary Crossbow 2-Hand
-Bs ig ANS
+Bs gin
 2,174.2
 if ~ }| Damage Per Second
-(sak
+ia
 1794-2159 Damage
 1.10 Attacks per Second
 Primary

@@ -80,6 +80,9 @@ trabalho extra agora, não feche essa porta:
 ### Etapa 4 — notas
 - Pipeline do app: F8 → print em volta do mouse → `recortar_dica` (par de bordas verticais + miolo preto,
   folga de 70 px em cima) → OCR **ampliado 2x** → parser → avaliador. Medido: 52/53 no gabarito.
+- Borda da dica = pixel claro com **≥7 de 10 vizinhos pretos** pra dentro (senão a moldura do
+  inventário emenda na borda). Print real que falhar no jogo: copiar de `capturas/` pra `samples/`
+  e virar teste (ex.: `jogo_zei_abaixo_do_inventario.png`).
 - `tests/ocr_recorte/` = saída REAL do app; `tests/test_captura.py` compara com o gabarito das imagens.
   Se mudar o recorte ou o OCR, **regenere** esses textos (`texto_da_dica`) e rode os testes.
 - Recortes do app ficam em `capturas/` (fora do Git). Prints do jogo com erro de leitura viram exemplos novos.

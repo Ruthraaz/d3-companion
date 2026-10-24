@@ -1,8 +1,7 @@
 ANTIQUE VINTAGE BOOTS ;
 mandi Set Boots Feet
-Be. 5 5 1 Demon Hunter
+x Lal 5 5 1 Demon Hunter
 ¥|
-A oy =:
 - rmor
 bake
 Primary
@@ -13,7 +12,7 @@ Primary
 Only)
 Secondary
 » +160 Cold Resistance
-* Increases Gold and Health Pickup by 2 Yards.
+¢ Increases Gold and Health Pickup by 2 Yards.
 Gears of Dreadlands
 
 Antique Vintage Boots (Feet)
@@ -46,15 +45,9 @@ Strafing, you gain 8% increased movement speed for
 each second of Momentum.
 
 (6) Set:
-
 » Your primary skills deal 27,500% increased damage.
-
 Stat Changes if Equipped:
-
 -0.3% Damage
-
 +0.4% Toughness
-
 +0.0% Recovery
 These have armored soles for increased kicking power!
-ee

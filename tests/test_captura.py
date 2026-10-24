@@ -43,6 +43,17 @@ class TestAcharDica(unittest.TestCase):
         self.assertAlmostEqual(x1, 453, delta=4)
         self.assertAlmostEqual(y1, 890, delta=4)
 
+    def test_dica_encostada_no_inventario(self):
+        # Print real do jogo: a dica do Zei começa logo abaixo do painel do
+        # inventário. A moldura do painel emendava na borda e a caixa subia
+        # até o topo da tela (ou nem era achada).
+        img = amostra("jogo_zei_abaixo_do_inventario")
+        x0, y0, x1, y1 = achar_dica(img, cursor=(600, 700))
+        self.assertAlmostEqual(x0, 651, delta=4)
+        self.assertAlmostEqual(x1, 1066, delta=4)
+        self.assertGreater(y0, 620)  # o inventário acaba em y≈628
+        self.assertAlmostEqual(y1, 1063, delta=6)
+
     def test_duas_dicas_escolhe_a_mais_perto_do_cursor(self):
         zei, pain = amostra("gema_zei"), amostra("gema_pain_enhancer")
         altura = max(zei.shape[0], pain.shape[0])
@@ -95,6 +106,7 @@ GABARITO = {
         "+157 Cold Resistance", "+5695 Life after Each Kill"]),
     "gema_zei": ("Zei's Stone of Vengeance", None, []),
     "gema_pain_enhancer": ("Pain Enhancer", None, []),
+    "jogo_zei_abaixo_do_inventario": ("Zei's Stone of Vengeance", None, []),
 }
 
 

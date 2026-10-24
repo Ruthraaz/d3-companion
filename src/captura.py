@@ -1,4 +1,4 @@
-"""
+﻿"""
 Etapa 4 — Captura da dica (tooltip) perto do cursor.
 
 Duas partes:
@@ -45,6 +45,58 @@ def _maior_sequencia(coluna: np.ndarray) -> tuple[int, int]:
     return int(inicios[i]), int(fins[i] - inicios[i])
 
 
+VIZINHOS = (3, 13)       # janela "ao lado" da borda, em px pra dentro da dica
+VIZINHOS_PRETOS = 7      # quantos desses 10 precisam ser pretos
+VAO = (1, 7)             # o vão estreito logo depois da borda (só no topo)
+VAO_PRETOS = 3           # quantos desses 6 precisam ser pretos
+_TAPAR = np.ones((9, 1), np.uint8)  # buraco vertical que ainda é a mesma borda
+
+
+def _pretos_ao_lado(escuro: np.ndarray, janela: tuple[int, int], miolo_a_direita: bool
+                    ) -> np.ndarray:
+    """Quantos pixels pretos há em x+a .. x+b-1 (ou x-b+1 .. x-a, espelhado)."""
+    altura, largura = escuro.shape
+    acumulado = np.zeros((altura, largura + 1), np.int32)
+    np.cumsum(escuro, axis=1, out=acumulado[:, 1:])
+    a, b = janela
+    contagem = np.zeros((altura, largura), np.int32)
+    if miolo_a_direita:
+        contagem[:, :largura - b] = acumulado[:, b:largura] - acumulado[:, a:largura - b + a]
+    else:
+        contagem[:, b:] = acumulado[:, b - a + 1:largura - a + 1] - acumulado[:, 1:largura - b + 1]
+    return contagem
+
+
+def _colunas_de_borda(claro: np.ndarray, escuro: np.ndarray, miolo_a_direita: bool
+                      ) -> list[tuple[int, int, int]]:
+    """Colunas que parecem borda lateral de dica: (x, início, tamanho).
+
+    Borda de dica = pixel CLARO com o miolo PRETO logo ao lado (a maioria dos
+    10 vizinhos pra dentro). Só "linha clara longa" não basta: quando a dica
+    encosta no painel do inventário, a moldura dele emenda na borda da dica e
+    a "linha" subia até o topo da tela (visto no jogo em 24/10/2026). Ao lado
+    da grade do inventário só ~3 de 10 pixels são pretos; ao lado do miolo da
+    dica, 7 a 10.
+
+    No topo, o enfeite do banner do título deixa poucos vizinhos pretos, então
+    a borda achada é ESTICADA pra cima enquanto o vão estreito logo depois dela
+    continua preto (a dica tem moldura dupla, com ~4 px pretos no meio).
+    """
+    borda = claro & (_pretos_ao_lado(escuro, VIZINHOS, miolo_a_direita) >= VIZINHOS_PRETOS)
+    borda = cv2.morphologyEx(borda.astype(np.uint8), cv2.MORPH_CLOSE, _TAPAR)
+    estreita = claro & (_pretos_ao_lado(escuro, VAO, miolo_a_direita) >= VAO_PRETOS)
+    estreita = cv2.morphologyEx(estreita.astype(np.uint8), cv2.MORPH_CLOSE, _TAPAR)
+
+    colunas = []
+    for x in range(borda.shape[1]):
+        y0, n = _maior_sequencia(borda[:, x])
+        if n >= ALTURA_MINIMA:
+            while y0 > 0 and estreita[y0 - 1, x]:
+                y0, n = y0 - 1, n + 1
+            colunas.append((x, y0, n))
+    return colunas
+
+
 def achar_dica(img: np.ndarray, cursor: tuple[int, int] | None = None
                ) -> tuple[int, int, int, int] | None:
     """Devolve (x0, y0, x1, y1) da dica na imagem (BGR), ou None.
@@ -53,19 +105,17 @@ def achar_dica(img: np.ndarray, cursor: tuple[int, int] | None = None
     importa quando aparecem duas (a do item e a do item equipado).
     """
     mx = img.max(axis=2)
-    claro = mx >= CLARO
+    escuro = mx < ESCURO
     # Imagem integral: soma de qualquer retângulo em tempo constante.
-    preto = cv2.integral((mx < ESCURO).astype(np.uint8))
+    preto = cv2.integral(escuro.astype(np.uint8))
 
-    colunas = []
-    for x in range(img.shape[1]):
-        y0, n = _maior_sequencia(claro[:, x])
-        if n >= ALTURA_MINIMA:
-            colunas.append((x, y0, n))
+    esquerdas = _colunas_de_borda(mx >= CLARO, escuro, miolo_a_direita=True)
+    direitas = _colunas_de_borda(mx >= CLARO, escuro, miolo_a_direita=False)
+    colunas = esquerdas + direitas
 
     candidatas = []
-    for xe, ye, ne in colunas:
-        for xd, yd, nd in colunas:
+    for xe, ye, ne in esquerdas:
+        for xd, yd, nd in direitas:
             if not LARGURA[0] <= xd - xe <= LARGURA[1]:
                 continue
             topo, base = max(ye, yd), min(ye + ne, yd + nd)
