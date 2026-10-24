@@ -1,8 +1,13 @@
 """
-O app: aperte F8 com o mouse em cima de um item no jogo.
+O app: passe o mouse num item no jogo (ou aperte o F8 em cima dele).
 
-    F8 -> print perto do mouse -> recorta a dica -> OCR -> parser -> avaliador
+    print perto do mouse -> recorta a dica -> OCR -> parser -> avaliador
        -> selo no overlay, ao lado da dica (e o resumo no terminal)
+
+Dois jeitos de disparar (dá pra usar os dois juntos):
+  - automático (AUTOMATICO=sim no .env): o app olha a tela sozinho e avalia
+    cada dica nova que aparece; o selo fica enquanto a dica estiver na tela;
+  - atalho (ATALHO, padrão F8): avalia na hora, e o selo some em SELO_SEGUNDOS.
 
 Uso:
     python src/app.py                    (fica esperando o F8; Ctrl+C pra sair)
@@ -14,8 +19,9 @@ jogo nem se injeta nele, só olha a tela.
 
 Como as partes conversam:
   - a janela do selo (Qt) roda na thread principal;
-  - o F8 é ouvido numa thread separada, que faz o trabalho pesado (print + OCR
-    levam ~1 s) sem travar a interface, e avisa o selo por um SINAL do Qt.
+  - o F8 e o vigia (modo automático) rodam cada um numa thread, fazem o
+    trabalho pesado (print + OCR levam ~1 s) sem travar a interface e avisam
+    o selo por um SINAL do Qt. Uma trava impede dois OCR ao mesmo tempo.
 """
 
 import ctypes
@@ -38,18 +44,23 @@ import historico  # noqa: E402
 from avaliador import builds_escolhidas, ler_builds, resumo, texto_dos_problemas  # noqa: E402
 from config import ler_config  # noqa: E402
 from atalho import ler_atalho, registrar, sugestoes_livres  # noqa: E402
-from captura import capturar_perto_do_cursor  # noqa: E402
+from captura import capturar_perto_do_cursor, jogo_em_foco, olhada_rapida  # noqa: E402
 from nucleo import avaliar_print, caixa_na_tela, montar_selo  # noqa: E402
 from overlay import JanelaSelo  # noqa: E402
+from vigia import AVALIAR, ESCONDER, GUARDADO, Vigia  # noqa: E402
 
 WM_HOTKEY = 0x0312
 ATALHO = os.getenv("ATALHO", "F8")                         # .env pode mudar
 SEGUNDOS_DO_SELO = float(os.getenv("SELO_SEGUNDOS", "6"))  # .env pode mudar
+INTERVALO_DO_VIGIA = 0.25  # segundos entre olhadas (cada uma custa ~40 ms)
+FIXO = 0                   # selo sem tempo pra sumir: some quando a dica sumir
+
+_avaliando = threading.Lock()  # F8 e vigia nunca fazem OCR ao mesmo tempo
 
 
 class Ponte(QObject):
     """Leva os pedidos da thread do F8 até a janela do selo."""
-    mostrar = Signal(object, object)  # (Selo, caixa da dica na tela)
+    mostrar = Signal(object, object, float)  # (Selo, caixa da dica na tela, segundos; 0 = fixo)
     esconder = Signal()
 
 
@@ -89,18 +100,60 @@ def ouvir_atalho(ponte: Ponte, builds: list[dict], pronto: threading.Event, falh
     while user32.GetMessageW(ctypes.byref(msg), None, 0, 0) > 0:
         if msg.message != WM_HOTKEY:
             continue
-        # Esconde o selo anterior pra ele não aparecer no print.
-        ponte.esconder.emit()
-        time.sleep(0.12)
+        # O selo não aparece no print (overlay._fora_dos_prints), então nem
+        # precisa esconder antes.
         imagem, cursor, origem = capturar_perto_do_cursor()
-        # A build escolhida na janela vale na hora: o .env é lido a cada F8.
+        av, selo, caixa = avaliar(imagem, cursor, origem, builds)
+        ponte.mostrar.emit(selo, caixa, SEGUNDOS_DO_SELO)
+
+
+def avaliar(imagem, cursor, origem, builds, automatico=False):
+    """O caminho comum do F8 e do vigia: avalia, registra no histórico e
+    devolve (avaliação, selo, caixa da dica na tela)."""
+    with _avaliando:
+        # A build escolhida na janela vale na hora: o .env é relido a cada vez.
         usadas = builds_escolhidas(builds, ler_config()["BUILD_ATIVA"])
-        av = avaliar_print(imagem, cursor, usadas)
-        print("\n" + _terminal(av), flush=True)
+        av = avaliar_print(imagem, cursor, usadas, salvar_sem_dica=not automatico)
         selo = montar_selo(av)
-        com = usadas[0].get("apelido", usadas[0]["nome"]) if len(usadas) == 1 else "Todas"
-        historico.registrar(av, selo, com=com)  # a janela principal lê daqui
-        ponte.mostrar.emit(selo, caixa_na_tela(av, origem, cursor))
+        if not (automatico and av.erro):  # alarme falso do vigia não vai pro histórico
+            print("\n" + _terminal(av), flush=True)
+            com = usadas[0].get("apelido", usadas[0]["nome"]) if len(usadas) == 1 else "Todas"
+            historico.registrar(av, selo, com=com)  # a janela principal lê daqui
+        return av, selo, caixa_na_tela(av, origem, cursor)
+
+
+def vigiar(ponte: Ponte, builds: list[dict]):
+    """Modo automático: olha a tela a cada INTERVALO_DO_VIGIA e avalia cada
+    dica nova sozinho. Só olha com o Diablo III em primeiro plano."""
+    vigia = Vigia()
+    config, proxima_leitura = ler_config(), 0.0
+    while True:
+        time.sleep(INTERVALO_DO_VIGIA)
+        if time.monotonic() >= proxima_leitura:  # a janela pode ligar/desligar a qualquer hora
+            config, proxima_leitura = ler_config(), time.monotonic() + 1
+        if config["AUTOMATICO"] != "sim" or not jogo_em_foco():
+            if vigia.esquecer_tela():
+                ponte.esconder.emit()
+            continue
+
+        imagem, cursor, origem = capturar_perto_do_cursor()
+        assinatura = olhada_rapida(imagem, cursor)
+        if assinatura is not None:
+            # Trocar a build na janela tem que reavaliar a mesma dica.
+            assinatura = (config["BUILD_ATIVA"],) + assinatura
+        acao, guardado = vigia.olhar(assinatura)
+        if acao == ESCONDER:
+            ponte.esconder.emit()
+        elif acao == GUARDADO:
+            ponte.mostrar.emit(*guardado, FIXO)
+        elif acao == AVALIAR:
+            # A tela está parada há uma olhada: avalia o print que já temos.
+            av, selo, caixa = avaliar(imagem, cursor, origem, builds, automatico=True)
+            if av.erro:  # dica de habilidade, menu etc.: fica quieto e não tenta de novo
+                vigia.guardar(assinatura, None)
+            else:
+                vigia.guardar(assinatura, (selo, caixa))
+                ponte.mostrar.emit(selo, caixa, FIXO)
 
 
 def main():
@@ -126,7 +179,7 @@ def main():
         g = app.primaryScreen().geometry()
         largura = av.caixa[2] - av.caixa[0] if av.caixa else 400
         x0 = g.center().x() - largura // 2
-        selo.mostrar(montar_selo(av), (x0, g.top() + 150, x0 + largura, g.top() + 700))
+        selo.mostrar(montar_selo(av), (x0, g.top() + 150, x0 + largura, g.top() + 700), SEGUNDOS_DO_SELO)
         QTimer.singleShot(int(SEGUNDOS_DO_SELO * 1000) + 300, app.quit)
         app.exec()
         return
@@ -147,6 +200,7 @@ def main():
     ponte.esconder.connect(selo.hide)
     pronto, falhou = threading.Event(), []
     threading.Thread(target=ouvir_atalho, args=(ponte, builds, pronto, falhou), daemon=True).start()
+    threading.Thread(target=vigiar, args=(ponte, builds), daemon=True).start()
     pronto.wait()
     if falhou:
         livres = ", ".join(sugestoes_livres(evitar=ATALHO)) or "nenhuma das sugestões"
@@ -155,8 +209,9 @@ def main():
               "Escolha uma e coloque no .env, ex.: ATALHO=Ctrl+F8 (veja .env.example).")
         sys.exit(1)
 
-    print(f"D3 Companion rodando com {len(builds)} builds. "
-          f"Passe o mouse num item e aperte {ATALHO}. (Ctrl+C pra sair)", flush=True)
+    modo = ("passe o mouse num item (avaliação automática) ou aperte "
+            if ler_config()["AUTOMATICO"] == "sim" else "passe o mouse num item e aperte ")
+    print(f"D3 Companion rodando com {len(builds)} builds: {modo}{ATALHO}. (Ctrl+C pra sair)", flush=True)
     app.exec()
     print("Até mais!")
 

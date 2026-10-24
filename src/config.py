@@ -16,7 +16,8 @@ ARQUIVO_ENV = Path(__file__).resolve().parent.parent / ".env"
 
 # chave -> valor padrão (o mesmo que o app usa quando a chave não existe)
 # BUILD_ATIVA = id da build escolhida na janela (nome do arquivo em builds/); vazio = todas.
-CHAVES = {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": ""}
+# AUTOMATICO = "sim": avalia sozinho ao passar o mouse num item; "nao": só pelo atalho.
+CHAVES = {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim"}
 
 
 def ler_config(arquivo: Path = ARQUIVO_ENV) -> dict[str, str]:
@@ -38,6 +39,9 @@ def validar(chave: str, valor: str) -> str | None:
             return "Tempo do selo precisa ser um número (ex.: 6)."
         if not 1 <= segundos <= 60:
             return "Tempo do selo precisa ficar entre 1 e 60 segundos."
+    elif chave == "AUTOMATICO":
+        if valor not in ("sim", "nao"):
+            return 'Avaliação automática precisa ser "sim" ou "nao".'
     elif chave == "BUILD_ATIVA":
         from avaliador import carregar_builds  # aqui: config não precisa das builds pro resto
         if valor and valor not in {b["id"] for b in carregar_builds()}:

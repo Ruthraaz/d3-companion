@@ -180,6 +180,48 @@ def achar_dicas(img: np.ndarray) -> list[tuple[int, int, int, int]]:
     return candidatas
 
 
+REDUCAO = 8              # a olhada rápida usa o print 8x menor
+BLOCO_MINIMO = (30, 25)  # dica tem pelo menos ~240 x 200 px (em células de 8 px)
+BLOCO_PRETO = 0.6        # fração de células pretas no bloco (o texto ocupa o resto)
+
+
+def olhada_rapida(imagem: Image.Image, cursor: tuple[int, int]) -> tuple | None:
+    """Tem uma dica perto do mouse? Devolve uma "assinatura" dela, ou None.
+
+    É o vigia da avaliação automática: roda várias vezes por segundo, então
+    não pode usar a busca completa (achar_dica leva ~260 ms no print inteiro).
+    Aqui o print vira uma imagem 8x menor de "quanto de preto tem em cada
+    quadradinho de 8x8"; a dica é um bloco grande quase todo preto.
+
+    A assinatura muda quando a dica muda (outro item = outro texto = outro
+    desenho de preto) e fica IGUAL enquanto a tela está parada. O vigia só
+    avalia quando ela se repete, ou seja, quando a dica terminou de aparecer.
+    """
+    rgb = np.asarray(imagem if imagem.mode == "RGB" else imagem.convert("RGB"))
+    # Igual a "todos os canais < ESCURO", mas ~10x mais rápido que max() do NumPy.
+    preto = cv2.inRange(rgb, (0, 0, 0), (ESCURO - 1,) * 3)
+    altura, largura = preto.shape
+    pequeno = cv2.resize(preto, (largura // REDUCAO, altura // REDUCAO), interpolation=cv2.INTER_AREA)
+    blocos = cv2.morphologyEx((pequeno >= 128).astype(np.uint8), cv2.MORPH_CLOSE,
+                              np.ones((3, 3), np.uint8))
+    n, _, stats, _ = cv2.connectedComponentsWithStats(blocos)
+    cx = cursor[0] // REDUCAO
+    melhor = None
+    for x, y, w, h, area in stats[1:n]:
+        if w < BLOCO_MINIMO[0] or h < BLOCO_MINIMO[1] or area < BLOCO_PRETO * w * h:
+            continue
+        distancia = max(x - cx, 0, cx - (x + w))
+        if distancia * REDUCAO > DISTANCIA_DO_CURSOR:
+            continue
+        if melhor is None or distancia < melhor[0]:
+            melhor = (distancia, int(x), int(y), int(w), int(h))
+    if melhor is None:
+        return None
+    _, x, y, w, h = melhor
+    desenho = hash(pequeno[y:y + h, x:x + w].tobytes())
+    return x, y, w, h, desenho
+
+
 def localizar_dica(imagem: Image.Image, cursor: tuple[int, int] | None = None
                    ) -> tuple[int, int, int, int] | None:
     """Caixa (x0, y0, x1, y1) da dica num print (PIL), já com a folga. None se não achou.
@@ -230,6 +272,16 @@ def posicao_do_cursor() -> tuple[int, int]:
     return ponto.x, ponto.y
 
 
+def jogo_em_foco() -> bool:
+    """A janela da frente é o Diablo III? A avaliação automática só olha a tela
+    nesse caso: fora do jogo, uma janela de tema escuro pode parecer uma dica."""
+    user32 = ctypes.windll.user32
+    janela = user32.GetForegroundWindow()
+    titulo = ctypes.create_unicode_buffer(256)
+    user32.GetWindowTextW(janela, titulo, 256)
+    return titulo.value.strip() == "Diablo III"
+
+
 def capturar_perto_do_cursor() -> tuple[Image.Image, tuple[int, int], tuple[int, int]]:
     """Print de uma faixa da tela em volta do mouse (altura inteira).
 
@@ -238,14 +290,21 @@ def capturar_perto_do_cursor() -> tuple[Image.Image, tuple[int, int], tuple[int,
     """
     _ativar_pixels_reais()
     user32 = ctypes.windll.user32
-    # Tela virtual = todos os monitores juntos.
-    esq, topo = user32.GetSystemMetrics(76), user32.GetSystemMetrics(77)
-    larg, alt = user32.GetSystemMetrics(78), user32.GetSystemMetrics(79)
-
     cx, cy = posicao_do_cursor()
+    # Mouse no monitor principal (onde o jogo costuma estar): print só dele,
+    # ~25 ms em vez de ~42 ms. Isso importa pra avaliação automática, que tira
+    # print várias vezes por segundo. Noutro monitor, usa a tela virtual inteira.
+    larg, alt = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+    principal = 0 <= cx < larg and 0 <= cy < alt
+    if principal:
+        esq, topo = 0, 0
+    else:
+        esq, topo = user32.GetSystemMetrics(76), user32.GetSystemMetrics(77)
+        larg, alt = user32.GetSystemMetrics(78), user32.GetSystemMetrics(79)
+
     x0 = max(esq, cx - MEIA_LARGURA_CAPTURA)
     x1 = min(esq + larg, cx + MEIA_LARGURA_CAPTURA)
-    imagem = ImageGrab.grab(bbox=(x0, topo, x1, topo + alt), all_screens=True)
+    imagem = ImageGrab.grab(bbox=(x0, topo, x1, topo + alt), all_screens=not principal)
     return imagem, (cx - x0, cy - topo), (x0, topo)
 
 

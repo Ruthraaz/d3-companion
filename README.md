@@ -9,7 +9,7 @@ O app só **olha a tela** (captura + OCR). Ele não lê a memória do jogo nem s
 ## Como funciona
 
 ```
-[F8 com o mouse no item]
+[mouse em cima do item (ou F8)]
         │
         ▼
  1. Captura da tela perto do cursor
@@ -41,6 +41,7 @@ A lógica (OCR, parser, avaliador) fica num **núcleo** sem interface (`src/nucl
 | | **Versão 1:** testar tudo dentro do jogo | ✅ testada em 24/10/2026 |
 | 6 | Janela principal (pywebview): builds no boneco, histórico, configurações | ✅ primeira versão |
 | 7 | Outras classes (só JSON de build novo) + conferência das builds | ✅ funcionando |
+| — | Avaliação automática: passar o mouse no item, sem apertar nada | ✅ falta testar no jogo |
 | 8 | Importar builds de sites (Maxroll etc.) | ⏳ próxima |
 
 ## O que aprendemos na Etapa 1
@@ -206,6 +207,22 @@ Chave que começa com `_` é comentário (`"_nota": "..."`): o JSON não tem com
 - JSON quebrado diz a linha e a coluna.
 
 O que a conferência **não** pega: um `modelo` escrito certo no formato mas que não bate com nenhum afixo do jogo (ex.: `"+# Strenght"`). Pra isso não tem lista oficial de afixos no projeto; o jeito é testar com um print (`python src/avaliador.py <print.png>`).
+
+## Avaliação automática (passar o mouse)
+
+Não precisa apertar nada: com o Diablo III na frente, **passe o mouse num item** e o selo aparece sozinho. Ele fica enquanto a dica estiver na tela e some quando ela some. O F8 continua funcionando junto. Liga e desliga em **Configurações → Avaliar sozinho ao passar o mouse** (ou `AUTOMATICO=sim`/`nao` no `.env`).
+
+Como funciona sem pesar no jogo:
+- **A olhada barata** (`captura.olhada_rapida`): a cada 0,25 s o app tira um print perto do mouse e reduz 8x, virando um mapa de "quanto preto tem em cada quadradinho". A dica do D3 é um bloco grande quase todo preto, então dá pra achar sem a busca completa. Print + olhada custam ~40 ms; o OCR (~1 s) só roda quando aparece uma dica **nova**.
+- **O vigia** (`src/vigia.py`) decide o que fazer com cada olhada, sem saber de tela (por isso tem teste sem jogo):
+  - espera a dica **parar de mudar** (duas olhadas iguais) antes de avaliar, pra não ler uma dica pela metade;
+  - **voltou num item que já viu**: mostra o resultado guardado, sem OCR;
+  - **2 olhadas sem dica**: esconde o selo;
+  - o que não era item (dica de habilidade, menu): guarda "não era item" e não tenta de novo.
+- **Só olha com o jogo em primeiro plano** (título da janela "Diablo III"): fora dele, um site de tema escuro poderia parecer uma dica.
+- **O selo não aparece nos prints** (`SetWindowDisplayAffinity`, Windows 10 2004+): você vê o selo, mas a captura não. Sem isso o vigia veria o próprio selo, acharia que a tela mudou e reavaliaria sem parar. De brinde, o F8 não precisa mais esconder o selo antes do print.
+- **Alarme falso não suja o histórico:** no automático, uma "dica" que não deu pra ler não vai pro histórico nem salva print em `capturas/`.
+- **Uma trava** impede o F8 e o vigia de rodarem OCR ao mesmo tempo.
 
 ## Como rodar (Windows)
 

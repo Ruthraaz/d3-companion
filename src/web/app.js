@@ -253,7 +253,7 @@ async function atualizarEstado() {
   caixa.classList.toggle("ligado", e.rodando);
   caixa.classList.toggle("parado", !e.rodando);
   caixa.querySelector(".estado-texto").textContent = e.rodando
-    ? `Overlay ativo · ${e.config.ATALHO} · ${apelidoAtivo(e.config)}`
+    ? `Overlay ativo · ${e.config.AUTOMATICO === "sim" ? "automático + " : ""}${e.config.ATALHO} · ${apelidoAtivo(e.config)}`
     : "Overlay parado — veja Configurações";
   document.getElementById("log").textContent = e.log.join("\n") || "(sem mensagens)";
 }
@@ -262,7 +262,10 @@ async function carregarConfig() {
   const valores = await estado.api.config();
   const form = document.getElementById("form-config");
   for (const [chave, valor] of Object.entries(valores)) {
-    if (form.elements[chave]) form.elements[chave].value = valor;
+    const campo = form.elements[chave];
+    if (!campo) continue;
+    if (campo.type === "checkbox") campo.checked = valor === "sim";
+    else campo.value = valor;
   }
 }
 
@@ -272,13 +275,15 @@ async function salvarConfig(evento) {
   const mudancas = {
     ATALHO: form.elements.ATALHO.value,
     SELO_SEGUNDOS: form.elements.SELO_SEGUNDOS.value,
+    AUTOMATICO: form.elements.AUTOMATICO.checked ? "sim" : "nao",
   };
   const aviso = document.getElementById("aviso-config");
   aviso.textContent = "";
   const { erros } = await estado.api.salvar_config(mudancas);
   for (const chave of Object.keys(mudancas)) {
     form.elements[chave].classList.toggle("invalido", Boolean(erros[chave]));
-    form.querySelector(`[data-erro="${chave}"]`).textContent = erros[chave] || "";
+    const aviso = form.querySelector(`[data-erro="${chave}"]`);
+    if (aviso) aviso.textContent = erros[chave] || "";
   }
   if (!Object.keys(erros).length) {
     aviso.textContent = "Salvo. Overlay reiniciado.";
@@ -373,7 +378,7 @@ function apiDeExemplo() {
       linhas: [[["✅ ", "normal"], ["Dreadlands", "build"], [" · Gema da build", "normal"]],
                [["✅ ", "normal"], ["LoN", "build"], [" · Gema da build", "normal"]]] },
   ];
-  let config = { ATALHO: "F8", SELO_SEGUNDOS: "6", BUILD_ATIVA: "" };
+  let config = { ATALHO: "F8", SELO_SEGUNDOS: "6", BUILD_ATIVA: "", AUTOMATICO: "sim" };
   return {
     builds: async () => builds,
     // ?problema na URL simula uma build com erro, pra ver o aviso.

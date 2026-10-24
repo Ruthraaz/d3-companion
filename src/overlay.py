@@ -41,6 +41,7 @@ WS_EX_NOACTIVATE = 0x08000000
 WS_EX_TRANSPARENT = 0x00000020
 WS_EX_LAYERED = 0x00080000
 WS_EX_TOOLWINDOW = 0x00000080
+WDA_EXCLUDEFROMCAPTURE = 0x00000011
 
 
 def _html_da_linha(linha: list[tuple[str, str]]) -> str:
@@ -91,8 +92,10 @@ class JanelaSelo(QWidget):
         self.corpo.setText("<br>".join(_html_da_linha(l) for l in selo.linhas))
         self.adjustSize()
 
-    def mostrar(self, selo: Selo, caixa_na_tela: Caixa):
-        """Mostra o selo ao lado da dica (coordenadas de tela) e agenda o sumiço."""
+    def mostrar(self, selo: Selo, caixa_na_tela: Caixa, segundos: float | None = None):
+        """Mostra o selo ao lado da dica (coordenadas de tela) e agenda o sumiço.
+        `segundos=0`: fica até alguém mandar esconder (modo automático, que
+        esconde quando a dica some)."""
         self.preencher(selo)
         tela = QGuiApplication.screenAt(self._centro(caixa_na_tela)) or QGuiApplication.primaryScreen()
         g = tela.geometry()
@@ -102,7 +105,11 @@ class JanelaSelo(QWidget):
         self.show()
         self._nunca_pegar_foco()
         self.raise_()
-        self.timer.start(int(self.segundos * 1000))
+        segundos = self.segundos if segundos is None else segundos
+        if segundos > 0:
+            self.timer.start(int(segundos * 1000))
+        else:
+            self.timer.stop()
 
     @staticmethod
     def _centro(caixa: Caixa) -> QPoint:
@@ -116,5 +123,9 @@ class JanelaSelo(QWidget):
             estilo = user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
             user32.SetWindowLongW(hwnd, GWL_EXSTYLE, estilo | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT
                                   | WS_EX_LAYERED | WS_EX_TOOLWINDOW)
+            # Fora dos prints: o selo some da captura de tela (o jogador continua
+            # vendo). Sem isso o modo automático veria o próprio selo, acharia que
+            # a tela mudou e reavaliaria sem parar. Windows 10 2004 ou mais novo.
+            user32.SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE)
         except (AttributeError, OSError):
             pass

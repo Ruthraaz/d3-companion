@@ -57,7 +57,7 @@ class TestConfig(unittest.TestCase):
         self.pasta.cleanup()
 
     def test_padroes_sem_env(self):
-        self.assertEqual(ler_config(self.env), {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": ""})
+        self.assertEqual(ler_config(self.env), {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim"})
 
     def test_salva_sem_mexer_no_resto(self):
         self.env.write_text("# meu comentário\nTESSERACT_CMD=C:\\Tess\\tesseract.exe\nATALHO=F8\n",
@@ -66,7 +66,7 @@ class TestConfig(unittest.TestCase):
         texto = self.env.read_text(encoding="utf-8")
         self.assertIn("# meu comentário", texto)
         self.assertIn("TESSERACT_CMD=C:\\Tess\\tesseract.exe", texto)
-        self.assertEqual(ler_config(self.env), {"ATALHO": "Ctrl+F9", "SELO_SEGUNDOS": "4.5", "BUILD_ATIVA": ""})
+        self.assertEqual(ler_config(self.env), {"ATALHO": "Ctrl+F9", "SELO_SEGUNDOS": "4.5", "BUILD_ATIVA": "", "AUTOMATICO": "sim"})
 
     def test_invalido_nao_grava_nada(self):
         self.env.write_text("ATALHO=F8\n", encoding="utf-8")
@@ -110,6 +110,11 @@ class TestBuildEscolhida(unittest.TestCase):
         self.assertEqual(ler_config(self.env)["BUILD_ATIVA"], "legacy_of_nightmares")
         self.assertEqual(salvar_config({"BUILD_ATIVA": ""}, self.env), {})
         self.assertEqual(ler_config(self.env)["BUILD_ATIVA"], "")
+
+    def test_config_automatico_liga_e_desliga(self):
+        self.assertEqual(salvar_config({"AUTOMATICO": "nao"}, self.env), {})
+        self.assertEqual(ler_config(self.env)["AUTOMATICO"], "nao")
+        self.assertIn("AUTOMATICO", salvar_config({"AUTOMATICO": "talvez"}, self.env))
 
     def test_config_recusa_build_que_nao_existe(self):
         self.assertIn("BUILD_ATIVA", salvar_config({"BUILD_ATIVA": "inventada"}, self.env))

@@ -37,8 +37,12 @@ class Avaliacao:
 
 
 def avaliar_print(imagem: Image.Image, cursor: tuple[int, int] | None,
-                  builds: list[dict], salvar: bool = True) -> Avaliacao:
-    """Print -> acha a dica -> OCR -> parser -> avaliador."""
+                  builds: list[dict], salvar: bool = True,
+                  salvar_sem_dica: bool = True) -> Avaliacao:
+    """Print -> acha a dica -> OCR -> parser -> avaliador.
+
+    `salvar_sem_dica=False` na avaliação automática: ela olha a tela o tempo
+    todo, e um print inteiro por "alarme falso" encheria capturas/."""
     inicio = time.perf_counter()
     av = Avaliacao()
     carimbo = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -48,7 +52,7 @@ def avaliar_print(imagem: Image.Image, cursor: tuple[int, int] | None,
     av.caixa = localizar_dica(imagem, cursor)
     if av.caixa is None:
         av.erro = "Não achei a dica perto do mouse."
-        if salvar:
+        if salvar and salvar_sem_dica:
             av.arquivo = PASTA_CAPTURAS / f"{carimbo}_sem_dica.png"
             imagem.save(av.arquivo)
     else:

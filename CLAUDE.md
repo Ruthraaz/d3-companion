@@ -71,7 +71,19 @@ trabalho extra agora, não feche essa porta:
 | — | **Versão 1:** Arthur testa F8 + selo dentro do jogo; corrigir o que aparecer | ✅ testado no jogo em 24/10/2026 (gemas + equipamentos) |
 | 6 | Janela principal (pywebview: `src/janela.py`, página em `src/web/`) | ✅ primeira versão (falta o Arthur usar) |
 | 7 | Outras classes: só builds novas em JSON (+ conferência das builds) | ✅ |
+| — | Avaliação automática ao passar o mouse (`src/vigia.py`, `captura.olhada_rapida`) | ✅ (falta o Arthur testar no jogo) |
 | 8 | Importar builds de sites (Maxroll etc.) como tradutores | próxima |
+
+### Avaliação automática — notas
+- Pedido do Arthur (24/10/2026): "só passar o mouse por cima do item" em vez de apertar F8.
+- `app.vigiar` (thread): a cada 0,25 s, print + `olhada_rapida` (~40 ms) → assinatura (posição,
+  tamanho, hash do bloco preto, prefixada com BUILD_ATIVA) → `Vigia.olhar` decide
+  NADA/AVALIAR/GUARDADO/ESCONDER. OCR só em dica nova e estável; resultado guardado (LRU 40).
+- Só com a janela "Diablo III" em primeiro plano (`captura.jogo_em_foco`).
+- Selo fora dos prints (`WDA_EXCLUDEFROMCAPTURE`) — essencial, senão o vigia vê o próprio selo.
+- No automático o selo é fixo (`segundos=0`), some quando a dica some; no F8 some em SELO_SEGUNDOS.
+- `AUTOMATICO=sim|nao` no .env (padrão sim), relido a cada 1 s; toggle na aba Configurações.
+- Erro no automático (não era item) não vai pro histórico nem salva print (`salvar_sem_dica=False`).
 
 ### Etapa 7 — notas
 - Nada de classe fixa no código; modelo pra outra classe em `builds/exemplos/` (não é carregada).
