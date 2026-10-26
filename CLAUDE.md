@@ -162,6 +162,13 @@ trabalho extra agora, não feche essa porta:
   `--overlay` sobe (parou na trava porque o overlay do Arthur estava aberto). Zip ~133 MB.
 - Sem assinatura digital: SmartScreen avisa (explicado no LEIA-ME.txt e no site).
 
+### Site (26/10/2026) — notas
+- `docs/` = GitHub Pages (branch main, pasta /docs, `.nojekyll`). Endereço: https://ruthraaz.github.io/d3-companion/
+- `docs/site.js` lê `api.github.com/.../releases/latest` e aponta o botão pro zip; só aceita link
+  `github.com/Ruthraaz/d3-companion/releases/download/`. Sem versão publicada: 404 e o botão leva à página de Releases.
+- CSP própria (`connect-src https://api.github.com`). Nenhuma imagem/print do jogo no site:
+  a dica e o selo da capa são HTML/CSS; `img/janela.webp` é a tela de exemplo do app (sem ícones).
+
 ### Segurança (26/10/2026) — notas
 - Pente fino pedido pelo Arthur. Tudo em `tests/test_seguranca.py`; resumo no README ("Segurança e privacidade").
 - `src/rede.py`: `ler()` (limite de 20 MB em toda resposta) e `link_seguro()` (abrir_link só https://maxroll.gg).

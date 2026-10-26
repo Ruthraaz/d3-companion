@@ -371,6 +371,8 @@ O app não lida com senha nem dado de pagamento, mas mexe com chave da Blizzard,
 
 ## Baixar pronto (sem Python)
 
+Site do app: **https://ruthraaz.github.io/d3-companion/** (botão de download direto pra última versão).
+
 Quem só quer usar: baixe o `D3-Companion-<versão>-windows.zip` na página de [Releases](https://github.com/Ruthraaz/d3-companion/releases/latest), descompacte e abra **`D3 Companion.exe`**. O Tesseract já vem junto. Seus dados (builds, prints, `.env`) ficam em `%APPDATA%\D3 Companion`, então trocar de versão não apaga nada. O `LEIA-ME.txt` dentro do zip explica o resto (inclusive o aviso do SmartScreen, porque o .exe não tem assinatura digital).
 
 ### Gerar o .exe
