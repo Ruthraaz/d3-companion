@@ -195,7 +195,7 @@ function desenharBuilds() {
       el("p", { class: "mudo" }, `Nenhuma build de ${CLASSES[estado.classe] || estado.classe} ainda. `,
         el("button", { class: "link", type: "button", onclick: () => abrirAba("guias") }, "Ver os guias dessa classe")),
       el("button", { class: "chip-build chip-importar", onclick: () => abrirImportar() },
-        el("span", { class: "chip-apelido" }, "+ Importar"), el("span", { class: "chip-nome" }, "do Maxroll")));
+        el("span", { class: "chip-apelido" }, "+ Colar link"), el("span", { class: "chip-nome" }, "de uma build do Maxroll")));
     trocar(document.getElementById("avaliando"));
     return;
   }
@@ -225,7 +225,7 @@ function desenharBuilds() {
     class: "chip-build chip-importar",
     title: "Trazer uma build pronta de um guia do Maxroll",
     onclick: () => abrirImportar(),
-  }, el("span", { class: "chip-apelido" }, "+ Importar"), el("span", { class: "chip-nome" }, "do Maxroll")));
+  }, el("span", { class: "chip-apelido" }, "+ Colar link"), el("span", { class: "chip-nome" }, "de uma build do Maxroll")));
   // A build do atalho pode ser de outra classe que a que está no boneco.
   const com = apelidoAtivo({ BUILD_ATIVA: estado.ativa });
   const fonte = estado.builds[estado.build].fonte;
@@ -525,12 +525,15 @@ async function importarMaxroll(b, perfil, apelido, botao) {
   if (estado.guias) desenharGuias();
   estado.habilidade = null;
   fecharImportar();
+  // Colou o link, já vale: o atalho passa a avaliar com a build nova.
+  estado.ativa = r.id;
+  await estado.api.escolher_build(r.id);
   desenharBuilds();
   estado.api.reiniciar_overlay();
   setTimeout(atualizarEstado, 1500);
   trocar(document.getElementById("avaliando"),
     el("strong", { class: "t-ok" }, `Build importada: ${estado.builds[estado.build].apelido}. `),
-    "Clique nela pro atalho avaliar só com ela. O arquivo ficou em ",
+    "O atalho já avalia com ela: no jogo, passe o mouse num item e aperte o atalho. O arquivo ficou em ",
     el("code", {}, `builds/${r.id}.json`), ".");
 }
 

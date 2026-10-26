@@ -128,6 +128,18 @@ Fiendish Grips — Set Gloves
 🟡 Legacy of Nightmares: Precisa ser Ancient (nota 0.67)
 ```
 
+**O selo explica:** a build de cima mostra o que o item **tem**, o que **falta** e, quando o item tem um afixo que a build não usa, qual trocar no **Místico** (ele troca um afixo por item):
+
+```
+Fiendish Grips
+✅ Unhallowed · item da build
+Tem: Destreza ✓  Vitalidade ✓  Crítico ✓
+Falta: Dano crítico ✗
+Dica: no Místico, troque "Attack Speed Increased by 5.0%" por Dano crítico.
+```
+
+Com "Todas", as outras builds aparecem embaixo numa linha só (ex.: `✅ LoN · 2 de 5 afixos`). A dica não sabe se o item já foi trocado no Místico antes; nesse caso, só dá pra trocar o mesmo afixo de novo.
+
 **Serve por enquanto (pra upar):** quando o item não bate, mas está no espaço certo, tem todos os obrigatórios e **metade ou mais dos desejáveis**, ele *serve por enquanto*: dá pra usar até cair o item da build. O item certo sem ser Ancient também serve por enquanto. O selo fica com a borda **amarela**:
 
 ```
@@ -273,12 +285,12 @@ Clicar numa habilidade mostra no painel da direita a descrição em português e
 
 A lista vem do mapa do site (`maxroll.gg/d3/sitemap.xml`), fica guardada em `dados/maxroll/` e é lida de novo no máximo uma vez por dia. As builds de um guia só são baixadas quando você clica em **Ver builds**: assim o app não puxa o site inteiro de uma vez.
 
-**Pela janela:** na aba Builds, clique em **+ Importar** e cole o link do guia (ex.: `https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide`) ou do planejador. Depois:
+**Pela janela:** na aba Builds, clique em **+ Colar link** e cole o link do guia (ex.: `https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-guide`) ou do planejador. Depois:
 1. **Build:** se o guia tiver mais de uma, escolha qual. As da seguidora (Enchantress) ficam de fora.
 2. **Perfil:** escolha a variação da build (push, speed, bounties…).
 3. **Nome curto:** é o que aparece na janela e no selo. Pode trocar.
 
-A build vai pra `builds/` (nunca sobrescreve outra) e o overlay reinicia sozinho pra já usar ela no F8.
+A build vai pra `builds/` (nunca sobrescreve outra), **passa a ser a build do atalho** e o overlay reinicia sozinho pra já usar ela.
 
 O Maxroll não tem API oficial. O app lê o mesmo endereço que a página do guia usa pra mostrar a build, **uma build por vez, só quando você pede**. Os itens vêm com o código da Blizzard, e o app acha o nome, o ícone e a descrição.
 

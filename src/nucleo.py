@@ -99,15 +99,47 @@ class Selo:
     parcial: bool = False
 
 
-def _afixos_da_linha(linha: list, r: dict) -> None:
-    for i, a in enumerate(r["afixos"]):
-        if i:
-            linha.append(("  ", "normal"))
-        linha.append((f"{a['rotulo']} {'✓' if a['ok'] else '✗'}", "ok" if a["ok"] else "falta"))
+def _lista(rotulo: str, afixos: list[dict], marca: str, estilo: str) -> list[tuple[str, str]]:
+    linha = [(rotulo, "normal")]
+    for i, a in enumerate(afixos):
+        linha += [("  ", "normal")] if i else []
+        linha.append((f"{a['rotulo']} {marca}", estilo))
+    return linha
+
+
+def _detalhe(r: dict) -> list[list[tuple[str, str]]]:
+    """O que o item tem e o que falta pra build; e, se der, o que trocar no Místico."""
+    tem = [a for a in r["afixos"] if a["ok"]]
+    falta = [a for a in r["afixos"] if not a["ok"]]
+    linhas = []
+    if tem:
+        linhas.append(_lista("Tem: ", tem, "✓", "ok"))
+    if falta:
+        linhas.append(_lista("Falta: ", falta, "✗", "falta"))
+        # O Místico troca UM afixo por item: troca um que a build não usa por um que falta.
+        trocaveis = [a["rotulo"] for a in falta if a["rotulo"] != "Encaixe"] or [falta[0]["rotulo"]]
+        if r.get("sobrando"):
+            alvo = trocaveis[0] + (f" (ou {trocaveis[1]})" if len(trocaveis) > 1 else "")
+            linhas.append([(f"Dica: no Místico, troque \"{r['sobrando'][0]}\" por {alvo}.", "motivo")])
+    return linhas
+
+
+def _resumo(r: dict) -> str:
+    """Uma linha curta pras outras builds (com "Todas")."""
+    if not r["afixos"]:
+        return r["motivo"]
+    ok = sum(a["ok"] for a in r["afixos"])
+    return f"{ok} de {len(r['afixos'])} afixos"
 
 
 def montar_selo(av: Avaliacao) -> Selo:
-    """Ex.: ✅ Dreadlands · Destreza ✓ Crítico ✓ Encaixe ✗"""
+    """Ex.:
+        Fiendish Grips
+        ✅ Unhallowed · item da build
+        Tem: Destreza ✓  Vitalidade ✓  Crítico ✓
+        Falta: Dano crítico ✗
+        Dica: no Místico, troque "Attack Speed Increased by 5.0%" por Dano crítico.
+    A build de cima ganha o detalhe; as outras (com "Todas"), uma linha cada."""
     if av.erro:
         return Selo(False, "D3 Companion", [[(av.erro, "motivo")]])
     item = av.item or {}
@@ -117,32 +149,31 @@ def montar_selo(av: Avaliacao) -> Selo:
 
     batem = [r for r in av.resultados if r["bate"]]
     por_enquanto = [r for r in av.resultados if r["por_enquanto"]]
-    if not batem and por_enquanto:
-        # Pra upar: não é o item da build, mas serve até achar.
-        linhas = []
-        for r in por_enquanto:
-            linha = [("🟡 Por enquanto · ", "normal"), (r["apelido"], "build")]
-            if r["afixos"]:
-                linha.append((" · ", "normal"))
-                _afixos_da_linha(linha, r)
-            linhas.append(linha)
-            linhas.append([(r["motivo"], "motivo")])
-        return Selo(False, titulo, linhas, parcial=True)
-    if not batem:
+    if not batem and not por_enquanto:
         r = av.resultados[0]  # a que chegou mais perto
         return Selo(False, titulo, [[("❌ Não serve", "build")],
                                     [(f"{r['apelido']}: {r['motivo']}", "motivo")]])
 
-    linhas = []
-    for r in batem:
-        linha = [("✅ ", "normal"), (r["apelido"], "build")]
-        if r["afixos"]:
-            linha.append((" · ", "normal"))
-            _afixos_da_linha(linha, r)
+    if batem:
+        primeira, outras, marca = batem[0], batem[1:], "✅ "
+        if not primeira["afixos"]:  # gema, cubo
+            o_que = primeira["motivo"]
+        elif primeira["motivo"].startswith("Item da build"):
+            o_que = "item da build"
         else:
-            linha.append((f" · {r['motivo']}", "normal"))
-        linhas.append(linha)
-    return Selo(True, titulo, linhas)
+            o_que = "serve neste espaço"
+        if primeira["afixos"] and all(a["ok"] for a in primeira["afixos"]):
+            o_que += " · tudo certo"
+    else:
+        # Pra upar: não é o item da build, mas serve até achar.
+        primeira, outras, marca = por_enquanto[0], por_enquanto[1:], "🟡 Por enquanto · "
+        o_que = primeira["motivo"]
+
+    linhas = [[(marca, "normal"), (primeira["apelido"], "build"), (f" · {o_que}", "normal")]]
+    linhas += _detalhe(primeira)
+    for r in outras:
+        linhas.append([(marca, "normal"), (r["apelido"], "build"), (f" · {_resumo(r)}", "normal")])
+    return Selo(bool(batem), titulo, linhas, parcial=not batem)
 
 
 def texto_do_selo(selo: Selo) -> str:

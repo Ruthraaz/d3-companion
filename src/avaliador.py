@@ -74,6 +74,10 @@ def _tem_afixo(item: dict, regra: str | dict) -> bool:
     return False
 
 
+def _modelo(regra: str | dict) -> str:
+    return regra["modelo"] if isinstance(regra, dict) else regra
+
+
 def _rotulo(regra: str | dict) -> str:
     """Nome curto pra mostrar (ex.: "Destreza"); sem rótulo, o próprio modelo."""
     if isinstance(regra, str):
@@ -110,6 +114,7 @@ def avaliar(item: dict, build: dict) -> dict:
             "afixos": [],
             "nota": 1.0 if bate else 0.0,
             "por_enquanto": False,
+            "sobrando": [],
         }
 
     nome = item.get("nome") or ""
@@ -126,14 +131,21 @@ def avaliar(item: dict, build: dict) -> dict:
             "afixos": [],
             "nota": 1.0,
             "por_enquanto": False,
+            "sobrando": [],
         }
 
     nome_espaco = ESPACO_DA_BUILD.get(item.get("slot"), item.get("slot"))
     espaco = build.get("espacos", {}).get(nome_espaco, {})
     geral = build.get("todos_os_espacos", {})
 
-    obrigatorios = _conferir(item, geral.get("obrigatorios", []) + espaco.get("obrigatorios", []))
-    desejaveis = _conferir(item, geral.get("desejaveis", []) + espaco.get("desejaveis", []))
+    regras_obrigatorias = geral.get("obrigatorios", []) + espaco.get("obrigatorios", [])
+    regras_desejaveis = geral.get("desejaveis", []) + espaco.get("desejaveis", [])
+    obrigatorios = _conferir(item, regras_obrigatorias)
+    desejaveis = _conferir(item, regras_desejaveis)
+    # Afixos principais que a build não usa: é um desses que vale trocar no Místico.
+    sobrando = [a["texto"] for a in item.get("primarios", [])
+                if not any(_tem_afixo({"primarios": [a]}, r)
+                           for r in regras_obrigatorias + regras_desejaveis if _modelo(r) != SOQUETE)]
     total = len(desejaveis["ok"]) + len(desejaveis["faltando"])
     nota = round(len(desejaveis["ok"]) / total, 2) if total else 1.0
 
@@ -167,6 +179,7 @@ def avaliar(item: dict, build: dict) -> dict:
         "afixos": obrigatorios["lista"] + desejaveis["lista"],
         "nota": nota,
         "por_enquanto": por_enquanto,
+        "sobrando": sobrando,
     }
 
 

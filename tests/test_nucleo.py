@@ -31,29 +31,45 @@ def avaliacao(nome: str) -> Avaliacao:
 
 
 class TestSelo(unittest.TestCase):
-    def test_serve_mostra_build_e_afixos(self):
+    def test_item_da_build_diz_o_que_tem_o_que_falta_e_o_que_trocar(self):
         selo = montar_selo(avaliacao("set_fiendish_grips"))
         self.assertTrue(selo.serve)
-        self.assertEqual(texto_do_selo(selo),
-                         "Fiendish Grips\n"
-                         "✅ Unhallowed · Destreza ✓  Vitalidade ✓  Crítico ✓  Dano crítico ✗")
+        self.assertEqual(texto_do_selo(selo).splitlines(), [
+            "Fiendish Grips",
+            "✅ Unhallowed · item da build",
+            "Tem: Destreza ✓  Vitalidade ✓  Crítico ✓",
+            "Falta: Dano crítico ✗",
+            # Velocidade de ataque não está nas regras das luvas: é essa que vale trocar.
+            'Dica: no Místico, troque "Attack Speed Increased by 5.0%" por Dano crítico.',
+        ])
 
-    def test_varias_builds_uma_linha_cada(self):
+    def test_espaco_sem_item_definido(self):
         selo = montar_selo(avaliacao("lendario_demon_machine"))
         linhas = texto_do_selo(selo).splitlines()
-        self.assertEqual(linhas[1], "✅ Dreadlands · Destreza ✓  Vitalidade ✓  Dano da arma ✓  Encaixe ✗")
-        # LoN não bate (precisa ser Ancient) e a Unhallowed pede Yang's Recurve
-        # (arma do guia do Maxroll).
-        self.assertEqual(len(linhas), 2)
+        self.assertEqual(linhas[1:3], ["✅ Dreadlands · serve neste espaço",
+                                       "Tem: Destreza ✓  Vitalidade ✓  Dano da arma ✓"])
+        # LoN não bate (precisa ser Ancient) e a Unhallowed pede Yang's Recurve:
+        # só a Dreadlands aparece.
+        self.assertNotIn("LoN", texto_do_selo(selo))
+
+    def test_tudo_certo_sem_dica(self):
+        selo = montar_selo(avaliacao("set_antique_vintage_boots"))
+        self.assertEqual(texto_do_selo(selo).splitlines()[1:],
+                         ["✅ Dreadlands · item da build · tudo certo", "Tem: Destreza ✓  Vitalidade ✓"])
+
+    def test_varias_builds_as_outras_em_uma_linha(self):
+        selo = montar_selo(avaliacao("set_litany_of_the_undaunted"))
+        self.assertEqual(texto_do_selo(selo).splitlines()[-1], "✅ LoN · 2 de 5 afixos")
 
     def test_item_errado_com_os_afixos_serve_por_enquanto(self):
         # Pra upar: o Cloak não é o peito da build, mas tem Destreza e encaixe.
         selo = montar_selo(avaliacao("lendario_cloak_garwulf"))
         self.assertFalse(selo.serve)
         self.assertTrue(selo.parcial)
-        self.assertEqual(texto_do_selo(selo).splitlines()[1:3],
-                         ["🟡 Por enquanto · Dreadlands · Destreza ✓  Vitalidade ✗  Encaixe ✓",
-                          "A build pede: Galvanized Vest"])
+        self.assertEqual(texto_do_selo(selo).splitlines()[1:4],
+                         ["🟡 Por enquanto · Dreadlands · A build pede: Galvanized Vest",
+                          "Tem: Destreza ✓  Encaixe ✓",
+                          "Falta: Vitalidade ✗"])
 
     def test_nao_serve_mostra_o_motivo(self):
         # Sem Destreza (obrigatória) não serve nem por enquanto.
