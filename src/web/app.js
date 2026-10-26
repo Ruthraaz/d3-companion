@@ -11,20 +11,28 @@ const ESPACOS = {
   Hands: "Mãos", Wrists: "Braçadeiras", Waist: "Cintura", Legs: "Pernas",
   Feet: "Pés", Finger: "Anéis", Weapon: "Arma", "Off-Hand": "Mão secundária",
 };
-// Lugar de cada espaço no boneco (grid-area do CSS). Os dois anéis usam o mesmo "Finger".
-const BONECO = [
-  ["Shoulders", "Shoulders"], ["Head", "Head"], ["Neck", "Neck"],
-  ["Hands", "Hands"], ["Torso", "Torso"], ["Wrists", "Wrists"],
-  ["Finger", "FingerL"], ["Waist", "Waist"], ["Finger", "FingerR"],
-  ["Weapon", "Weapon"], ["Legs", "Legs"], ["Off-Hand", "OffHand"],
-  ["Feet", "Feet"],
-];
+// Espaços nas duas colunas do equipamento: armadura à esquerda, joias e armas
+// à direita. Os dois anéis usam o mesmo "Finger" (FingerL/FingerR = qual mão).
+const BONECO = {
+  esq: [["Head", "Head"], ["Shoulders", "Shoulders"], ["Torso", "Torso"], ["Hands", "Hands"],
+        ["Wrists", "Wrists"], ["Legs", "Legs"], ["Feet", "Feet"]],
+  dir: [["Neck", "Neck"], ["Waist", "Waist"], ["Finger", "FingerL"], ["Finger", "FingerR"],
+        ["Weapon", "Weapon"], ["Off-Hand", "OffHand"]],
+};
+const NOME_DO_LUGAR = { FingerL: "Anel 1", FingerR: "Anel 2" };
 
 // Classe nas builds -> nome no jogo em português.
 const CLASSES = {
   Barbarian: "Bárbaro", Crusader: "Cruzado", "Demon Hunter": "Caçador de Demônios", Monk: "Monge",
   Necromancer: "Necromante", "Witch Doctor": "Feiticeiro", Wizard: "Arcanista",
 };
+// Ícone de cada classe: uma habilidade marcante dela, do servidor da Blizzard.
+const ICONE_DA_CLASSE = {
+  Barbarian: "barbarian_whirlwind", Crusader: "x1_crusader_blessedhammer", "Demon Hunter": "demonhunter_multishot",
+  Monk: "monk_waveoflight", Necromancer: "p6_necro_bonespear", "Witch Doctor": "witchdoctor_zombiecharger",
+  Wizard: "wizard_meteor",
+};
+const URL_DE_ICONE = "https://blzmedia-a.akamaihd.net/d3/icons/skills/64/";
 
 const estado = {
   api: null,
@@ -77,6 +85,19 @@ function icone(url, classe = "") {
   return caixa;
 }
 
+function iconeDaClasse(cl, classe = "icone-classe") {
+  return icone(ICONE_DA_CLASSE[cl] ? `${URL_DE_ICONE}${ICONE_DA_CLASSE[cl]}.png` : null, classe);
+}
+
+// Botão de classe (ícone + nome + quantidade), usado nas abas Guias e Builds.
+function botaoDeClasse(cl, qtd, extra, onclick) {
+  return el("button", { class: `classe${cl === estado.classe ? " ativo" : ""}${extra}`, role: "tab", onclick },
+    iconeDaClasse(cl),
+    el("span", { class: "classe-texto" },
+      el("span", { class: "classe-nome" }, CLASSES[cl]),
+      el("span", { class: "classe-qtd" }, qtd)));
+}
+
 function hora(iso) {
   const d = new Date(iso);
   const hoje = new Date().toDateString() === d.toDateString();
@@ -112,13 +133,15 @@ async function carregarGuias(atualizar = false) {
   desenharGuias();
 }
 
+// Busca sem acento e sem maiúscula: "furia" acha "Fúria".
+const normalizar = t => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
 function desenharGuias() {
   const porClasse = cl => estado.guias.filter(g => g.classe === cl);
-  trocar(document.getElementById("classes"), Object.entries(CLASSES).map(([cl, pt]) =>
-    el("button", {
-      class: "classe" + (cl === estado.classe ? " ativo" : ""), role: "tab",
-      onclick: () => { trocarClasse(cl); desenharGuias(); },
-    }, el("span", { class: "classe-nome" }, pt), el("span", { class: "classe-qtd" }, `${porClasse(cl).length} guias`))));
+  trocar(document.getElementById("classes"), Object.keys(CLASSES).map(cl =>
+    botaoDeClasse(cl, `${porClasse(cl).length} guias`, "", () => { trocarClasse(cl); desenharGuias(); })));
+  const busca = normalizar(document.getElementById("filtro-guias").value.trim());
+  const daClasse = porClasse(estado.classe).filter(g => !busca || normalizar(g.titulo).includes(busca));
 
   // Guia já importado: a build guarda o link do guia de onde veio.
   const importadas = {};
@@ -126,8 +149,9 @@ function desenharGuias() {
     const guia = b.fonte && b.fonte.guia;
     if (guia) (importadas[guia] = importadas[guia] || []).push(b.apelido);
   }
-  trocar(document.getElementById("lista-guias"), porClasse(estado.classe).map(g =>
+  trocar(document.getElementById("lista-guias"), daClasse.length ? daClasse.map(g =>
     el("li", { class: "guia" + (importadas[g.link] ? " importado" : "") },
+      iconeDaClasse(g.classe),
       el("div", {},
         el("p", { class: "guia-titulo" }, g.titulo),
         el("p", { class: "guia-sub" }, importadas[g.link]
@@ -136,7 +160,8 @@ function desenharGuias() {
       el("div", { class: "guia-acoes" },
         el("button", { type: "button", class: "botao", onclick: () => verBuildsDoGuia(g.link) }, "Ver builds"),
         el("button", { type: "button", class: "botao botao-leve", onclick: () => estado.api.abrir_link(g.link) },
-          "Ler o guia")))));
+          "Ler o guia"))))
+    : el("li", { class: "vazio-lista" }, busca ? "Nenhum guia com esse nome." : "Nenhum guia dessa classe."));
 }
 
 // Abre o painel de importar (aba Builds) já buscando as builds do guia.
@@ -177,14 +202,34 @@ function trocarClasse(cl) {
 }
 
 function desenharClassesDasBuilds() {
-  trocar(document.getElementById("classes-builds"), Object.entries(CLASSES).map(([cl, pt]) => {
+  trocar(document.getElementById("classes-builds"), Object.keys(CLASSES).map(cl => {
     const n = estado.builds.filter(b => b.classe === cl).length;
-    return el("button", {
-      class: "filtro" + (cl === estado.classe ? " ativo" : "") + (n ? "" : " sem-build"), role: "tab",
-      title: n ? `${n} build${n > 1 ? "s" : ""} de ${pt}` : `Nenhuma build de ${pt} ainda`,
-      onclick: () => { trocarClasse(cl); desenharBuilds(); },
-    }, pt, n ? ` · ${n}` : "");
+    return botaoDeClasse(cl, n ? `${n} build${n > 1 ? "s" : ""}` : "nenhuma build", n ? "" : " sem-build",
+      () => { trocarClasse(cl); desenharBuilds(); });
   }));
+}
+
+// Cabeçalho da build: emblema da classe, nome, de onde veio e os botões.
+function desenharCabecaDaBuild(b) {
+  const fonte = b && b.fonte;
+  const noAtalho = b && b.id === estado.ativa;
+  trocar(document.getElementById("cabeca-build"), b && [
+    iconeDaClasse(b.classe, "emblema"),
+    el("div", { class: "cabeca-texto" },
+      el("h1", { class: "build-titulo" }, b.apelido),
+      el("p", { class: "build-sub" }, b.nome),
+      el("p", { class: "build-meta" }, [CLASSES[b.classe] || b.classe,
+        fonte && fonte.site && `Fonte: ${fonte.site === "maxroll" ? "Maxroll" : fonte.site}`,
+        fonte && fonte.perfil].filter(Boolean).join(" · "))),
+    el("div", { class: "cabeca-acoes" },
+      fonte && fonte.link && el("button", { type: "button", class: "botao botao-leve", onclick: () => estado.api.abrir_link(fonte.link) },
+        "Abrir no Maxroll"),
+      el("button", {
+        type: "button", class: "botao" + (noAtalho ? " no-atalho" : ""),
+        title: noAtalho ? "O atalho já avalia os itens com esta build" : "O atalho passa a avaliar os itens só com esta build",
+        onclick: () => { if (!noAtalho) escolherBuild(b.id); },
+      }, noAtalho ? "✓ No atalho" : "Usar no atalho")),
+  ]);
 }
 
 function desenharBuilds() {
@@ -194,6 +239,7 @@ function desenharBuilds() {
   const corpo = document.getElementById("builds-corpo");
   corpo.hidden = !daClasse.length;
   if (!daClasse.length) {
+    desenharCabecaDaBuild(null);
     trocar(caixa,
       el("p", { class: "mudo" }, `Nenhuma build de ${CLASSES[estado.classe] || estado.classe} ainda. `,
         el("button", { class: "link", type: "button", onclick: () => abrirAba("guias") }, "Ver os guias dessa classe")),
@@ -231,14 +277,8 @@ function desenharBuilds() {
   }, el("span", { class: "chip-apelido" }, "+ Colar link"), el("span", { class: "chip-nome" }, "de uma build do Maxroll")));
   // A build do atalho pode ser de outra classe que a que está no boneco.
   const com = apelidoAtivo({ BUILD_ATIVA: estado.ativa });
-  const fonte = estado.builds[estado.build].fonte;
-  trocar(document.getElementById("avaliando"),
-    "O atalho avalia o item com ", el("strong", {}, com), ".",
-    fonte && fonte.link && el("span", { class: "fonte" },
-      ` Fonte: ${fonte.site === "maxroll" ? "Maxroll" : fonte.site}`,
-      fonte.perfil && ` · ${fonte.perfil}`, " ",
-      el("button", { class: "link", type: "button", onclick: () => estado.api.abrir_link(fonte.link) },
-        "abrir no navegador")));
+  desenharCabecaDaBuild(estado.builds[estado.build]);
+  trocar(document.getElementById("avaliando"), "O atalho avalia o item com ", el("strong", {}, com), ".");
   desenharVisual();
   carregarVisual(estado.builds[estado.build]);
 }
@@ -296,31 +336,35 @@ function itensDoLugar(espaco, area) {
   return espaco.itens;
 }
 
+// Um espaço do equipamento: ícone quadrado e, do lado, o item (na cor da
+// raridade) com o nome do espaço embaixo.
+function botaoDoEspaco(build, chave, area) {
+  const espaco = build.espacos[chave];
+  const itens = itensDoLugar(espaco, area);
+  const classe = !espaco.definido ? "geral" : itens.length ? "com-item" : "livre";
+  const item = itens.length ? itens.join(" ou ") : "Qualquer item";
+  const n = espaco.obrigatorios.length + espaco.desejaveis.length;
+  const selecionado = chave === estado.espaco && !estado.habilidade;
+  return el("button", {
+    class: `espaco ${classe}` + (selecionado ? " selecionado" : ""),
+    title: espaco.definido ? item : "A build não fala deste espaço: valem só as regras gerais",
+    onclick: () => { estado.espaco = chave; estado.habilidade = null; desenharVisual(); },
+  },
+    el("span", { class: "espaco-icone" },
+      icone(itens.length ? iconeDoItem(itens[0]) : null, "icone-item"),
+      espaco.exige_ancient && el("span", { class: "selo-ancient", title: "Precisa ser Ancient" }, "ANC")),
+    el("span", { class: "espaco-texto" },
+      el("span", { class: "espaco-item" }, item),
+      el("span", { class: "espaco-nome" }, NOME_DO_LUGAR[area] || ESPACOS[chave] || chave),
+      n > 0 && el("span", { class: "espaco-afixos" }, `${n} afixo${n > 1 ? "s" : ""}`),
+    ),
+  );
+}
+
 function desenharBoneco() {
   const build = estado.builds[estado.build];
-  trocar(document.getElementById("boneco"), BONECO.map(([chave, area]) => {
-    const espaco = build.espacos[chave];
-    const itens = itensDoLugar(espaco, area);
-    const classe = !espaco.definido ? "geral" : itens.length ? "com-item" : "livre";
-    const item = itens.length ? itens.join(" ou ") : "Qualquer item";
-    const n = espaco.obrigatorios.length + espaco.desejaveis.length;
-    const afixos = n ? `${n} afixo${n > 1 ? "s" : ""}` : "";
-    const selecionado = chave === estado.espaco && !estado.habilidade;
-    return el("button", {
-      class: `espaco ${classe}` + (selecionado ? " selecionado" : ""),
-      style: `grid-area: ${area}`,
-      title: espaco.definido ? item : "A build não fala deste espaço: valem só as regras gerais",
-      onclick: () => { estado.espaco = chave; estado.habilidade = null; desenharVisual(); },
-    },
-      icone(itens.length ? iconeDoItem(itens[0]) : null, "icone-item"),
-      el("span", { class: "espaco-texto" },
-        el("span", { class: "espaco-nome" }, ESPACOS[chave] || chave),
-        el("span", { class: "espaco-item" }, item),
-        afixos && el("span", { class: "espaco-afixos" }, afixos),
-      ),
-      espaco.exige_ancient && el("span", { class: "selo-ancient", title: "Precisa ser Ancient" }, "ANC"),
-    );
-  }));
+  trocar(document.getElementById("equip-esq"), BONECO.esq.map(([chave, area]) => botaoDoEspaco(build, chave, area)));
+  trocar(document.getElementById("equip-dir"), BONECO.dir.map(([chave, area]) => botaoDoEspaco(build, chave, area)));
 }
 
 const PARTES_DO_CUBO = { arma: "Arma", armadura: "Armadura", joia: "Joia" };
@@ -338,6 +382,18 @@ function desenharExtras() {
     ? build.gemas.map(g => el("div", { class: "mini-item", title: g },
         icone(iconeDoItem(g), "icone-mini"), el("span", { class: "t-lendario" }, g)))
     : el("p", { class: "nada" }, "A build não diz."));
+
+  // A roda: os 3 poderes do cubo em cima e as 3 gemas embaixo.
+  const no = (nome, tipo, pos, rotulo) => {
+    const url = nome && iconeDoItem(nome);
+    return el("span", { class: `roda-no ${tipo} p${pos}` + (nome ? "" : " vazio"), title: nome ? `${rotulo}: ${nome}` : `${rotulo}: a build não diz` },
+      url && el("img", { src: url, alt: "", draggable: "false", onerror: e => e.target.remove() }));
+  };
+  const gemas = [0, 1, 2].map(i => build.gemas[i] || null);
+  trocar(document.getElementById("roda"),
+    el("span", { class: "roda-centro", "aria-hidden": "true" }),
+    no(cubo.arma, "cubo", 5, "Cubo · Arma"), no(cubo.armadura, "cubo", 0, "Cubo · Armadura"), no(cubo.joia, "cubo", 1, "Cubo · Joia"),
+    gemas.map((g, i) => no(g, "gema", [2, 3, 4][i], "Gema")));
 }
 
 // Paragon na ordem do jogo: 4 grupos de 4 atributos (o 1º do Principal é o da classe).
@@ -387,6 +443,7 @@ function desenharHabilidades() {
   const ativas = document.getElementById("barra-ativas");
   const passivas = document.getElementById("barra-passivas");
   desenharParagon(build);
+  document.querySelector(".hab-grupo-passivas").hidden = vazio;
   if (vazio) {
     trocar(ativas, el("p", { class: "nada" },
       "Esta build ainda não tem habilidades. Elas vêm junto quando a build é importada do Maxroll."));
@@ -545,10 +602,12 @@ function desenharHerois() {
       class: "chip-build" + (h.id === estado.heroi ? " ativo-heroi" : ""),
       onclick: () => escolherHeroi(h.id),
     },
-      el("span", { class: "chip-apelido" }, h.nome),
-      el("span", { class: "chip-nome" }, [CLASSES[h.classe] || h.classe || "?", `nível ${h.nivel}`,
-        h.paragon ? `paragon ${h.paragon}` : "", h.temporada ? "temporada" : "", h.hardcore ? "hardcore" : "",
-        h.morto ? "morto" : ""].filter(Boolean).join(" · ")))));
+      iconeDaClasse(h.classe),
+      el("span", {},
+        el("span", { class: "chip-apelido" }, h.nome),
+        el("span", { class: "chip-nome" }, [CLASSES[h.classe] || h.classe || "?", `nível ${h.nivel}`,
+          h.paragon ? `paragon ${h.paragon}` : "", h.temporada ? "temporada" : "", h.hardcore ? "hardcore" : "",
+          h.morto ? "morto" : ""].filter(Boolean).join(" · "))))));
 }
 
 function escolherHeroi(id) {
@@ -846,19 +905,49 @@ async function iniciar(api) {
     await estado.api.reiniciar_overlay();
     setTimeout(atualizarEstado, 1500);
   });
+  document.getElementById("filtro-guias").addEventListener("input", () => { if (estado.guias) desenharGuias(); });
+  document.querySelectorAll(".sub-aba").forEach(s => s.addEventListener("click", () => abrirSubAba(s.dataset.sub)));
 
-  estado.builds = await api.builds();
-  desenharProblemas(await api.problemas_das_builds());
-  const { BUILD_ATIVA, BATTLETAG } = await api.config();
-  document.getElementById("form-heroi").elements.battletag.value = BATTLETAG || "";
-  const i = estado.builds.findIndex(b => b.id === BUILD_ATIVA);
-  if (i >= 0) { estado.ativa = BUILD_ATIVA; estado.build = i; }
-  estado.classe = (estado.builds[estado.build] && estado.builds[estado.build].classe) || "Demon Hunter";
-  desenharBuilds();
-  await Promise.all([atualizarHistorico(), atualizarEstado()]);
+  try {
+    abertura(15, "Lendo as builds…");
+    estado.builds = await api.builds();
+    desenharProblemas(await api.problemas_das_builds());
+    abertura(45, "Lendo as configurações…");
+    const { BUILD_ATIVA, BATTLETAG } = await api.config();
+    document.getElementById("form-heroi").elements.battletag.value = BATTLETAG || "";
+    const i = estado.builds.findIndex(b => b.id === BUILD_ATIVA);
+    if (i >= 0) { estado.ativa = BUILD_ATIVA; estado.build = i; }
+    estado.classe = (estado.builds[estado.build] && estado.builds[estado.build].classe) || "Demon Hunter";
+    desenharBuilds();
+    abertura(75, "Ligando o overlay do jogo…");
+    await Promise.all([atualizarHistorico(), atualizarEstado()]);
+    abertura(100, "Pronto.");
+    const tela = document.getElementById("abertura");
+    setTimeout(() => tela.classList.add("saindo"), 250);
+    setTimeout(() => { tela.hidden = true; }, 700);
+  } catch (erro) {
+    // Sem esconder a tela: diz o que houve pra pessoa poder mandar o erro.
+    abertura(100, `Não deu pra abrir: ${erro && erro.message ? erro.message : erro}`, true);
+    return;
+  }
   // O overlay é outro processo: de tempos em tempos, vê se chegou item novo.
   setInterval(atualizarHistorico, 1500);
   setInterval(atualizarEstado, 3000);
+}
+
+// Barra da tela de abertura (0 a 100).
+function abertura(pct, texto, erro = false) {
+  document.getElementById("abertura-progresso").style.width = `${pct}%`;
+  const t = document.getElementById("abertura-texto");
+  t.textContent = texto;
+  t.classList.toggle("erro", erro);
+}
+
+function abrirSubAba(nome) {
+  document.querySelectorAll(".sub-aba").forEach(s => s.classList.toggle("ativa", s.dataset.sub === nome));
+  document.querySelectorAll(".sub-painel").forEach(p => p.classList.toggle("ativo", p.id === `sub-${nome}`));
+  // O detalhe do lado é do equipamento e das habilidades: no paragon e no "ao upar" só atrapalha.
+  document.querySelector(".builds-grade").classList.toggle("sem-detalhe", nome !== "equipamento");
 }
 
 if (window.pywebview && window.pywebview.api) {

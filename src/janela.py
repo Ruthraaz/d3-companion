@@ -276,7 +276,7 @@ def main():
     overlay.ligar()
     janela = webview.create_window(
         "D3 Companion", str(PAGINA), js_api=Api(overlay),
-        width=1180, height=780, min_size=(900, 600), background_color="#0e0c0a",
+        width=1180, height=780, min_size=(900, 600), background_color="#111215",
     )
     janela.events.closed += overlay.desligar
     webview.start()

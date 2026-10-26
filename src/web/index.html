@@ -3,21 +3,45 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Só arquivos do próprio app e ícones do servidor da Blizzard. Nada de script de fora.
+       'unsafe-eval': o pywebview monta as funções da ponte com o Python com new Function(). -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self'; img-src 'self' data: https://blzmedia-a.akamaihd.net; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>D3 Companion</title>
   <link rel="stylesheet" href="estilo.css">
 </head>
 <body>
+  <!-- Tela de abertura: some quando as builds e o overlay estão prontos. -->
+  <div class="abertura" id="abertura" role="status" aria-live="polite">
+    <div class="abertura-centro">
+      <span class="abertura-runa" aria-hidden="true"></span>
+      <p class="abertura-nome">D3 Companion</p>
+      <div class="abertura-barra"><span id="abertura-progresso"></span></div>
+      <p class="abertura-texto" id="abertura-texto">Abrindo…</p>
+    </div>
+  </div>
+
   <header class="topo">
     <div class="marca">
       <span class="marca-runa" aria-hidden="true"></span>
       <span class="marca-nome">D3 Companion</span>
     </div>
     <nav class="abas" role="tablist">
-      <button class="aba" data-aba="guias" role="tab">Guias</button>
-      <button class="aba ativa" data-aba="builds" role="tab">Builds</button>
-      <button class="aba" data-aba="heroi" role="tab">Meu herói</button>
-      <button class="aba" data-aba="historico" role="tab">Histórico</button>
-      <button class="aba" data-aba="config" role="tab">Configurações</button>
+      <button class="aba" data-aba="guias" role="tab">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM13 4h5.5c.8 0 1.5.7 1.5 1.5v13c0 .8-.7 1.5-1.5 1.5H13z"/></svg>
+        Guias</button>
+      <button class="aba ativa" data-aba="builds" role="tab">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5l6 6-9 9-3-3-3 3-2-2 3-3-3-3zM16 8l-6 6"/></svg>
+        Builds</button>
+      <button class="aba" data-aba="heroi" role="tab">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/></svg>
+        Meu herói</button>
+      <button class="aba" data-aba="historico" role="tab">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 1-7.4 5M12 8v4l3 2M4 4v5h5"/></svg>
+        Histórico</button>
+      <button class="aba" data-aba="config" role="tab">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
+        Configurações</button>
     </nav>
     <div class="estado" id="estado">
       <span class="estado-ponto"></span>
@@ -32,24 +56,33 @@
         <h2>Guias do Maxroll</h2>
         <p class="mudo">Escolha a classe do seu boneco. Abra um guia pra ver as builds dele e trazer a que quiser pro app.</p>
       </div>
-      <div class="classes" id="classes" role="tablist"></div>
-      <p class="importar-status" id="guias-status" role="status"></p>
-      <ul class="lista-guias" id="lista-guias"></ul>
-      <p class="nota-guias mudo">
-        A lista vem do mapa do site do Maxroll e é atualizada uma vez por dia.
-        <button class="link" type="button" id="atualizar-guias">Atualizar agora</button>
-      </p>
+      <div class="layout-lado">
+        <aside class="grade-classes" id="classes" role="tablist"></aside>
+        <div class="lado-conteudo">
+          <label class="busca">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM20 20l-4.8-4.8"/></svg>
+            <input id="filtro-guias" type="search" autocomplete="off" spellcheck="false" maxlength="60" placeholder="Buscar pelo nome do guia…">
+          </label>
+          <p class="importar-status" id="guias-status" role="status"></p>
+          <ul class="lista-guias" id="lista-guias"></ul>
+          <p class="nota-guias mudo">
+            A lista vem do mapa do site do Maxroll e é atualizada uma vez por dia.
+            <button class="link" type="button" id="atualizar-guias">Atualizar agora</button>
+          </p>
+        </div>
+      </div>
     </section>
 
     <!-- BUILDS -->
     <section class="painel ativo" id="painel-builds">
       <div class="problemas" id="problemas" role="alert" hidden></div>
-      <div class="filtros filtro-classes" id="classes-builds" role="tablist"></div>
+      <nav class="faixa-classes" id="classes-builds" role="tablist"></nav>
+      <header class="cabeca-build" id="cabeca-build"></header>
       <div class="escolha-build" id="escolha-build"></div>
       <section class="importar" id="importar" hidden>
         <h2 class="importar-titulo">Importar build do Maxroll</h2>
         <form class="importar-busca" id="form-importar">
-          <input name="link" autocomplete="off" spellcheck="false"
+          <input name="link" autocomplete="off" spellcheck="false" maxlength="300"
                  placeholder="Cole o link do guia (maxroll.gg/d3/guides/…) ou do planejador">
           <button type="submit" class="botao">Buscar</button>
           <button type="button" class="botao botao-leve" id="fechar-importar">Cancelar</button>
@@ -59,38 +92,64 @@
       </section>
       <p class="avaliando" id="avaliando"></p>
       <div class="builds-corpo" id="builds-corpo">
-        <div class="coluna-build">
-          <div class="boneco-moldura">
-            <p class="aviso-visual" id="aviso-visual" hidden></p>
-            <div class="boneco" id="boneco"></div>
-            <p class="legenda">
-              <span class="leg leg-item">item da build</span>
-              <span class="leg leg-livre">qualquer item com os afixos</span>
-              <span class="leg leg-geral">só as regras gerais</span>
-            </p>
-            <div class="extras">
-              <div class="extra">
-                <h3 class="extra-titulo">Cubo de Kanai</h3>
-                <div class="fila-icones" id="cubo"></div>
+        <nav class="sub-abas" id="sub-abas" role="tablist">
+          <button class="sub-aba ativa" data-sub="equipamento" role="tab">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l1 4-5 3-5-3zM7 7v6l5 8 5-8V7"/></svg>
+            Equipamento e habilidades</button>
+          <button class="sub-aba" data-sub="paragon" role="tab">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 7h7l-5.5 4.5 2 7.5-6.5-4.5L5.5 21l2-7.5L2 9h7z"/></svg>
+            Paragon</button>
+          <button class="sub-aba" data-sub="upar" role="tab">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16V10M12 16V6M17 16v-4"/></svg>
+            Ao upar</button>
+        </nav>
+        <div class="builds-grade">
+          <div class="coluna-build">
+            <div class="sub-painel ativo" id="sub-equipamento">
+              <p class="aviso-visual" id="aviso-visual" hidden></p>
+              <div class="boneco">
+                <div class="coluna-equip" id="equip-esq"></div>
+                <div class="centro-equip">
+                  <div class="roda" id="roda"></div>
+                  <div class="extras">
+                    <div class="extra">
+                      <h3 class="extra-titulo">Cubo de Kanai</h3>
+                      <div class="fila-icones" id="cubo"></div>
+                    </div>
+                    <div class="extra">
+                      <h3 class="extra-titulo">Gemas lendárias</h3>
+                      <div class="fila-icones" id="gemas"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="coluna-equip direita" id="equip-dir"></div>
               </div>
-              <div class="extra">
-                <h3 class="extra-titulo">Gemas lendárias</h3>
-                <div class="fila-icones" id="gemas"></div>
+              <p class="legenda">
+                <span class="leg leg-item">item da build</span>
+                <span class="leg leg-livre">qualquer item com os afixos</span>
+                <span class="leg leg-geral">só as regras gerais</span>
+              </p>
+              <div class="habilidades-bloco">
+                <div class="hab-grupo">
+                  <h3 class="extra-titulo">Habilidades</h3>
+                  <div class="barra" id="barra-ativas"></div>
+                </div>
+                <div class="hab-grupo hab-grupo-passivas">
+                  <h3 class="extra-titulo">Passivas</h3>
+                  <div class="barra barra-passivas" id="barra-passivas"></div>
+                </div>
               </div>
             </div>
+            <div class="sub-painel" id="sub-paragon">
+              <div class="paragon" id="paragon"></div>
+            </div>
+            <div class="sub-painel" id="sub-upar">
+              <p class="mudo sub-intro">Em que nível libera cada habilidade, runa e passiva da build. Os níveis vêm da API da Blizzard.</p>
+              <div class="ao-upar" id="ao-upar"></div>
+            </div>
           </div>
-          <div class="barra-moldura">
-            <h3 class="extra-titulo">Habilidades</h3>
-            <div class="barra" id="barra-ativas"></div>
-            <h3 class="extra-titulo">Passivas</h3>
-            <div class="barra barra-passivas" id="barra-passivas"></div>
-            <h3 class="extra-titulo">Ao upar: quando libera cada coisa</h3>
-            <div class="ao-upar" id="ao-upar"></div>
-            <h3 class="extra-titulo">Paragon</h3>
-            <div class="paragon" id="paragon"></div>
-          </div>
+          <aside class="detalhe"><div class="detalhe-fixo" id="detalhe"></div></aside>
         </div>
-        <aside class="detalhe" id="detalhe"></aside>
       </div>
     </section>
 
@@ -102,7 +161,7 @@
           A Blizzard só atualiza quando você <strong>sai do jogo</strong> (ou troca de personagem).</p>
       </div>
       <form class="importar-busca busca-heroi" id="form-heroi">
-        <input name="battletag" autocomplete="off" spellcheck="false" placeholder="Sua BattleTag, ex.: Arthur#1234">
+        <input name="battletag" autocomplete="off" spellcheck="false" maxlength="24" placeholder="Sua BattleTag, ex.: Arthur#1234">
         <button type="submit" class="botao">Buscar heróis</button>
       </form>
       <p class="importar-status" id="heroi-status" role="status"></p>
@@ -141,13 +200,13 @@
         </label>
         <label class="campo">
           <span class="campo-nome">Atalho</span>
-          <input name="ATALHO" autocomplete="off" spellcheck="false">
+          <input name="ATALHO" autocomplete="off" spellcheck="false" maxlength="20">
           <span class="campo-dica">Tecla que avalia o item sob o mouse. Ex.: F8, Ctrl+F8, Alt+Q.</span>
           <span class="campo-erro" data-erro="ATALHO"></span>
         </label>
         <label class="campo">
           <span class="campo-nome">Tempo do selo (segundos)</span>
-          <input name="SELO_SEGUNDOS" inputmode="decimal" autocomplete="off">
+          <input name="SELO_SEGUNDOS" inputmode="decimal" autocomplete="off" maxlength="4">
           <span class="campo-dica">Quanto tempo o selo fica na tela, de 1 a 60.</span>
           <span class="campo-erro" data-erro="SELO_SEGUNDOS"></span>
         </label>

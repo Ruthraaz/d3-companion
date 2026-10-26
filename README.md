@@ -216,6 +216,8 @@ Sem `rotulo`, o selo mostra o próprio modelo; sem `apelido`, o nome da build. T
 - **Nome de item vem do OCR**, então a página monta tudo com `textContent`, nunca `innerHTML`.
 - **Aberta no navegador comum, a página usa dados de exemplo** — dá pra mexer no visual sem jogo nem app.
 
+**Visual (26/10/2026).** Inspirado no d4builds: tela de abertura com barra de progresso; aba Builds como a página de uma build (emblema da classe, sub-abas *Equipamento e habilidades / Paragon / Ao upar*, itens em duas colunas em volta de uma roda com o Cubo de Kanai e as gemas); aba Guias como uma tier list (classes ao lado, busca pelo nome). Os ícones de classe são ícones de habilidades carregados do servidor da Blizzard.
+
 ## Etapa 7: outras classes
 
 O código não tem nada fixo de Demon Hunter: o que muda de uma classe pra outra (atributo principal, itens, gemas) está todo no JSON da build. Pra jogar de outra classe:

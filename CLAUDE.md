@@ -36,6 +36,13 @@ Na versão 1 as builds são editadas direto nos arquivos JSON (sem janela).
   (OCR, parser, avaliador) fica num núcleo que as duas usam, sem depender de interface.
 - Estilo pode lembrar o Diablo (escuro, dourado, cores de raridade), mas sem
   copiar logo, fonte ou arte da Blizzard.
+- **26/10/2026 — visual novo, pedido do Arthur: parecido com o d4builds** (prints dele): fundo grafite,
+  destaque vermelho na aba ativa, título da build em laranja, itens nas cores de raridade. Aba Builds =
+  página de build do d4builds (cabeçalho com emblema, sub-abas, equipamento em 2 colunas com uma "roda"
+  no meio com cubo + gemas, habilidades numa fileira). Aba Guias = tier list do d4builds (grade de
+  classes ao lado). Ícone de classe = ícone de uma habilidade dela, do CDN da Blizzard (`ICONE_DA_CLASSE`).
+  Tela de abertura com barra (`#abertura`). Página tem CSP: precisa de `'unsafe-eval'` porque o
+  `api.js` do pywebview usa `new Function` (sem isso a ponte com o Python some).
 
 ### Depois da versão 1
 Feitos: janela principal (pywebview), outras classes (só JSON), avaliação automática
