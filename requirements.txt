@@ -1,7 +1,7 @@
 pytesseract==0.3.13
 pillow==13.0.0
 opencv-python==4.10.0.84
-numpy==1.26.4
+numpy==2.5.4
 python-dotenv==1.2.4
 PySide6-Essentials==6.11.2
 pywebview==5.3.2
