@@ -22,7 +22,7 @@ sys.path.insert(0, str(RAIZ / "src"))
 from avaliador import problemas_da_build  # noqa: E402
 from maxroll import (ErroMaxroll, baixar_planner, builds_do_heroi, catalogo, classe_do_planner, converter,  # noqa: E402
                      dados_do_planejador, e_de_seguidor, guia_do_link, link_de_guia, planners_do_link,
-                     salvar_build,
+                     remover_build, salvar_build,
                      id_do_link, modelo_do_formato, nome_do_arquivo, nomes_dos_perfis, regras_do_item)
 
 DADOS = {
@@ -184,6 +184,19 @@ class TestConverter(unittest.TestCase):
             segundo = salvar_build(self.build, Path(pasta))
             self.assertEqual((primeiro.name, segundo.name), ("sanc_ue_multishot.json", "sanc_ue_multishot_2.json"))
             self.assertEqual(json.loads(primeiro.read_text(encoding="utf-8")), self.build)
+
+    def test_remover_so_apaga_build_da_pasta(self):
+        with tempfile.TemporaryDirectory() as raiz:
+            pasta = Path(raiz) / "builds"
+            pasta.mkdir()
+            fora = Path(raiz) / "segredo.json"
+            fora.write_text("{}", encoding="utf-8")
+            arquivo = salvar_build(self.build, pasta)
+            for ruim in ("../segredo", "..\segredo", "sanc_ue_multishot.json", "", "a/b", "nao_existe"):
+                self.assertFalse(remover_build(ruim, pasta), ruim)
+            self.assertTrue(fora.exists())
+            self.assertTrue(remover_build(arquivo.stem, pasta))
+            self.assertFalse(arquivo.exists())
 
 
 class TestCatalogo(unittest.TestCase):

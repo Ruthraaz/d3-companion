@@ -188,7 +188,8 @@ class TestBuildsDeVerdade(unittest.TestCase):
             self.skipTest("sem cache da Blizzard (rode python src/blizzard.py)")
         from avaliador import ler_builds
         indice = json.loads(arquivo.read_text(encoding="utf-8"))
-        for build in ler_builds()[0]:
+        from builds_dos_testes import PASTA_DOS_TESTES
+        for build in ler_builds(PASTA_DOS_TESTES)[0]:
             with self.subTest(build["id"]):
                 self.assertEqual(itens_desconhecidos(build, indice), [])
 

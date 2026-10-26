@@ -93,6 +93,8 @@ Cada afixo vem com um **modelo** (os números trocados por `#`), que é o que o 
 
 ## Etapa 3: builds e avaliador
 
+**As builds são de cada um.** O app não vem com nenhuma: na aba Builds você cola o link de um guia ou do planejador do Maxroll, a build é importada e fica salva (e o botão **Remover** tira a que não usa mais). A pasta `builds/` fica fora do Git; as builds que os testes usam moram em `tests/builds/`.
+
 As builds ficam em `builds/*.json`, num **formato próprio** do app. Se um dia entrarem builds de sites (Maxroll, Icy Veins), elas serão só *traduzidas* pra esse formato; o avaliador (`src/avaliador.py`) só conhece ele.
 
 ```json
@@ -287,7 +289,7 @@ Embaixo da barra de habilidades da aba Builds:
 
 - **Nível de cada habilidade:** cada botão mostra em que nível ela fica do jeito da build (a habilidade e a runa liberadas). Clicar mostra os dois níveis.
 - **Ao upar: quando libera cada coisa** — a lista em ordem de nível, ex.: `Nv 2 Empalamento`, `Nv 28 runa Penetração Superior (Empalamento)`, `Nv 61 Vingança`. Os níveis vêm da API da Blizzard.
-- **Paragon:** os pontos da build nos 4 grupos (Principal, Ataque, Defesa, Utilidade), na ordem do jogo, com um resumo: *"Principal: 650 em Vitalidade, 50 em Velocidade, 50 em Recurso máximo, e o resto em Destreza. Nos outros grupos, tudo no máximo (50 cada)."* Vem do perfil do Maxroll (`"paragon"` na build).
+- **Paragon:** em passos numerados, na ordem de encher. Os 4 grupos (Principal → Ataque → Defesa → Utilidade) se revezam a cada nível; dentro de cada um, o 1 primeiro até 50, depois o 2… No Principal: Velocidade e Recurso primeiro, e **"todo o resto"** por último (ex.: *Destreza 3950 · Vitalidade 400*), com o aviso de que o número grande do atributo não é a prioridade, só não tem limite. Os números vêm do perfil do Maxroll (`"paragon"` na build); a ordem dentro dos grupos é a comum dos guias (o Maxroll não guarda ordem).
 
 ## Meu herói (BattleTag)
 
@@ -332,11 +334,6 @@ python src/maxroll.py https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-gu
 ```
 Cada build do Maxroll tem vários **perfis** (push, speed, bounties…); `--perfil` escolhe qual. O link do planejador aparece no guia ao clicar na build e em "Open in Planner".
 
-A build **Unhallowed** já recebeu do guia UE Multishot do Maxroll (perfil *Solo Push Odyssey*):
-- as habilidades e o cubo;
-- os itens que faltavam: amuleto, cintura, braçadeiras, anéis, arma e mão secundária.
-
-Os itens, regras e gemas que você já tinha ficaram como estavam; a diferença com o guia está anotada no arquivo (`_nota`).
 
 ## Avaliação automática (passar o mouse)
 
@@ -373,7 +370,7 @@ O app não lida com senha nem dado de pagamento, mas mexe com chave da Blizzard,
 
 Site do app: **https://ruthraaz.github.io/d3-companion/** (botão de download direto pra última versão).
 
-Quem só quer usar: baixe o `D3-Companion-<versão>-windows.zip` na página de [Releases](https://github.com/Ruthraaz/d3-companion/releases/latest), descompacte e abra **`D3 Companion.exe`**. O Tesseract já vem junto. Seus dados (builds, prints, `.env`) ficam em `%APPDATA%\D3 Companion`, então trocar de versão não apaga nada. O `LEIA-ME.txt` dentro do zip explica o resto (inclusive o aviso do SmartScreen, porque o .exe não tem assinatura digital).
+Quem só quer usar: baixe o `D3-Companion-<versão>-windows.zip` na página de [Releases](https://github.com/Ruthraaz/d3-companion/releases/latest), descompacte e abra **`D3 Companion.exe`**. O Tesseract já vem junto. O app começa sem builds: cole o link de um guia do Maxroll na aba Builds. Seus dados (builds, prints, `.env`) ficam em `%APPDATA%\D3 Companion`, então trocar de versão não apaga nada. O `LEIA-ME.txt` dentro do zip explica o resto (inclusive o aviso do SmartScreen, porque o .exe não tem assinatura digital).
 
 ### Gerar o .exe
 

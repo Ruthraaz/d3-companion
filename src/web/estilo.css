@@ -668,19 +668,51 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
 .marco-runa { color: var(--ouro-claro); }
 .marco-passiva { color: var(--mudo); }
 
+.botao-remover.confirmar { border-color: var(--acento); color: var(--acento-claro); }
+.boas-vindas {
+  width: 100%; padding: 18px 20px; border: 1px solid var(--borda); border-left: 3px solid var(--acento);
+  border-radius: var(--raio); background: var(--painel);
+}
+.boas-vindas h2 { margin: 0 0 6px; font-family: var(--serifa); color: var(--ouro-claro); font-size: 20px; }
+.boas-vindas p { margin: 0; font-size: 14px; line-height: 1.5; }
+.boas-vindas p + p { margin-top: 8px; }
+
 /* ------------------------------------------------------------ paragon */
-.paragon-resumo { margin: 0 0 14px; font-size: 14px; }
-.paragon-grupos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.paragon-explica {
+  margin: 0 0 14px; padding: 12px 14px;
+  border: 1px solid var(--borda); border-left: 3px solid var(--ouro); border-radius: var(--raio);
+  background: var(--painel); font-size: 13px; line-height: 1.5;
+}
+.paragon-explica p { margin: 0; }
+.paragon-explica p + p { margin-top: 6px; color: var(--mudo); }
+.paragon-explica strong { color: var(--ouro-claro); }
+.paragon-grupos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 1280px) { .paragon-grupos { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .paragon-grupos { grid-template-columns: 1fr; } }
 .builds-grade.sem-detalhe { grid-template-columns: minmax(0, 1fr); }
 .builds-grade.sem-detalhe .detalhe { display: none; }
 .paragon-grupo { border: 1px solid var(--borda); border-radius: 8px; background: var(--fundo-2); padding: 10px 12px; }
-.paragon-titulo { margin: 0 0 6px; font-weight: 600; color: var(--ouro); }
-.paragon-grupo ul { list-style: none; margin: 0; padding: 0; }
-.paragon-linha { display: flex; justify-content: space-between; gap: 6px; font-size: 13px; padding: 3px 0; }
-.paragon-linha.zero { color: var(--apagado); }
-.paragon-valor { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
-.paragon-linha.zero .paragon-valor { color: var(--apagado); font-weight: 400; }
-.paragon-valor small { color: var(--mudo); font-size: 10px; font-weight: 400; }
+.paragon-titulo { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-weight: 600; color: var(--ouro); }
+.paragon-ordem {
+  display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  border: 1px solid var(--ouro); font-size: 11px;
+}
+.passos { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.passo {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  padding: 5px 6px; border-radius: 4px; background: var(--painel); font-size: 13px;
+}
+.passo-num {
+  display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 4px;
+  background: var(--primario); color: #fff; font-size: 11px; font-weight: 700;
+}
+.passo-nome small { display: block; color: var(--mudo); font-size: 11px; }
+.passo-resto { background: transparent; border: 1px dashed var(--borda-forte); }
+.passo-resto .passo-num { background: var(--painel-3); }
+.passo.zero { background: transparent; color: var(--apagado); }
+.passo.zero .passo-num { background: transparent; color: var(--apagado); }
+.paragon-valor { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; font-size: 12px; }
+.passo.zero .paragon-valor { color: var(--apagado); font-weight: 400; }
 .paragon .nota { margin: 12px 0 0; }
 
 /* ------------------------------------------------------------ detalhe (lado direito) */
@@ -858,9 +890,11 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
   .hab-grupo-passivas { padding-left: 0; border-left: 0; }
   .barra { flex-wrap: wrap; justify-content: center; }
   .importar-campos { grid-template-columns: 1fr; }
-  .paragon-grupos { grid-template-columns: 1fr 1fr; }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+.botao[hidden] { display: none; }

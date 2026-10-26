@@ -9,6 +9,7 @@ Rodar:
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -17,7 +18,7 @@ sys.path.insert(0, str(RAIZ / "src"))
 import historico  # noqa: E402
 from avaliador import (ESPACOS, avaliar_todas, builds_escolhidas, carregar_builds,  # noqa: E402
                        ficha_da_build)
-from builds_dos_testes import BUILDS_DOS_TESTES  # noqa: E402
+from builds_dos_testes import BUILDS_DOS_TESTES, PASTA_DOS_TESTES  # noqa: E402
 from config import ler_config, salvar_config  # noqa: E402
 from nucleo import Avaliacao, Selo, montar_selo, texto_do_selo  # noqa: E402
 
@@ -80,7 +81,7 @@ class TestBuildEscolhida(unittest.TestCase):
     """Na janela, clicar numa build faz o atalho avaliar só com ela."""
 
     def setUp(self):
-        self.builds = [b for b in carregar_builds() if b["id"] in BUILDS_DOS_TESTES]  # só as originais
+        self.builds = [b for b in carregar_builds(PASTA_DOS_TESTES) if b["id"] in BUILDS_DOS_TESTES]  # só as originais
         self.pasta = tempfile.TemporaryDirectory()
         self.env = Path(self.pasta.name) / ".env"
 
@@ -107,7 +108,8 @@ class TestBuildEscolhida(unittest.TestCase):
         self.assertNotIn("Dreadlands", texto_do_selo(selo))
 
     def test_config_aceita_build_que_existe_e_vazio(self):
-        self.assertEqual(salvar_config({"BUILD_ATIVA": "legacy_of_nightmares"}, self.env), {})
+        with mock.patch("avaliador.carregar_builds", lambda: self.builds):  # builds dos testes, não as do usuário
+            self.assertEqual(salvar_config({"BUILD_ATIVA": "legacy_of_nightmares"}, self.env), {})
         self.assertEqual(ler_config(self.env)["BUILD_ATIVA"], "legacy_of_nightmares")
         self.assertEqual(salvar_config({"BUILD_ATIVA": ""}, self.env), {})
         self.assertEqual(ler_config(self.env)["BUILD_ATIVA"], "")
@@ -128,7 +130,7 @@ class TestBuildEscolhida(unittest.TestCase):
 
 class TestFichaDaBuild(unittest.TestCase):
     def setUp(self):
-        self.builds = {b["apelido"]: b for b in carregar_builds() if b["id"] in BUILDS_DOS_TESTES}
+        self.builds = {b["apelido"]: b for b in carregar_builds(PASTA_DOS_TESTES) if b["id"] in BUILDS_DOS_TESTES}
 
     def test_soma_as_regras_gerais_em_cada_espaco(self):
         ficha = ficha_da_build(self.builds["Dreadlands"])

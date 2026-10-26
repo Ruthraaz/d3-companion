@@ -441,6 +441,19 @@ def salvar_build(build: dict, pasta: Path = PASTA_BUILDS) -> Path:
     return destino
 
 
+def remover_build(id_build: str, pasta: Path = PASTA_BUILDS) -> bool:
+    """Apaga builds/<id>.json. O id vem da janela, então só aceita o nome de
+    um arquivo que está direto na pasta (nada de "../" ou outra extensão).
+    Devolve False se não achou."""
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", id_build or ""):
+        return False
+    arquivo = pasta / f"{id_build}.json"
+    if not arquivo.is_file():
+        return False
+    arquivo.unlink()
+    return True
+
+
 def montar(planner: dict, perfil: int | None = None, apelido: str | None = None,
            blizzard=None) -> dict:
     """Planner já baixado -> build pronta pra salvar, com os códigos das

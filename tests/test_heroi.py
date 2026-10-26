@@ -17,10 +17,11 @@ sys.path.insert(0, str(RAIZ / "src"))
 
 from avaliador import avaliar, carregar_builds  # noqa: E402
 from blizzard import ErroBlizzard  # noqa: E402
+from builds_dos_testes import PASTA_DOS_TESTES  # noqa: E402
 from config import validar  # noqa: E402
 from heroi import comparar, conta_da_battletag, item_do_perfil  # noqa: E402
 
-UNHALLOWED = next(b for b in carregar_builds() if b["id"] == "unhallowed_multidisparo")
+UNHALLOWED = next(b for b in carregar_builds(PASTA_DOS_TESTES) if b["id"] == "unhallowed_multidisparo")
 
 # Luvas no formato da API de perfil (inventadas, iguais às da dica do jogo nos testes do OCR).
 LUVAS = {

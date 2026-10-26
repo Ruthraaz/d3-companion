@@ -168,7 +168,7 @@ def montar_selo(av: Avaliacao) -> Selo:
     item = av.item or {}
     titulo = item.get("nome") or f"{item.get('qualidade', '')} {item.get('tipo') or ''}".strip()
     if not av.resultados:
-        return Selo(False, titulo, [[("Nenhuma build em builds/", "motivo")]])
+        return Selo(False, titulo, [[("Nenhuma build ainda: cole um link do Maxroll na janela do app", "motivo")]])
 
     batem = [r for r in av.resultados if r["bate"]]
     por_enquanto = [r for r in av.resultados if r["por_enquanto"]]

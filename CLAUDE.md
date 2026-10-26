@@ -21,7 +21,7 @@ Não é um planejador nem um motor de recomendação (decidido em 24/10/2026). S
 A versão 1 está pronta quando: no jogo, com o mouse num item, aperto o atalho e
 aparece um selo no overlay com o veredito e os afixos, ex.:
 "✅ Dreadlands · Destreza ✓ Crítico ✓ Encaixe ✗".
-Vale pras 3 builds de Demon Hunter (Dreadlands, Unhallowed Essence, Legacy of Nightmares).
+Vale pras 3 builds de Demon Hunter (Dreadlands, Unhallowed Essence, Legacy of Nightmares), hoje em `tests/builds/`.
 Na versão 1 as builds são editadas direto nos arquivos JSON (sem janela).
 
 ### Visual (decidido em 24/10/2026)
@@ -161,6 +161,19 @@ trabalho extra agora, não feche essa porta:
 - Testado em 26/10/2026 com APPDATA temporário: janela abre, copia as builds, desenha;
   `--overlay` sobe (parou na trava porque o overlay do Arthur estava aberto). Zip ~133 MB.
 - Sem assinatura digital: SmartScreen avisa (explicado no LEIA-ME.txt e no site).
+
+### Builds de cada um + Paragon (26/10/2026) — notas
+- Pedido do Arthur: builds que vinham no app estavam bugadas (faltando itens). Agora o app **não traz builds**:
+  `builds/*.json` no .gitignore (só `builds/exemplos/` no Git), o .exe não empacota `builds/` (antes empacotava
+  a pasta local inteira!) e `pastas.preparar()` só cria a pasta. Tela vazia da aba Builds = "Monte a sua lista"
+  com o colar link aberto. Botão **Remover** (2 cliques) → `Api.remover_build` → `maxroll.remover_build`
+  (id só `[A-Za-z0-9_-]`, arquivo direto em builds/; se era a do atalho, volta pra "todas").
+- As 3 builds feitas à mão (Dreadlands, LoN, Unhallowed) viraram dados de teste em `tests/builds/`
+  (`PASTA_DOS_TESTES` em `tests/builds_dos_testes.py`). As importadas pelo Arthur continuam no PC dele, fora do Git.
+- Paragon: Arthur achava que Destreza era a prioridade (o 3950 aparecia primeiro). Agora são passos
+  numerados por grupo (`ORDEM_DO_PARAGON` no app.js), com "Todo o resto" por último no Principal. O Maxroll
+  só guarda números (conferido no planner 236100095), a ordem é a comum dos guias.
+- Fora do app, `?vazio` na URL simula app recém-instalado.
 
 ### Site (26/10/2026) — notas
 - `docs/` = GitHub Pages (branch main, pasta /docs, `.nojekyll`). Endereço: https://ruthraaz.github.io/d3-companion/

@@ -15,3 +15,6 @@ dados/
 # Gerados por ferramentas/empacotar.py (o .exe vai pra Release, não pro Git)
 build/
 dist/
+
+# Builds de cada usuário (importadas pelo app). Só o modelo do formato vai pro Git.
+builds/*.json

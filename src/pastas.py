@@ -9,14 +9,13 @@ são lidos; o que é seu (.env, builds, prints, cache) fica em
 """
 
 import os
-import shutil
 import sys
 from pathlib import Path
 
 NO_EXE = bool(getattr(sys, "frozen", False))
 
 if NO_EXE:
-    PROGRAMA = Path(sys._MEIPASS)  # o que o PyInstaller empacotou (web/, builds/ de exemplo, tesseract/)
+    PROGRAMA = Path(sys._MEIPASS)  # o que o PyInstaller empacotou (web/, tesseract/)
     SEUS = Path(os.environ.get("APPDATA") or Path.home()) / "D3 Companion"
     WEB = PROGRAMA / "web"
 else:
@@ -31,12 +30,6 @@ TESSERACT_JUNTO = PROGRAMA / "tesseract" / "tesseract.exe"  # só existe no .exe
 
 
 def preparar() -> None:
-    """No .exe, na primeira vez: cria a pasta do usuário e copia as builds de
-    exemplo. Nunca sobrescreve uma build que já está lá."""
-    if not NO_EXE:
-        return
+    """Cria a pasta de builds do usuário. Ela começa vazia: cada um monta a sua
+    colando o link do Maxroll no app."""
     PASTA_BUILDS.mkdir(parents=True, exist_ok=True)
-    for exemplo in (PROGRAMA / "builds").glob("*.json"):
-        destino = PASTA_BUILDS / exemplo.name
-        if not destino.exists():
-            shutil.copyfile(exemplo, destino)

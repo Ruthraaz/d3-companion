@@ -7,7 +7,7 @@ Gera o D3 Companion pra quem não tem Python: dist/D3-Companion-<versão>-window
 
 O que entra no zip (pasta "D3 Companion"):
   - D3 Companion.exe e o Python/bibliotecas que ele usa (PyInstaller, modo pasta);
-  - a página da janela (src/web) e as builds de exemplo (builds/);
+  - a página da janela (src/web). Builds não vão junto: cada um importa as suas;
   - o Tesseract (OCR) só com o que o tesseract.exe usa + o inglês, e a licença dele.
 
 Do seu PC não entra nada: nem .env, nem capturas/, nem dados/ (o app cria
@@ -120,7 +120,6 @@ def empacotar() -> Path:
         "--paths", str(RAIZ / "src"),
         "--workpath", str(OBRA / "pyinstaller"), "--distpath", str(SAIDA), "--specpath", str(OBRA),
         "--add-data", f"{RAIZ / 'src' / 'web'}{sep}web",
-        "--add-data", f"{RAIZ / 'builds'}{sep}builds",
         # O overlay e a janela são carregados por import dentro do main: avisa o PyInstaller.
         "--hidden-import", "app", "--hidden-import", "janela",
         "--exclude-module", "tkinter", "--exclude-module", "unittest",

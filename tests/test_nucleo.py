@@ -15,13 +15,13 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
 
 from avaliador import avaliar_todas, carregar_builds  # noqa: E402
-from builds_dos_testes import BUILDS_DOS_TESTES  # noqa: E402
+from builds_dos_testes import BUILDS_DOS_TESTES, PASTA_DOS_TESTES  # noqa: E402
 from nucleo import (Avaliacao, caixa_na_tela, montar_selo, posicao_do_selo,  # noqa: E402
                     processo_vivo, texto_do_selo)
 from parser import interpretar  # noqa: E402
 
 # Só as 3 builds originais: builds importadas na pasta não podem mudar o resultado dos testes.
-BUILDS = [b for b in carregar_builds() if b["id"] in BUILDS_DOS_TESTES]
+BUILDS = [b for b in carregar_builds(PASTA_DOS_TESTES) if b["id"] in BUILDS_DOS_TESTES]
 
 
 def avaliacao(nome: str) -> Avaliacao:

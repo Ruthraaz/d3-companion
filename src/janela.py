@@ -48,7 +48,8 @@ from blizzard import Blizzard, ErroBlizzard, visual_da_build
 from config import ler_config, salvar_config
 from heroi import comparar, herois, heroi
 from maxroll import (ErroMaxroll, baixar_planner, builds_do_heroi, catalogo, classe_do_planner,
-                     link_de_guia, montar, nomes_dos_perfis, planners_do_link, salvar_build)
+                     link_de_guia, montar, nomes_dos_perfis, planners_do_link, remover_build,
+                     salvar_build)
 from nucleo import PASTA_CAPTURAS, dica_do_mistico
 from pastas import NO_EXE, WEB
 from rede import link_seguro
@@ -163,6 +164,16 @@ class Api:
         if problemas:  # não devia acontecer; se acontecer, não grava build quebrada
             return {"erro": "A build veio com problema: " + " ".join(problemas)}
         return {"id": salvar_build(build).stem}
+
+    def remover_build(self, id_build: str) -> dict:
+        """Tira a build do app (apaga o arquivo dela em builds/). Se era a do
+        atalho, o atalho volta a usar todas. {"ok"} ou {"erro"}."""
+        if not remover_build(str(id_build)):
+            return {"erro": "Essa build não está mais na pasta."}
+        if ler_config().get("BUILD_ATIVA") == id_build:
+            salvar_config({"BUILD_ATIVA": ""})
+        self._overlay.ligar()  # o overlay só lê builds/ ao abrir
+        return {"ok": True}
 
     def abrir_link(self, url: str) -> None:
         """Abre o guia da build no navegador do Windows (não dentro da janela).

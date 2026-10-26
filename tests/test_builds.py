@@ -16,6 +16,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
 
 from avaliador import avaliar, ler_builds, problemas_da_build  # noqa: E402
+from builds_dos_testes import PASTA_DOS_TESTES  # noqa: E402
 
 EXEMPLOS = RAIZ / "builds" / "exemplos"
 
@@ -26,7 +27,7 @@ def build_minima(**mudancas) -> dict:
 
 class TestBuildsDoProjeto(unittest.TestCase):
     def test_todas_as_builds_estao_ok(self):
-        _, problemas = ler_builds()
+        _, problemas = ler_builds(PASTA_DOS_TESTES)
         self.assertEqual(problemas, {})
 
     def test_modelo_de_outra_classe_esta_ok(self):

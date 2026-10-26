@@ -228,8 +228,35 @@ function desenharCabecaDaBuild(b) {
         type: "button", class: "botao" + (noAtalho ? " no-atalho" : ""),
         title: noAtalho ? "O atalho já avalia os itens com esta build" : "O atalho passa a avaliar os itens só com esta build",
         onclick: () => { if (!noAtalho) escolherBuild(b.id); },
-      }, noAtalho ? "✓ No atalho" : "Usar no atalho")),
+      }, noAtalho ? "✓ No atalho" : "Usar no atalho"),
+      botaoDeRemover(b)),
   ]);
+}
+
+// Remover pede um segundo clique (o arquivo some de builds/ de verdade).
+function botaoDeRemover(b) {
+  let confirmando = null;
+  const botao = el("button", { type: "button", class: "botao botao-leve botao-remover", title: "Tirar esta build do app" }, "Remover");
+  botao.addEventListener("click", async () => {
+    if (!confirmando) {
+      botao.textContent = "Clique de novo pra remover";
+      botao.classList.add("confirmar");
+      confirmando = setTimeout(() => { confirmando = null; botao.textContent = "Remover"; botao.classList.remove("confirmar"); }, 4000);
+      return;
+    }
+    clearTimeout(confirmando);
+    botao.disabled = true;
+    const r = await estado.api.remover_build(b.id);
+    if (r.erro) { trocar(document.getElementById("avaliando"), el("span", { class: "t-falta" }, r.erro)); }
+    estado.builds = await estado.api.builds();
+    if (estado.ativa === b.id) estado.ativa = "";
+    estado.build = Math.max(0, estado.builds.findIndex(x => x.classe === estado.classe));
+    estado.habilidade = null;
+    if (estado.guias) desenharGuias();
+    desenharBuilds();
+    if (!r.erro) trocar(document.getElementById("avaliando"), `Build removida: ${b.apelido}.`);
+  });
+  return botao;
 }
 
 function desenharBuilds() {
@@ -238,6 +265,21 @@ function desenharBuilds() {
   const daClasse = estado.builds.map((b, i) => [b, i]).filter(([b]) => b.classe === estado.classe);
   const corpo = document.getElementById("builds-corpo");
   corpo.hidden = !daClasse.length;
+  if (!estado.builds.length) {
+    // App novo: as builds são de cada um. Começa com o colar link aberto.
+    desenharCabecaDaBuild(null);
+    trocar(caixa, el("div", { class: "boas-vindas" },
+      el("h2", {}, "Monte a sua lista de builds"),
+      el("p", {}, "Cole abaixo o link de um guia ou do planejador do Maxroll. A build é importada e fica salva aqui no app, ",
+        "pronta pro atalho. Pode colar quantas quiser e tirar quando não usar mais."),
+      el("p", { class: "mudo" }, "Não sabe qual? ",
+        el("button", { class: "link", type: "button", onclick: () => abrirAba("guias") }, "Veja os guias por classe"), ".")));
+    if (document.getElementById("importar").hidden) abrirImportar();
+    document.getElementById("fechar-importar").hidden = true;
+    trocar(document.getElementById("avaliando"));
+    return;
+  }
+  document.getElementById("fechar-importar").hidden = false;
   if (!daClasse.length) {
     desenharCabecaDaBuild(null);
     trocar(caixa,
@@ -484,6 +526,15 @@ function desenharAoUpar(v) {
         i ? ", " : "", el("span", { class: `marco-${m.tipo}` }, m.texto)]))))));
 }
 
+// Ordem pra encher cada grupo (índices de PARAGON). O Maxroll só guarda os
+// números, não a ordem: esta é a ordem comum dos guias de D3.
+const ORDEM_DO_PARAGON = [
+  [2, 3],        // Principal: Velocidade e Recurso primeiro; atributo e Vitalidade ficam com o resto
+  [1, 2, 3, 0],  // Ataque: Recarga, Crítico, Dano crítico, Vel. de ataque
+  [0, 2, 1, 3],  // Defesa: Vida %, Resistência, Armadura, Regeneração
+  [0, 1, 2, 3],  // Utilidade: Área, Custo, Vida por acerto, Ouro
+];
+
 function desenharParagon(build) {
   const caixa = document.getElementById("paragon");
   const p = build.paragon;
@@ -492,23 +543,43 @@ function desenharParagon(build) {
     return;
   }
   const atributo = ATRIBUTO[build.classe] || "Atributo principal";
-  const [, vit, vel, rec] = p.pontos[0];
-  const resumo = [`Principal: ${vit} em Vitalidade`, vel && `${vel} em Velocidade`, rec && `${rec} em Recurso máximo`]
-    .filter(Boolean).join(", ") + `, e o resto em ${atributo}.`;
+  const [principal, vit] = p.pontos[0];
+  const passo = (numero, nome, n) => el("li", { class: "passo" + (n === 0 ? " zero" : "") },
+    el("span", { class: "passo-num" }, numero),
+    el("span", { class: "passo-nome" }, nome),
+    el("span", { class: "paragon-valor" }, n === 0 ? "não pôr" : n >= MAXIMO_DO_PARAGON ? "até 50" : `${n} pontos`));
+
+  const grupos = PARAGON.map(([grupo, nomes], g) => {
+    const ordem = ORDEM_DO_PARAGON[g];
+    const comPonto = ordem.filter(i => p.pontos[g][i] > 0);
+    const semPonto = ordem.filter(i => p.pontos[g][i] === 0);
+    const linhas = [...comPonto, ...semPonto].map((i, k) =>
+      passo(k < comPonto.length ? String(k + 1) : "–", nomes[i], p.pontos[g][i]));
+    if (g === 0) {
+      // O número gigante do atributo principal é "o que sobra", não a prioridade.
+      linhas.splice(comPonto.length, 0, el("li", { class: "passo passo-resto" },
+        el("span", { class: "passo-num" }, String(comPonto.length + 1)),
+        el("span", { class: "passo-nome" }, "Todo o resto",
+          el("small", {}, [`${atributo} ${principal}`, vit && `Vitalidade ${vit}`].filter(Boolean).join(" · "))),
+        el("span", { class: "paragon-valor" }, "sem limite")));
+    }
+    return el("div", { class: "paragon-grupo" },
+      el("p", { class: "paragon-titulo" }, el("span", { class: "paragon-ordem" }, String(g + 1)), grupo),
+      el("ol", { class: "passos" }, linhas));
+  });
+
   trocar(caixa,
-    el("p", { class: "paragon-resumo" }, resumo, " Nos outros grupos, ",
-      p.pontos.slice(1).flat().every(n => n >= MAXIMO_DO_PARAGON) ? "tudo no máximo (50 cada)." : "veja abaixo (0 = deixe sem)."),
-    el("div", { class: "paragon-grupos" }, PARAGON.map(([grupo, nomes], g) =>
-      el("div", { class: "paragon-grupo" },
-        el("p", { class: "paragon-titulo" }, grupo),
-        el("ul", {}, nomes.map((nome, i) => {
-          const n = p.pontos[g][i];
-          const extra = g === 0 && i === 0 ? "resto" : n >= MAXIMO_DO_PARAGON && !(g === 0 && i === 1) ? "máx" : n === 0 ? "sem" : "";
-          return el("li", { class: "paragon-linha" + (n === 0 ? " zero" : "") },
-            el("span", {}, nome || atributo),
-            el("span", { class: "paragon-valor" }, String(n), extra && el("small", {}, ` ${extra}`)));
-        }))))),
-    p.nivel && el("p", { class: "nota" }, `Pontos da build no paragon ${p.nivel}. Antes disso, siga a mesma ordem: o que está no máximo primeiro.`),
+    el("div", { class: "paragon-explica" },
+      el("p", {}, el("strong", {}, "Como ler: "),
+        "cada nível de paragon dá 1 ponto, e os grupos se revezam (Principal → Ataque → Defesa → Utilidade). ",
+        "Dentro de cada grupo, encha na ordem dos números: o 1 primeiro, até o máximo, depois o 2…"),
+      el("p", {}, el("strong", {}, `${atributo} não é a prioridade: `),
+        "o número dela é grande só porque não tem limite. É onde caem os pontos do Principal depois que ",
+        "Velocidade e Recurso já encheram.")),
+    el("div", { class: "paragon-grupos" }, grupos),
+    p.nivel && el("p", { class: "nota" },
+      `Números da build no paragon ${p.nivel}. "Não pôr" = a build deixa esse atributo em 0. `,
+      "A ordem dentro dos grupos é a comum dos guias; o Maxroll só guarda os números."),
   );
 }
 
@@ -976,7 +1047,8 @@ function apiDeExemplo() {
              gerais: { obrigatorios: ["Destreza"], desejaveis: ["Vitalidade"] }, espacos, gemas };
   };
   const critico = afixo("Encaixe", "Crítico", "Dano crítico");
-  const builds = [
+  // ?vazio na URL: app recém-instalado, sem nenhuma build.
+  const builds = location.search.includes("vazio") ? [] : [
     build("Gears of Dreadlands — Metralhar", "Dreadlands", {
       Head: esp(["Dystopian Goggles"], ["Encaixe", "Crítico"]),
       Shoulders: esp(["Mechanical Pauldrons"]),
@@ -1045,6 +1117,13 @@ function apiDeExemplo() {
     },
     estado: async () => ({ rodando: true, config, log: ["(modo de exemplo: aberto fora do app)"] }),
     reiniciar_overlay: async () => ({}),
+    remover_build: async id => {
+      const i = builds.findIndex(b => b.id === id);
+      if (i < 0) return { erro: "Essa build não está mais na pasta." };
+      builds.splice(i, 1);
+      if (config.BUILD_ATIVA === id) config = { ...config, BUILD_ATIVA: "" };
+      return { ok: true };
+    },
     escolher_build: async id => { config = { ...config, BUILD_ATIVA: id }; return { erros: {} }; },
     visual: async id => visualDeExemplo(builds.find(b => b.id === id)),
     abrir_link: async url => { window.open(url, "_blank"); },
