@@ -4,6 +4,14 @@
 
 "use strict";
 
+// Contra clickjacking: o GitHub Pages não deixa mandar o cabeçalho que proíbe
+// abrir o site dentro de outro (iframe). Então, se estiver dentro de outro site,
+// a página some e tenta abrir sozinha, por inteiro.
+if (window.top !== window.self) {
+  document.documentElement.hidden = true;
+  try { window.top.location.href = window.self.location.href; } catch { /* o outro site bloqueou: fica escondida */ }
+}
+
 const API = "https://api.github.com/repos/Ruthraaz/d3-companion/releases/latest";
 const DOWNLOAD_OK = /^https:\/\/github\.com\/Ruthraaz\/d3-companion\/releases\/download\//;
 
@@ -43,6 +51,25 @@ document.querySelectorAll(".js-baixar").forEach(a => a.addEventListener("click",
   const antes = rotulo.textContent;
   rotulo.textContent = "Baixando… veja a barra do navegador";
   setTimeout(() => { a.classList.remove("baixando"); rotulo.textContent = antes; }, 6000);
+}));
+
+// "Mandar o site pra um amigo": a folha de compartilhar do celular/Windows ou,
+// sem ela, copia o endereço. O endereço é fixo (nada do que está na página).
+const ENDERECO = "https://ruthraaz.github.io/d3-companion/";
+document.querySelectorAll(".js-compartilhar").forEach(botao => botao.addEventListener("click", async () => {
+  const antes = botao.textContent;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: "D3 Companion", text: "Ajudante grátis pra Diablo III: diz se o item serve na sua build.", url: ENDERECO });
+      return;
+    }
+    await navigator.clipboard.writeText(ENDERECO);
+    botao.textContent = "Link copiado!";
+  } catch (erro) {
+    if (erro && erro.name === "AbortError") return;  // fechou a folha de compartilhar
+    botao.textContent = ENDERECO;
+  }
+  setTimeout(() => { botao.textContent = antes; }, 3000);
 }));
 
 carregarVersao();

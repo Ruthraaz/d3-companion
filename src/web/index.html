@@ -220,7 +220,7 @@
           A Blizzard só atualiza quando você <strong>sai do jogo</strong> (ou troca de personagem).</p>
       </div>
       <form class="importar-busca busca-heroi" id="form-heroi">
-        <input name="battletag" autocomplete="off" spellcheck="false" maxlength="24" placeholder="Sua BattleTag, ex.: Arthur#1234">
+        <input name="battletag" autocomplete="off" spellcheck="false" maxlength="24" placeholder="Sua BattleTag, ex.: Jogador#1234">
         <button type="submit" class="botao">Buscar heróis</button>
       </form>
       <p class="importar-status" id="heroi-status" role="status"></p>
@@ -275,6 +275,15 @@
           <span class="aviso" id="aviso-config" role="status"></span>
         </div>
       </form>
+      <section class="indicar">
+        <h2>Gostou? Indique pra um amigo</h2>
+        <p class="mudo">No site dá pra baixar o app e montar builds sem instalar nada.</p>
+        <div class="acoes">
+          <button type="button" class="botao" id="copiar-site">Copiar link do site</button>
+          <button type="button" class="botao botao-leve" id="abrir-site">Abrir o site</button>
+          <span class="aviso" id="aviso-indicar" role="status"></span>
+        </div>
+      </section>
       <details class="log">
         <summary>Mensagens do overlay</summary>
         <pre id="log"></pre>

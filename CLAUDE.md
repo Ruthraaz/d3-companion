@@ -191,7 +191,7 @@ trabalho extra agora, não feche essa porta:
 - `docs/site.js` lê `api.github.com/.../releases/latest` e aponta o botão pro zip; só aceita link
   `github.com/Ruthraaz/d3-companion/releases/download/`. Sem versão publicada: 404 e o botão leva à página de Releases.
 - CSP própria (`connect-src https://api.github.com`). Nenhuma imagem/print do jogo no site:
-  a dica e o selo da capa são HTML/CSS; `img/janela.webp` é a tela de exemplo do app (sem ícones).
+  a dica e o selo da capa são HTML/CSS; `img/janela.png` é a tela de exemplo do app (sem ícones).
 
 ### Montar build no site (26/10/2026) — notas
 - Pedido: "Fazer o site ser igual o app e adicionar o sistema de montar build ... só que no site o cara nao vai
@@ -201,7 +201,7 @@ trabalho extra agora, não feche essa porta:
   pros afixos). Só nomes/códigos de ícone; imagens ficam no CDN (`blzmedia-a.akamaihd.net`, única origem de img na CSP).
 - Link: `montar.html#b=` + base64url(deflate-raw(JSON da build)). App: `link_do_site.build_do_link` (https, host,
   caminho, ≤20000 chars, ≤200 KB aberto, força `fonte={"site":"montar"}`, tira "id"/"_*") e `Api.importar_do_site`.
-- Rascunho por classe em localStorage ("d3c-montar-v1"). Ainda falta: seguidor no montador.
+- Rascunho por classe em localStorage ("d3c-montar-v2"; o v1 é apagado). Ainda falta: seguidor no montador.
 
 ### Montar no app + dica do item (26/10/2026) — notas
 - Pedido: "Quando passar o mouse por cima mostrar oque a gema faz, se for possivel ou os itens no geral. e fazer o
@@ -217,6 +217,25 @@ trabalho extra agora, não feche essa porta:
 - dicas.json: `{itens: {nome_en: {n, t, p?, s?, f?}}, sets: {nome_set: [bônus]}}`. Poder = spans laranja
   (`d3-color-ffff8000`); sem laranja, azul fora "Engastes" (ex.: RoRG). Faixa cinza vai junto no item, não na gema.
   Texto puro (HTMLParser no gerador; dica.js usa textContent).
+
+### Divulgar + limpeza + segurança do site (26/10/2026) — notas
+- Pedido: "Faz o site ser divulgavel e o app tambem ... antes faça uma melhora no site ele esta com resultados
+  salvos ja limpe, nao se esqueca da cyberseguranca".
+- Limpeza: `docs/previa_selo.png` era print do jogo (arte da Blizzard) → saiu do Git (cópia local em `capturas/`,
+  que é ignorada). `img/janela.webp` antigo (builds que vinham junto) → `img/janela.png` novo. Rascunho do montador
+  agora é `d3c-montar-v2` (apaga o v1) e só guarda classe com conteúdo (`temConteudo`).
+- Imagens: `ferramentas/vitrine.py` (Edge headless numa CÓPIA de src/web com vitrine.css que esconde `img` e
+  vitrine.js que abre Montar e a dica; sem CSP só na cópia) → `docs/img/janela.png` e `compartilhar.png` (1200x630, PIL).
+  Nunca usar CopyFromScreen.
+- Divulgar: Open Graph/Twitter com URL absoluta + canonical (index e montar), robots.txt, sitemap.xml, 404.html,
+  `.well-known/security.txt` (Expires daqui a 1 ano: renovar!), botão "Mandar o site pra um amigo" (site.js,
+  endereço fixo), "Compartilhar" no montador do site (só com navigator.share), em Configurações do app
+  "Indique pra um amigo" (`Api.abrir_site`, endereço fixo). README com cara de vitrine.
+- Segurança: frame-buster no site.js e no montador do site (Pages não manda frame-ancestors/X-Frame-Options);
+  `SECURITY.md`; `.github/dependabot.yml` (pip, semanal); testes `TestSegurancaDoSite` (CSP rígida em toda página,
+  sem script/evento/style inline, noopener, sem innerHTML/eval no JS, lista fechada de imagens, og:image própria,
+  security.txt válido e sem e-mail). Exemplos de BattleTag viraram "Jogador#1234" (nada do nome do Arthur no código).
+- Varredura (valores do .env + e-mail + pasta do usuário) no histórico inteiro do Git: nada encontrado.
 
 ### Segurança (26/10/2026) — notas
 - Pente fino pedido pelo Arthur. Tudo em `tests/test_seguranca.py`; resumo no README ("Segurança e privacidade").

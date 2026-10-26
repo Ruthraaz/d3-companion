@@ -32,6 +32,7 @@ const ICONE_DA_CLASSE = {
   Monk: "monk_waveoflight", Necromancer: "p6_necro_bonespear", "Witch Doctor": "witchdoctor_zombiecharger",
   Wizard: "wizard_meteor",
 };
+const SITE_DO_APP = "https://ruthraaz.github.io/d3-companion/";
 const URL_DE_ICONE = "https://blzmedia-a.akamaihd.net/d3/icons/skills/64/";
 
 const estado = {
@@ -1109,6 +1110,12 @@ async function iniciar(api) {
     await estado.api.reiniciar_overlay();
     setTimeout(atualizarEstado, 1500);
   });
+  document.getElementById("abrir-site").addEventListener("click", () => estado.api.abrir_site());
+  document.getElementById("copiar-site").addEventListener("click", async () => {
+    const aviso = document.getElementById("aviso-indicar");
+    try { await navigator.clipboard.writeText(SITE_DO_APP); aviso.textContent = "Link copiado!"; }
+    catch { aviso.textContent = SITE_DO_APP; }
+  });
   document.getElementById("filtro-guias").addEventListener("input", () => { if (estado.guias) desenharGuias(); });
   document.querySelectorAll("#painel-builds .sub-aba").forEach(s => s.addEventListener("click", () => abrirSubAba(s.dataset.sub)));
 
@@ -1264,6 +1271,7 @@ function apiDeExemplo() {
       return { build: montadas[id] || { ...b, espacos: Object.fromEntries(Object.entries(b.espacos).filter(([, e]) => e.definido)
         .map(([k, e]) => [k, { itens: e.itens }])) }, pode_alterar: id in montadas };
     },
+    abrir_site: async () => window.open(SITE_DO_APP, "_blank", "noopener"),
     builds: async () => builds,
     // ?problema na URL simula uma build com erro, pra ver o aviso.
     problemas_das_builds: async () => location.search.includes("problema")
@@ -1296,7 +1304,7 @@ function apiDeExemplo() {
     herois: async tag => /#\d{3,6}$/.test(tag)
       ? { herois: [{ id: 1, nome: "Caçadora", classe: "Demon Hunter", nivel: 70, paragon: 1520, temporada: true },
                    { id: 2, nome: "Bruxo", classe: "Witch Doctor", nivel: 43, paragon: 1520, temporada: true }] }
-      : { erro: "Escreva a BattleTag com o número, ex.: Arthur#1234 (aparece no canto do app da Battle.net)." },
+      : { erro: "Escreva a BattleTag com o número, ex.: Jogador#1234 (aparece no canto do app da Battle.net)." },
     comparar_heroi: async () => {
       const I = "https://blzmedia-a.akamaihd.net/d3/icons/items/large/";
       return {

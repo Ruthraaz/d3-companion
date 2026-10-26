@@ -13,8 +13,10 @@ Rodar:
 """
 
 import base64
+import datetime
 import functools
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -122,6 +124,72 @@ class TestSiteIgualAoApp(unittest.TestCase):
                     self.assertIn(arquivo, texto)
                 self.assertIn("data-montador=", texto)
                 self.assertIn('data-m="detalhe"', texto)
+
+
+class TestSegurancaDoSite(unittest.TestCase):
+    """O site é público: cada página com CSP, nada de script inline, nenhuma
+    imagem do jogo e a prévia de link apontando pra imagem própria."""
+
+    PAGINAS = sorted((RAIZ / "docs").glob("*.html"))
+    IMAGENS_PERMITIDAS = {"img/janela.png", "img/compartilhar.png", "favicon.svg"}
+
+    def test_toda_pagina_tem_csp_rigida(self):
+        self.assertGreaterEqual(len(self.PAGINAS), 3)
+        for pagina in self.PAGINAS:
+            with self.subTest(pagina.name):
+                html = pagina.read_text(encoding="utf-8")
+                csp = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
+                self.assertIsNotNone(csp, "página sem CSP")
+                csp = csp.group(1)
+                for regra in ("object-src 'none'", "base-uri 'none'", "form-action 'none'"):
+                    self.assertIn(regra, csp)
+                self.assertNotIn("unsafe-inline", csp)
+                self.assertNotIn("unsafe-eval", csp)
+                self.assertIn('<meta name="referrer" content="no-referrer">', html)
+
+    def test_sem_script_inline_nem_de_fora(self):
+        for pagina in self.PAGINAS:
+            with self.subTest(pagina.name):
+                html = pagina.read_text(encoding="utf-8")
+                for atributos, corpo in re.findall(r"<script([^>]*)>(.*?)</script>", html, re.S):
+                    src = re.search(r'src="([^"]+)"', atributos)
+                    self.assertIsNotNone(src, "script inline")
+                    self.assertEqual(corpo.strip(), "")
+                    self.assertNotRegex(src.group(1), r"^(https?:)?//", "script de outro site")
+                self.assertNotRegex(html, r"<[^>]+\son[a-z]+\s*=", "evento inline (onclick=...)")
+                self.assertNotRegex(html, r"<[^>]+\sstyle\s*=", "style inline (a CSP bloqueia)")
+                for link in re.findall(r"<a\s[^>]*target=[^>]*>", html):
+                    self.assertIn("noopener", link)
+
+    def test_js_do_site_nao_monta_html(self):
+        for js in (RAIZ / "docs").glob("*.js"):
+            with self.subTest(js.name):
+                texto = js.read_text(encoding="utf-8")
+                for perigo in ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write", "eval(", "new Function"):
+                    self.assertNotIn(perigo, texto)
+
+    def test_nenhuma_imagem_do_jogo_no_site(self):
+        imagens = {str(p.relative_to(RAIZ / "docs")).replace("\\", "/") for p in (RAIZ / "docs").rglob("*")
+                   if p.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".ico"}}
+        self.assertEqual(imagens - self.IMAGENS_PERMITIDAS, set(),
+                         "imagem nova no site: confira se não é print ou arte do jogo e libere aqui")
+
+    def test_previa_do_link_com_imagem_propria(self):
+        for pagina in (RAIZ / "docs" / "index.html", RAIZ / "docs" / "montar.html"):
+            with self.subTest(pagina.name):
+                html = pagina.read_text(encoding="utf-8")
+                imagem = re.search(r'property="og:image" content="([^"]+)"', html).group(1)
+                self.assertTrue(imagem.startswith("https://ruthraaz.github.io/d3-companion/"))
+                self.assertTrue((RAIZ / "docs" / imagem.split("/d3-companion/", 1)[1]).is_file())
+                self.assertIn('name="twitter:card" content="summary_large_image"', html)
+                self.assertIn('rel="canonical"', html)
+
+    def test_security_txt_valido(self):
+        texto = (RAIZ / "docs" / ".well-known" / "security.txt").read_text(encoding="utf-8")
+        self.assertIn("Contact: https://github.com/Ruthraaz/d3-companion/security/advisories/new", texto)
+        vence = re.search(r"^Expires: (\S+)$", texto, re.M).group(1)
+        self.assertGreater(vence, datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+        self.assertNotIn("@", texto, "sem e-mail pessoal no site")
 
 
 class TestDadosDoJogo(unittest.TestCase):

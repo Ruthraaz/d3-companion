@@ -1,7 +1,7 @@
 """
 Seu herói de verdade (API de perfil da Blizzard) comparado com uma build.
 
-Pela BattleTag (ex.: Arthur#1234), a Blizzard diz os heróis da conta e, de
+Pela BattleTag (ex.: Jogador#1234), a Blizzard diz os heróis da conta e, de
 cada um, os itens equipados e as habilidades. Cada item vira o mesmo formato
 que o parser tira da dica do jogo, então o avaliador é o mesmo do F8.
 
@@ -11,8 +11,8 @@ Limites da API (da Blizzard, não do app):
   - a conta precisa ser da região Américas (us), que é a do Brasil.
 
 Uso:
-    python src/heroi.py Arthur#1234                 # lista os heróis
-    python src/heroi.py Arthur#1234 <id> <build>    # compara um herói com uma build (id do arquivo)
+    python src/heroi.py Jogador#1234                 # lista os heróis
+    python src/heroi.py Jogador#1234 <id> <build>    # compara um herói com uma build (id do arquivo)
 """
 
 import re
@@ -36,13 +36,13 @@ QUALIDADE = re.compile(r"^((?:Primal )?(?:Ancient )?(?:Legendary|Set|Rare|Magic)
 
 
 def conta_da_battletag(texto: str) -> str:
-    """"Arthur#1234" -> "Arthur-1234" (como a API quer). Erro claro se não parecer BattleTag.
+    """"Jogador#1234" -> "Jogador-1234" (como a API quer). Erro claro se não parecer BattleTag.
 
     Nome só com letras (com acento) e números, como a Battle.net exige: assim "/",
     "." ou "?" nunca entram no endereço da API (não dá pra cair em outra página dela)."""
     m = re.fullmatch(r"\s*([^\W_]{2,12})\s*[#-]\s*(\d{3,6})\s*", texto or "")
     if not m:
-        raise ErroBlizzard("Escreva a BattleTag com o número, ex.: Arthur#1234 "
+        raise ErroBlizzard("Escreva a BattleTag com o número, ex.: Jogador#1234 "
                            "(aparece no canto do app da Battle.net).")
     return f"{m.group(1)}-{m.group(2)}"
 

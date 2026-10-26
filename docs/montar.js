@@ -55,7 +55,8 @@ const PARAGON = [
   ["Defesa", ["Vida %", "Armadura", "Resistência total", "Regeneração de vida"]],
   ["Utilidade", ["Dano em área", "Redução de custo", "Vida por acerto", "Achar ouro"]],
 ];
-const GUARDADO = "d3c-montar-v1";      // rascunho por classe (só neste navegador)
+const GUARDADO = "d3c-montar-v2";      // rascunho por classe (só neste navegador)
+const GUARDADOS_ANTIGOS = ["d3c-montar-v1"];
 const MAXIMO_DO_LINK = 20000;          // caracteres depois de "#b="
 const SITE = "https://ruthraaz.github.io/d3-companion/montar.html";
 
@@ -104,11 +105,28 @@ function icone(url, classe = "") {
 }
 
 // Guardar no navegador pode falhar (janela anônima, site bloqueado): o site segue sem.
+// Só fica guardado rascunho que tem alguma coisa: classe só visitada continua "nova".
 function lerGuardado() {
-  try { return JSON.parse(localStorage.getItem(GUARDADO) || "{}") || {}; } catch { return {}; }
+  try {
+    for (const antigo of GUARDADOS_ANTIGOS) localStorage.removeItem(antigo);  // rascunhos de versões velhas
+    return JSON.parse(localStorage.getItem(GUARDADO) || "{}") || {};
+  } catch { return {}; }
 }
 function guardar() {
-  try { localStorage.setItem(GUARDADO, JSON.stringify({ classe: estado.classe, rascunhos: estado.rascunhos })); } catch { /* sem */ }
+  const rascunhos = Object.fromEntries(Object.entries(estado.rascunhos).filter(([, b]) => temConteudo(b)));
+  try {
+    if (Object.keys(rascunhos).length) localStorage.setItem(GUARDADO, JSON.stringify({ classe: estado.classe, rascunhos }));
+    else localStorage.removeItem(GUARDADO);
+  } catch { /* sem */ }
+}
+const PARAGON_INICIAL = JSON.stringify(buildVazia().paragon);
+function temConteudo(b) {
+  if (!b || !b.lugares) return false;
+  return Boolean(b.id || (b.apelido || "").trim()
+    || Object.values(b.lugares).some(l => l && (l.item || (l.afixos || []).length || l.ancient))
+    || (b.gemas || []).some(Boolean) || Object.values(b.cubo || {}).some(Boolean)
+    || (b.ativas || []).some(Boolean) || (b.passivas || []).some(Boolean)
+    || JSON.stringify(b.paragon) !== PARAGON_INICIAL);
 }
 
 // ------------------------------------------------------------ a build
@@ -291,7 +309,7 @@ function desenharClasses() {
       icone(ICONE_HAB(ICONE_DA_CLASSE[cl]), "icone-classe"),
       el("span", { class: "classe-texto" },
         el("span", { class: "classe-nome" }, CLASSES[cl]),
-        el("span", { class: "classe-qtd" }, estado.rascunhos[cl] ? "em montagem" : "nova")))));
+        el("span", { class: "classe-qtd" }, temConteudo(estado.rascunhos[cl]) ? "em montagem" : "nova")))));
 }
 
 function desenharCabeca() {
@@ -331,6 +349,17 @@ function desenharCabeca() {
       avisar(noApp() ? "Não deu pra copiar o link." : "Não deu pra copiar sozinho: o link está na barra de endereço, copie de lá.", true);
     }
   });
+  // Folha de compartilhar do sistema (celular, Windows), quando o navegador tem.
+  const partilhar = !noApp() && navigator.share && el("button", { type: "button", class: "botao botao-leve" }, "Compartilhar");
+  if (partilhar) partilhar.addEventListener("click", async () => {
+    try {
+      const link = await linkDaBuild();
+      history.replaceState(null, "", link.slice(link.indexOf("#")));
+      await navigator.share({ title: `${paraBuild().apelido} — D3 Companion`, text: "Minha build de Diablo III:", url: link });
+    } catch (erro) {
+      if (!erro || erro.name !== "AbortError") avisar("Não deu pra compartilhar daqui: use \"Copiar link da build\".", true);
+    }
+  });
   const baixar = !noApp() && el("button", { type: "button", class: "botao botao-leve" }, "Baixar .json");
   if (baixar) baixar.addEventListener("click", () => {
     const build = paraBuild();
@@ -362,7 +391,7 @@ function desenharCabeca() {
     el("div", { class: "cabeca-texto" },
       nome,
       el("p", { class: "build-meta" }, `${CLASSES[estado.classe]} · ${onde} · atributo principal: ${daClasse().atributo.rotulo}`)),
-    el("div", { class: "cabeca-acoes" }, salvar, copiar, baixar, limpar));
+    el("div", { class: "cabeca-acoes" }, salvar, copiar, partilhar, baixar, limpar));
 }
 
 function botaoDoLugar(nome) {
@@ -697,7 +726,12 @@ window.Montador = {
 
 // No site, liga sozinho (no app quem liga é o app.js, ao abrir a aba Montar).
 const noSite = document.querySelector('[data-montador="site"]');
-if (noSite) {
+if (noSite && window.top !== window.self) {
+  // Contra clickjacking (o GitHub Pages não deixa proibir iframe por cabeçalho):
+  // dentro de outro site, a página some e tenta abrir por inteiro.
+  document.documentElement.hidden = true;
+  try { window.top.location.href = window.self.location.href; } catch { /* bloqueado: fica escondida */ }
+} else if (noSite) {
   const json = async caminho => {
     const r = await fetch(caminho);
     if (!r.ok) throw new Error(String(r.status));

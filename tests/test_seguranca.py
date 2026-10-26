@@ -106,7 +106,7 @@ class TestEnv(unittest.TestCase):
         self.pasta.cleanup()
 
     def test_quebra_de_linha_nao_cria_outra_chave(self):
-        for chave, valor in [("BATTLETAG", "Arthur#1234\nBLIZZARD_CLIENT_ID=outra"),
+        for chave, valor in [("BATTLETAG", "Jogador#1234\nBLIZZARD_CLIENT_ID=outra"),
                              ("ATALHO", "F8\nBLIZZARD_CLIENT_ID=outra"),
                              ("SELO_SEGUNDOS", "6\nBLIZZARD_CLIENT_ID=outra")]:
             self.assertIn(chave, salvar_config({chave: valor}, self.env), valor)

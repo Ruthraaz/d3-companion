@@ -1,0 +1,7 @@
+# Achou uma falha de segurança no D3 Companion? Conte em particular por aqui
+# (não abra issue pública). Found a security issue? Report it privately here.
+Contact: https://github.com/Ruthraaz/d3-companion/security/advisories/new
+Policy: https://github.com/Ruthraaz/d3-companion/security/policy
+Preferred-Languages: pt, en
+Canonical: https://ruthraaz.github.io/d3-companion/.well-known/security.txt
+Expires: 2027-10-26T00:00:00Z

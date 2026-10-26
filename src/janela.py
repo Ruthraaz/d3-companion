@@ -60,6 +60,7 @@ PASTA_SRC = Path(__file__).resolve().parent
 PAGINA = WEB / "index.html"
 ICONE_DE_ITEM = "https://blzmedia-a.akamaihd.net/d3/icons/items/large/{}.png"
 LARGURA_MINIATURA = 220
+SITE_DO_APP = "https://ruthraaz.github.io/d3-companion/"
 MAXIMO_DA_BUILD = 200_000  # caracteres do JSON de uma build montada (como no link do site)
 
 
@@ -238,6 +239,10 @@ class Api:
         sido editado à mão), então confere tudo antes de passar pro Windows."""
         if link_seguro(url):
             webbrowser.open(url)
+
+    def abrir_site(self) -> None:
+        """Abre o site do app no navegador (endereço fixo, nada vem da página)."""
+        webbrowser.open(SITE_DO_APP)
 
     def herois(self, battletag: str) -> dict:
         """Heróis da conta (API de perfil da Blizzard). Guarda a BattleTag no .env

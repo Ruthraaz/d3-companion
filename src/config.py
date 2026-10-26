@@ -2,7 +2,7 @@
 Configurações que a janela deixa mudar: ficam no .env, junto do TESSERACT_CMD.
 
 Só mexemos nas chaves de CHAVES. O resto do .env (e os comentários) fica como
-estava, porque o Arthur também edita esse arquivo à mão.
+estava, porque a pessoa também pode editar esse arquivo à mão.
 """
 
 import re
@@ -16,7 +16,7 @@ from pastas import ARQUIVO_ENV  # o .env do projeto (ou do usuário, no .exe)
 # chave -> valor padrão (o mesmo que o app usa quando a chave não existe)
 # BUILD_ATIVA = id da build escolhida na janela (nome do arquivo em builds/); vazio = todas.
 # AUTOMATICO = "sim": avalia sozinho ao passar o mouse num item; "nao": só pelo atalho.
-# BATTLETAG = a da aba "Meu herói" (ex.: Arthur#1234), pra não digitar toda vez.
+# BATTLETAG = a da aba "Meu herói" (ex.: Jogador#1234), pra não digitar toda vez.
 CHAVES = {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim", "BATTLETAG": ""}
 
 

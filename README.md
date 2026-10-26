@@ -1,10 +1,26 @@
 # D3 Companion
 
-App de desktop pessoal pro **Diablo 3**: quando um item cai, você aperta um atalho e o app diz, num selo em cima do jogo, se o item **bate com a sua build** ou não.
+**Saiba na hora se o item serve na sua build de Diablo III.** Passe o mouse no item, aperte **F8** e um selo em cima do jogo diz se ele serve, o que tem e o que falta. Grátis, em português, para Windows 10 e 11.
 
-O app só **olha a tela** (captura + OCR). Ele não lê a memória do jogo nem se injeta nele, então não viola os termos da Blizzard.
+**[⬇ Baixar para Windows](https://github.com/Ruthraaz/d3-companion/releases/latest)** · **[🌐 Site](https://ruthraaz.github.io/d3-companion/)** · **[🛠 Montar uma build no navegador](https://ruthraaz.github.io/d3-companion/montar.html)**
 
-![Selo do overlay ao lado da dica do item](docs/previa_selo.png)
+![Janela do D3 Companion na aba Montar, com a dica de um item de conjunto aberta](docs/img/janela.png)
+
+- **Selo no jogo (F8):** serve, serve por enquanto (pra upar) ou não serve, com os afixos que tem e os que faltam, e a dica do Místico.
+- **Builds do Maxroll:** cole o link do guia ou do planejador e a build fica salva no app.
+- **Monte a sua:** itens, gemas, cubo de Kanai, habilidades com runas e paragon, com os dados do jogo, no app ou no site.
+- **Dica do item:** passe o mouse num item ou gema e veja o poder lendário e os bônus do set, em português.
+- **Meu herói:** pela BattleTag, compara o equipamento do seu herói com a build.
+
+**Seguro de usar:** o app só **olha a tela** quando você aperta o atalho (captura + OCR). Não lê a memória do jogo, não se injeta nele e não mexe no DirectX. Suas chaves ficam só no seu PC. Veja [SECURITY.md](SECURITY.md) (e como avisar de uma falha em particular).
+
+> Projeto independente e de código aberto. Não é da Blizzard Entertainment nem do Maxroll. Diablo é marca registrada da Blizzard Entertainment, Inc.
+
+**Gostou?** Mande o site pros amigos: https://ruthraaz.github.io/d3-companion/ · Ideias e problemas: [Issues](https://github.com/Ruthraaz/d3-companion/issues)
+
+---
+
+*Daqui pra baixo: como o app funciona por dentro, para quem quer estudar ou contribuir.*
 
 ## Como funciona
 
@@ -308,7 +324,7 @@ Embaixo da barra de habilidades da aba Builds:
 
 ## Meu herói (BattleTag)
 
-Na aba **Meu herói**, digite sua BattleTag (ex.: `Arthur#1234`). O app pede à Blizzard os heróis da conta; escolha um e a build pra comparar.
+Na aba **Meu herói**, digite sua BattleTag (ex.: `Jogador#1234`). O app pede à Blizzard os heróis da conta; escolha um e a build pra comparar.
 
 - **Cada item equipado** passa pelo mesmo avaliador do F8: ✅ serve, 🟡 por enquanto, ❌ não serve, com o que tem, o que falta e a dica do Místico.
 - **Místico:** a Blizzard diz qual afixo já foi trocado. Se ele já serve, o app não sugere trocar outro, porque só dá pra trocar um por item.
@@ -317,7 +333,7 @@ Na aba **Meu herói**, digite sua BattleTag (ex.: `Arthur#1234`). O app pede à 
 
 Limites da API da Blizzard (não do app): só os itens **equipados** (mochila e baú continuam no F8); os dados **atualizam quando você sai do jogo**, não na hora; só contas da região **Américas** (a do Brasil).
 
-Pelo terminal: `python src/heroi.py Arthur#1234` lista os heróis; `python src/heroi.py Arthur#1234 <id> <build>` compara.
+Pelo terminal: `python src/heroi.py Jogador#1234` lista os heróis; `python src/heroi.py Jogador#1234 <id> <build>` compara.
 
 ## Builds do Maxroll
 

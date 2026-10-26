@@ -60,7 +60,7 @@ SEGUIDORES = ("templar", "scoundrel", "enchantress")
 
 
 class ErroBlizzard(Exception):
-    """Erro com mensagem em português, pronta pra mostrar ao Arthur."""
+    """Erro com mensagem em português, pronta pra mostrar na tela."""
 
 
 def icone_da_habilidade(icone: str, tamanho: int = 64) -> str:

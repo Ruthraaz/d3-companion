@@ -1,0 +1,9 @@
+# Avisa (com um pull request) quando sair versão nova de alguma dependência,
+# principalmente as de segurança. Nada é atualizado sem você aprovar.
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5

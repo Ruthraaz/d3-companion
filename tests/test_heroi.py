@@ -46,19 +46,19 @@ LUVAS = {
 
 class TestBattleTag(unittest.TestCase):
     def test_vira_conta_da_api(self):
-        self.assertEqual(conta_da_battletag("Arthur#1234"), "Arthur-1234")
-        self.assertEqual(conta_da_battletag("  Arthur # 12345 "), "Arthur-12345")
-        self.assertEqual(conta_da_battletag("Arthur-1234"), "Arthur-1234")
+        self.assertEqual(conta_da_battletag("Jogador#1234"), "Jogador-1234")
+        self.assertEqual(conta_da_battletag("  Jogador # 12345 "), "Jogador-12345")
+        self.assertEqual(conta_da_battletag("Jogador-1234"), "Jogador-1234")
 
     def test_sem_numero_da_erro_claro(self):
-        for ruim in ("Arthur", "Arthur#", "#1234", "", "um nome muito comprido#1234"):
+        for ruim in ("Jogador", "Jogador#", "#1234", "", "um nome muito comprido#1234"):
             with self.assertRaises(ErroBlizzard, msg=ruim):
                 conta_da_battletag(ruim)
 
     def test_config_valida_a_battletag(self):
         self.assertIsNone(validar("BATTLETAG", ""))  # vazio = não usa a aba
-        self.assertIsNone(validar("BATTLETAG", "Arthur#1234"))
-        self.assertIn("BattleTag", validar("BATTLETAG", "Arthur"))
+        self.assertIsNone(validar("BATTLETAG", "Jogador#1234"))
+        self.assertIn("BattleTag", validar("BATTLETAG", "Jogador"))
 
 
 class TestItemDoPerfil(unittest.TestCase):

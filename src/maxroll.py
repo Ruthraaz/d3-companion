@@ -3,7 +3,7 @@ Builds do planejador do Maxroll (maxroll.gg/d3/planner/<número>) no formato do 
 
 O Maxroll não tem API oficial. Lemos o mesmo endereço que a própria página
 do guia usa pra mostrar a build (planners.maxroll.gg/profiles/load/d3/<n>),
-só quando o Arthur cola um link. Link de guia: lemos a página do guia uma vez
+só quando a pessoa cola um link. Link de guia: lemos a página do guia uma vez
 pra achar as builds que ela mostra (as do seguidor ficam de fora). Se o site mudar o formato,
 é aqui que quebra — e a mensagem de erro diz isso.
 
@@ -17,7 +17,7 @@ em dados/maxroll/). Os códigos das habilidades são convertidos pros da Blizzar
 
 Catálogo: a lista de guias vem do mapa do site (maxroll.gg/d3/sitemap.xml),
 um arquivo pequeno, lido no máximo uma vez por dia. As builds de cada guia
-só são baixadas quando o Arthur abre o guia na janela.
+só são baixadas quando a pessoa abre o guia na janela.
 
 Uso (o link pode ser do guia ou do planejador):
     python src/maxroll.py <link>                                # mostra as builds, os perfis e a build
@@ -89,7 +89,7 @@ RUNAS = ("a", "b", "c", "d", "e")
 
 
 class ErroMaxroll(Exception):
-    """Erro com mensagem em português, pronta pra mostrar ao Arthur."""
+    """Erro com mensagem em português, pronta pra mostrar na tela."""
 
 
 def id_do_link(texto: str) -> int:

@@ -100,7 +100,7 @@ class TestBuildEscolhida(unittest.TestCase):
         self.assertEqual([b["apelido"] for b in usadas], ["LoN"])
 
     def test_gema_fora_da_lon_mostra_o_motivo_da_lon(self):
-        # O caso do Arthur: com LoN escolhida, o selo não pode falar da Dreadlands.
+        # O caso real: com LoN escolhida, o selo não pode falar da Dreadlands.
         gema = {"nome": "Gem of Ease", "qualidade": "Legendary", "tipo": "Gem"}
         usadas = builds_escolhidas(self.builds, "legacy_of_nightmares")
         selo = montar_selo(Avaliacao(item=gema, resultados=avaliar_todas(gema, usadas)))

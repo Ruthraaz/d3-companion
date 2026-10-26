@@ -977,3 +977,8 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
 .dica-set-nome { margin-top: 10px !important; color: var(--set); font-weight: 600; }
 .dica-set { margin-top: 4px !important; color: #b9dcbf; font-size: 12px; }
 .dica-sabor { margin-top: 10px !important; color: var(--ouro); font-style: italic; font-size: 12px; }
+
+/* Configurações: indicar o app. */
+.indicar { margin-top: 24px; padding: 16px 18px; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--painel); }
+.indicar h2 { margin: 0 0 4px; font: 600 18px var(--serifa); color: var(--ouro-claro); }
+.indicar .acoes { margin-top: 10px; }
