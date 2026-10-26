@@ -276,6 +276,35 @@
     "armadura": "Aquila Cuirass",
     "joia": "Ring of Royal Grandeur"
   },
+  "paragon": {
+    "nivel": 5000,
+    "pontos": [
+      [
+        4000,
+        300,
+        50,
+        50
+      ],
+      [
+        50,
+        50,
+        50,
+        50
+      ],
+      [
+        50,
+        50,
+        50,
+        50
+      ],
+      [
+        50,
+        50,
+        50,
+        50
+      ]
+    ]
+  },
   "habilidades": {
     "ativas": [
       {

@@ -74,6 +74,7 @@
     "guia": "https://maxroll.gg/d3/guides/ue-multishot-demon-hunter-guide"
   },
   "cubo": { "arma": "Odyssey's End", "armadura": "Mantle of Channeling", "joia": "Ring of Royal Grandeur" },
+  "paragon": { "nivel": 5000, "pontos": [[3950, 400, 50, 0], [50, 50, 50, 50], [50, 50, 50, 50], [50, 50, 50, 50]] },
   "habilidades": {
     "ativas": [
       { "habilidade": "entangling-shot", "runa": "b" },

@@ -62,8 +62,11 @@ paragon. Referência: apps de PoE e D4 (lista de builds + overlay). Ordem:
    Ideia do Arthur (26/10/2026): colar o link → o app usa aquela build na hora e, no jogo, diz o
    que o item tem, o que falta e o que deveria ter. Feito: importar já escolhe a build do atalho;
    o selo mostra Tem / Falta / Dica do Místico (`sobrando` = afixos principais fora das regras).
-7. Marcadores: destacar habilidade/runa da build e mostrar o paragon (`paragon.data` do perfil:
-   4 grupos × 4 atributos).
+7. Marcadores: nível de cada habilidade/runa (lista "Ao upar") e o paragon da build. ✅
+   `paragon.data` do perfil = 4×4 na ordem do jogo: Principal [atributo, Vit, Velocidade, Recurso],
+   Ataque [IAS, CDR, CHC, CHD], Defesa [Vida, Armadura, Res, Regen], Utilidade [Área, RCR, LoH, Ouro].
+   Conferido: índice 2 é sempre 50 (Velocidade tem teto 50); índice 3 às vezes 0 (Recurso).
+   Build guarda `"paragon": {"nivel", "pontos"}`; runa ganhou `nivel` (campo `level` da Blizzard).
 8. Herói real vs. build (era o passo 4).
 
 ### Quem usa

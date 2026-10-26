@@ -116,6 +116,13 @@ class TestConferencia(unittest.TestCase):
         self.assertTrue(any("runa 'z' não existe" in p for p in problemas))
         self.assertTrue(any("'pasivas' não existe" in p and "'passivas'" in p for p in problemas))
 
+    def test_paragon_certo_e_errado(self):
+        certo = {"nivel": 5000, "pontos": [[3650, 650, 50, 50], [50] * 4, [50] * 4, [50] * 4]}
+        self.assertEqual(problemas_da_build(build_minima(paragon=certo)), [])
+        problemas = problemas_da_build(build_minima(paragon={"nivel": "5k", "pontos": [[1, 2, 3]], "x": 1}))
+        self.assertEqual(len(problemas), 3, problemas)
+        self.assertTrue(any("4 grupos de 4" in p for p in problemas))
+
     def test_limite_de_habilidades(self):
         sete = [{"habilidade": f"h{i}"} for i in range(7)]
         [problema] = problemas_da_build(build_minima(habilidades={"ativas": sete}))

@@ -393,6 +393,27 @@ h3 {
 }
 .habilidade-nome { font-size: 12px; line-height: 1.2; color: var(--ouro-claro); overflow-wrap: anywhere; }
 .habilidade-runa { font-size: 11px; line-height: 1.2; color: var(--mudo); overflow-wrap: anywhere; }
+.nivel-hab { font-size: 10px; letter-spacing: .04em; color: var(--ouro); opacity: .8; }
+
+/* ao upar e paragon */
+.ao-upar .nada, .paragon .nada { margin: 0; color: var(--apagado); font-size: 13px; }
+.marcos { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+.marco { display: grid; grid-template-columns: 52px 1fr; gap: 8px; align-items: baseline; }
+.marco-nivel { color: var(--ouro); font-variant-numeric: tabular-nums; font-size: 12px; }
+.marco-ativa { color: var(--ouro-claro); }
+.marco-runa { color: var(--texto); }
+.marco-passiva { color: var(--mudo); }
+.paragon-resumo { margin: 0 0 10px; font-size: 13px; }
+.paragon-grupos { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+.paragon-grupo { border: 1px solid var(--borda); border-radius: var(--raio); background: var(--painel); padding: 8px 10px; }
+.paragon-titulo { margin: 0 0 4px; font: 400 14px var(--serifa); color: var(--ouro-claro); }
+.paragon-grupo ul { list-style: none; margin: 0; padding: 0; }
+.paragon-linha { display: flex; justify-content: space-between; gap: 6px; font-size: 12px; padding: 1px 0; }
+.paragon-linha.zero { color: var(--apagado); }
+.paragon-valor { font-variant-numeric: tabular-nums; color: var(--ouro-claro); white-space: nowrap; }
+.paragon-linha.zero .paragon-valor { color: var(--apagado); }
+.paragon-valor small { color: var(--mudo); font-size: 10px; }
+.barra-moldura .nota { margin: 10px 0 0; color: var(--mudo); font-size: 12px; }
 
 .detalhe-cabeca { display: flex; align-items: center; gap: 14px; margin: 6px 0 4px; }
 .nome-ingles { margin: 2px 0 0; font-size: 12px; }

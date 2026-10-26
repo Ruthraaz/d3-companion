@@ -37,7 +37,7 @@ RESPOSTAS = {
     "/d3/data/hero/demon-hunter?locale=pt_BR": CLASSE_PT,
     "/d3/data/hero/demon-hunter/skill/multishot?locale=en_US": {"skill": {}, "runes": [
         {"slug": "full broadside", "type": "a", "name": "Full Broadside", "description": "More damage"},
-        {"slug": "arsenal", "type": "c", "name": "Arsenal", "description": "Rockets"}]},
+        {"slug": "arsenal", "type": "c", "name": "Arsenal", "level": 34, "description": "Rockets"}]},
     "/d3/data/hero/demon-hunter/skill/multishot?locale=pt_BR": {"skill": {}, "runes": [
         {"slug": "full broadside", "type": "a", "name": "Banda de Artilharia", "description": "Mais dano"},
         {"slug": "arsenal", "type": "c", "name": "Arsenal", "description": "Foguetes"}]},
@@ -152,6 +152,8 @@ class TestVisualDaBuild(unittest.TestCase):
         multi = v["habilidades"]["ativas"][0]
         self.assertEqual(multi["nome_pt"], "Tiro Múltiplo")
         self.assertEqual((multi["runa"]["nome_pt"], multi["runa"]["descricao_pt"]), ("Arsenal", "Foguetes"))
+        # Em que nível libera: a habilidade e a runa (pra lista "Ao upar" da janela).
+        self.assertEqual((multi["nivel"], multi["runa"]["nivel"]), (22, 34))
         self.assertEqual(v["habilidades"]["passivas"][0]["nome_pt"], "Arquearia")
 
     def test_habilidade_escrita_errada_aparece_sem_icone(self):

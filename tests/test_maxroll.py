@@ -55,6 +55,7 @@ PERFIL = {
     "name": "Solo Push", "class": "demonhunter",
     "skills": [["entanglingshot", "b"], ["multishot", "a"]],
     "passives": ["culltheweak", "ambush"],
+    "paragon": {"level": 5000, "data": [[3950, 400, 50, 0], [50, 50, 50, 50], [50, 50, 50, 50], [50, 50, 50, 50]]},
     "kanai": {"weapon": "P69_Unique_Bow_102", "jewelry": "Unique_Ring_107_x1"},
     "items": {
         "head": {"id": "Unique_Helm_Set_03_p2", "gems": [[9, "topaz"]]},
@@ -162,6 +163,14 @@ class TestConverter(unittest.TestCase):
         build = converter(PLANNER | {"profiles": [perfil]}, DADOS)
         self.assertEqual([a["runa"] for a in build["habilidades"]["ativas"]], ["", "a"])
         self.assertEqual(problemas_da_build(build), [])
+
+    def test_paragon_na_ordem_do_jogo(self):
+        self.assertEqual(self.build["paragon"], {
+            "nivel": 5000, "pontos": [[3950, 400, 50, 0], [50, 50, 50, 50], [50, 50, 50, 50], [50, 50, 50, 50]]})
+        # Perfil sem paragon (ou num formato estranho): a build fica sem, e continua valendo.
+        sem = converter(PLANNER | {"profiles": [PERFIL | {"paragon": {"data": [[1, 2]]}}]}, DADOS)
+        self.assertNotIn("paragon", sem)
+        self.assertEqual(problemas_da_build(sem), [])
 
     def test_fonte_guarda_o_guia(self):
         guia = "https://maxroll.gg/d3/guides/ue-multishot-demon-hunter-guide"

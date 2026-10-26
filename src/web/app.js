@@ -337,6 +337,19 @@ function desenharExtras() {
     : el("p", { class: "nada" }, "A build não diz."));
 }
 
+// Paragon na ordem do jogo: 4 grupos de 4 atributos (o 1º do Principal é o da classe).
+const ATRIBUTO = {
+  Barbarian: "Força", Crusader: "Força", "Demon Hunter": "Destreza", Monk: "Destreza",
+  Necromancer: "Inteligência", "Witch Doctor": "Inteligência", Wizard: "Inteligência",
+};
+const PARAGON = [
+  ["Principal", [null, "Vitalidade", "Velocidade de movimento", "Recurso máximo"]],
+  ["Ataque", ["Vel. de ataque", "Redução de recarga", "Chance de crítico", "Dano crítico"]],
+  ["Defesa", ["Vida %", "Armadura", "Resistência total", "Regeneração de vida"]],
+  ["Utilidade", ["Dano em área", "Redução de custo", "Vida por acerto", "Achar ouro"]],
+];
+const MAXIMO_DO_PARAGON = 50;  // por atributo, fora o atributo principal e a Vitalidade
+
 // Tecla de cada lugar da barra, na ordem em que o Maxroll guarda as habilidades
 // (botão esquerdo e direito do mouse, depois 1 a 4).
 const TECLAS = ["Esq.", "Dir.", "1", "2", "3", "4"];
@@ -350,13 +363,14 @@ function desenharHabilidades() {
     class: "habilidade" + (h ? "" : " vazia")
       + (estado.habilidade && estado.habilidade.tipo === tipo && estado.habilidade.i === i ? " selecionado" : ""),
     ...(h ? {} : { disabled: "" }),  // el() grava qualquer valor; só põe quando vazio
-    title: h ? h.nome_pt : "",
+    title: h ? h.nome_pt + (nivelDe(h) ? ` · libera no nível ${nivelDe(h)}` : "") : "",
     onclick: () => { estado.habilidade = { tipo, i }; desenharVisual(); },
   },
     icone(h && h.icone, tipo === "passivas" ? "icone-passiva" : "icone-habilidade"),
     rotulo && el("span", { class: "tecla" }, rotulo),
     el("span", { class: "habilidade-nome" }, h ? h.nome_pt : ""),
     h && h.runa && el("span", { class: "habilidade-runa" }, h.runa.nome_pt),
+    h && nivelDe(h) && el("span", { class: "nivel-hab" }, `nível ${nivelDe(h)}`),
   );
 
   // Enquanto a Blizzard não respondeu, mostra o código da build (sem ícone).
@@ -369,14 +383,73 @@ function desenharHabilidades() {
   };
   const ativas = document.getElementById("barra-ativas");
   const passivas = document.getElementById("barra-passivas");
+  desenharParagon(build);
   if (vazio) {
     trocar(ativas, el("p", { class: "nada" },
       "Esta build ainda não tem habilidades. Elas vêm junto quando a build é importada do Maxroll."));
     trocar(passivas);
+    trocar(document.getElementById("ao-upar"), el("p", { class: "nada" }, "Sem habilidades na build."));
     return;
   }
   trocar(ativas, TECLAS.map((tecla, i) => botao("ativas", i, daBuild("ativas", i), tecla)));
   trocar(passivas, [0, 1, 2, 3].map(i => botao("passivas", i, daBuild("passivas", i), null)));
+  desenharAoUpar(v);
+}
+
+// Nível em que a habilidade fica do jeito da build (ela e a runa liberadas).
+function nivelDe(h) {
+  return Math.max(h.nivel || 0, (h.runa && h.runa.nivel) || 0) || null;
+}
+
+// Linha do tempo pra upar: em que nível libera cada habilidade, runa e passiva da build.
+function desenharAoUpar(v) {
+  const marcos = [];
+  for (const h of v.habilidades.ativas) {
+    if (h.nivel) marcos.push({ nivel: h.nivel, texto: h.nome_pt, tipo: "ativa" });
+    if (h.runa && h.runa.nivel) marcos.push({ nivel: h.runa.nivel, texto: `runa ${h.runa.nome_pt} (${h.nome_pt})`, tipo: "runa" });
+  }
+  for (const h of v.habilidades.passivas) {
+    if (h.nivel) marcos.push({ nivel: h.nivel, texto: `passiva ${h.nome_pt}`, tipo: "passiva" });
+  }
+  const caixa = document.getElementById("ao-upar");
+  if (!marcos.length) {
+    trocar(caixa, el("p", { class: "nada" }, v.carregando ? "Buscando na Blizzard…" : "Sem dados de nível (falta a chave da Blizzard?)."));
+    return;
+  }
+  const niveis = [...new Set(marcos.map(m => m.nivel))].sort((a, b) => a - b);
+  trocar(caixa, el("ol", { class: "marcos" }, niveis.map(n =>
+    el("li", { class: "marco" },
+      el("span", { class: "marco-nivel" }, `Nv ${n}`),
+      el("span", {}, marcos.filter(m => m.nivel === n).map((m, i) => [
+        i ? ", " : "", el("span", { class: `marco-${m.tipo}` }, m.texto)]))))));
+}
+
+function desenharParagon(build) {
+  const caixa = document.getElementById("paragon");
+  const p = build.paragon;
+  if (!p) {
+    trocar(caixa, el("p", { class: "nada" }, "A build não diz. Vem junto quando a build é importada do Maxroll."));
+    return;
+  }
+  const atributo = ATRIBUTO[build.classe] || "Atributo principal";
+  const [, vit, vel, rec] = p.pontos[0];
+  const resumo = [`Principal: ${vit} em Vitalidade`, vel && `${vel} em Velocidade`, rec && `${rec} em Recurso máximo`]
+    .filter(Boolean).join(", ") + `, e o resto em ${atributo}.`;
+  trocar(caixa,
+    el("p", { class: "paragon-resumo" }, resumo, " Nos outros grupos, ",
+      p.pontos.slice(1).flat().every(n => n >= MAXIMO_DO_PARAGON) ? "tudo no máximo (50 cada)." : "veja abaixo (0 = deixe sem)."),
+    el("div", { class: "paragon-grupos" }, PARAGON.map(([grupo, nomes], g) =>
+      el("div", { class: "paragon-grupo" },
+        el("p", { class: "paragon-titulo" }, grupo),
+        el("ul", {}, nomes.map((nome, i) => {
+          const n = p.pontos[g][i];
+          const extra = g === 0 && i === 0 ? "resto" : n >= MAXIMO_DO_PARAGON && !(g === 0 && i === 1) ? "máx" : n === 0 ? "sem" : "";
+          return el("li", { class: "paragon-linha" + (n === 0 ? " zero" : "") },
+            el("span", {}, nome || atributo),
+            el("span", { class: "paragon-valor" }, String(n), extra && el("small", {}, ` ${extra}`)));
+        }))))),
+    p.nivel && el("p", { class: "nota" }, `Pontos da build no paragon ${p.nivel}. Antes disso, siga a mesma ordem: o que está no máximo primeiro.`),
+  );
 }
 
 function etiquetas(lista, classe) {
@@ -425,6 +498,8 @@ function desenharDetalheDaHabilidade() {
       el("div", {},
         el("p", { class: "detalhe-titulo livre" }, h.nome_pt),
         h.nome !== h.nome_pt && el("p", { class: "mudo nome-ingles" }, `No jogo em inglês: ${h.nome}`))),
+    h.nivel && el("p", { class: "mudo" }, `Libera no nível ${h.nivel}`
+      + (h.runa && h.runa.nivel ? `; a runa ${h.runa.nome_pt}, no nível ${h.runa.nivel}.` : ".")),
     h.descricao_pt && el("p", { class: "descricao" }, h.descricao_pt),
     h.runa && [
       el("h3", {}, "Runa"),
@@ -720,6 +795,7 @@ function apiDeExemplo() {
       fonte: { site: "maxroll", perfil: "Sanc: Solo Push Odyssey", link: "https://maxroll.gg/d3/planner/345357607",
                guia: "https://maxroll.gg/d3/guides/ue-multishot-demon-hunter-guide" },
       cubo: { arma: "Odyssey's End", armadura: "Mantle of Channeling", joia: "Ring of Royal Grandeur" },
+      paragon: { nivel: 5000, pontos: [[3950, 400, 50, 0], [50, 50, 50, 50], [50, 50, 50, 50], [50, 50, 50, 50]] },
       habilidades: {
         ativas: ["entangling-shot", "multishot", "strafe", "preparation", "smoke-screen", "vengeance"]
           .map(habilidade => ({ habilidade, runa: "a" })),
@@ -815,8 +891,10 @@ function visualDeExemplo(build) {
     ambush: "Emboscada", "tactical-advantage": "Vantagem Tática", "steady-aim": "Mira Firme",
   };
   const comX1 = ["entangling-shot", "vengeance", "ambush"];  // ícones da expansão têm "x1_"
+  const niveis = { "entangling-shot": 1, multishot: 26, strafe: 14, preparation: 17, "smoke-screen": 21, vengeance: 61,
+                   "cull-the-weak": 10, ambush: 64, "tactical-advantage": 16, "steady-aim": 10 };
   const habilidade = (slug, passiva) => ({
-    slug, nome: slug, nome_pt: pt[slug] || slug,
+    slug, nome: slug, nome_pt: pt[slug] || slug, nivel: niveis[slug] || 1,
     icone: `${ICONES}/skills/64/${comX1.includes(slug) ? "x1_" : ""}demonhunter_${passiva ? "passive_" : ""}${slug.replace(/-/g, "")}.png`,
     descricao_pt: "Descrição de exemplo (no app vem da Blizzard, em português).",
   });
@@ -824,7 +902,7 @@ function visualDeExemplo(build) {
   return {
     itens,
     habilidades: {
-      ativas: h.ativas.map(a => ({ ...habilidade(a.habilidade), runa: { letra: "a", nome: "Rune", nome_pt: "Runa de exemplo", descricao_pt: "O que a runa muda." } })),
+      ativas: h.ativas.map(a => ({ ...habilidade(a.habilidade), runa: { letra: "a", nome: "Rune", nome_pt: "Runa de exemplo", descricao_pt: "O que a runa muda.", nivel: 30 } })),
       passivas: h.passivas.map(p => habilidade(p, true)),
     },
   };

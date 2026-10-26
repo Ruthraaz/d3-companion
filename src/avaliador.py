@@ -214,6 +214,7 @@ def ficha_da_build(build: dict) -> dict:
         "gemas": build.get("gemas", []),
         "cubo": build.get("cubo", {}),
         "habilidades": build.get("habilidades", {"ativas": [], "passivas": []}),
+        "paragon": build.get("paragon"),
         "fonte": build.get("fonte"),
     }
 
@@ -224,7 +225,8 @@ def ficha_da_build(build: dict) -> dict:
 # fazia a regra sumir calada; e uma vírgula faltando derrubava o app inteiro.
 
 CHAVES_DA_BUILD = {"formato", "nome", "apelido", "classe", "exige_ancient",
-                   "todos_os_espacos", "espacos", "gemas", "cubo", "habilidades", "fonte"}
+                   "todos_os_espacos", "espacos", "gemas", "cubo", "habilidades", "paragon", "fonte"}
+CHAVES_DO_PARAGON = {"nivel", "pontos"}
 CHAVES_DAS_HABILIDADES = {"ativas", "passivas"}
 CHAVES_DA_ATIVA = {"habilidade", "runa"}
 RUNAS = {"", "a", "b", "c", "d", "e"}  # a letra que a Blizzard e o Maxroll usam pra cada runa
@@ -315,6 +317,8 @@ def problemas_da_build(build) -> list[str]:
         problemas += _lista_de_textos("gemas", build["gemas"])
     problemas += _problemas_do_cubo(build.get("cubo", {}))
     problemas += _problemas_das_habilidades(build.get("habilidades", {}))
+    if "paragon" in build:
+        problemas += _problemas_do_paragon(build["paragon"])
     if not isinstance(build.get("fonte", {}), dict):
         problemas.append('"fonte" precisa ser um objeto { ... }.')
     return problemas
@@ -327,6 +331,24 @@ def _problemas_do_cubo(cubo) -> list[str]:
     for parte in set(PARTES_DO_CUBO) & set(cubo):
         if not isinstance(cubo[parte], str) or not cubo[parte].strip():
             problemas.append(f"cubo.{parte}: precisa ser o nome do item.")
+    return problemas
+
+
+def _problemas_do_paragon(paragon) -> list[str]:
+    """{"nivel": 5000, "pontos": 4 grupos (Principal, Ataque, Defesa, Utilidade) x 4 atributos},
+    na ordem do jogo."""
+    exemplo = '"paragon": { "nivel": 5000, "pontos": [[3650, 650, 50, 50], [50, 50, 50, 50], ...] }'
+    if not isinstance(paragon, dict):
+        return [f"paragon precisa ser um objeto, ex.: {exemplo}."]
+    problemas = _chaves_desconhecidas("paragon", paragon, CHAVES_DO_PARAGON)
+    pontos = paragon.get("pontos")
+    certo = (isinstance(pontos, list) and len(pontos) == 4
+             and all(isinstance(g, list) and len(g) == 4 for g in pontos)
+             and all(isinstance(n, int) and n >= 0 for g in pontos for n in g))
+    if not certo:
+        problemas.append(f"paragon.pontos: precisa ser 4 grupos de 4 números, ex.: {exemplo}.")
+    if "nivel" in paragon and not (isinstance(paragon["nivel"], int) and paragon["nivel"] >= 0):
+        problemas.append("paragon.nivel: precisa ser um número (ex.: 5000).")
     return problemas
 
 

@@ -173,13 +173,14 @@ class Blizzard:
 
     def runas(self, classe: str, slug: str) -> list[dict]:
         """As 5 runas de uma habilidade ativa: letra (a-e, como a build guarda),
-        slug, nome, nome_pt, descricao_pt."""
+        slug, nome, nome_pt, descricao_pt e nivel (em que nível do herói libera)."""
         caminho = f"/d3/data/hero/{CLASSES[classe]}/skill/{slug}"
         en, pt = self.pegar(caminho, "en_US"), self.pegar(caminho, "pt_BR")
         em_pt = {r["type"]: r for r in pt.get("runes", [])}
         return [{"letra": r["type"], "slug": r["slug"], "nome": r["name"],
                  "nome_pt": em_pt.get(r["type"], r)["name"],
-                 "descricao_pt": em_pt.get(r["type"], r).get("description", "")}
+                 "descricao_pt": em_pt.get(r["type"], r).get("description", ""),
+                 "nivel": r.get("level")}
                 for r in en.get("runes", [])]
 
     # ------------------------------------------------------------ itens

@@ -47,7 +47,7 @@ A lógica (OCR, parser, avaliador) fica num **núcleo** sem interface (`src/nucl
 | 8c | Importar build do Maxroll: colar o link do guia na janela | ✅ funcionando |
 | 8d | Aba Guias: todos os guias do Maxroll, por classe | ✅ funcionando |
 | 8e | Upar: o F8 mostra itens parecidos com os da build ("serve por enquanto", selo amarelo) | ✅ funcionando |
-| 8f | Marcadores: qual habilidade, runa e paragon focar | ⏳ |
+| 8f | Marcadores: em que nível libera cada habilidade/runa e onde pôr o paragon | ✅ funcionando |
 | 8g | Seu herói (BattleTag) vs. a build | ⏳ |
 
 ## O que aprendemos na Etapa 1
@@ -278,6 +278,14 @@ Clicar numa habilidade mostra no painel da direita a descrição em português e
 ```
 - **Habilidades:** o código da Blizzard em inglês com hífen (`smoke-screen`), até 6 ativas e 4 passivas, na ordem botão esquerdo, botão direito, 1, 2, 3, 4.
 - **Runa:** uma letra de `a` a `e`, a mesma que a Blizzard e o Maxroll usam.
+
+## Ao upar e paragon
+
+Embaixo da barra de habilidades da aba Builds:
+
+- **Nível de cada habilidade:** cada botão mostra em que nível ela fica do jeito da build (a habilidade e a runa liberadas). Clicar mostra os dois níveis.
+- **Ao upar: quando libera cada coisa** — a lista em ordem de nível, ex.: `Nv 2 Empalamento`, `Nv 28 runa Penetração Superior (Empalamento)`, `Nv 61 Vingança`. Os níveis vêm da API da Blizzard.
+- **Paragon:** os pontos da build nos 4 grupos (Principal, Ataque, Defesa, Utilidade), na ordem do jogo, com um resumo: *"Principal: 650 em Vitalidade, 50 em Velocidade, 50 em Recurso máximo, e o resto em Destreza. Nos outros grupos, tudo no máximo (50 cada)."* Vem do perfil do Maxroll (`"paragon"` na build).
 
 ## Builds do Maxroll
 

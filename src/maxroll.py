@@ -404,6 +404,13 @@ def converter(planner: dict, dados: dict, habilidades_da_classe: dict | None = N
         "cubo": cubo,
         "habilidades": {"ativas": ativas, "passivas": passivas},
     }
+    paragon = p.get("paragon") or {}
+    pontos = paragon.get("data")
+    if (isinstance(pontos, list) and len(pontos) == 4
+            and all(isinstance(g, list) and len(g) == 4 and all(isinstance(n, int) for n in g) for g in pontos)):
+        # Mesma ordem do jogo: Principal (atributo, Vitalidade, Velocidade, Recurso máx.),
+        # Ataque, Defesa e Utilidade.
+        build["paragon"] = {"nivel": int(paragon.get("level") or 0), "pontos": pontos}
     if desconhecidos:
         build["_itens_nao_reconhecidos"] = desconhecidos
     return build
