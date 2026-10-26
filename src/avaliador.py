@@ -25,7 +25,7 @@ import sys
 from difflib import get_close_matches
 from pathlib import Path
 
-PASTA_BUILDS = Path(__file__).resolve().parent.parent / "builds"
+from pastas import PASTA_BUILDS  # builds/ do projeto (ou do usuário, no .exe)
 
 # O parser devolve o encaixe da arma ("1-Hand", "2-Hand"); a build usa "Weapon".
 ESPACO_DA_BUILD = {"1-Hand": "Weapon", "2-Hand": "Weapon"}

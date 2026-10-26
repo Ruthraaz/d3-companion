@@ -11,8 +11,7 @@ from pathlib import Path
 from dotenv import dotenv_values
 
 from atalho import ler_atalho
-
-ARQUIVO_ENV = Path(__file__).resolve().parent.parent / ".env"
+from pastas import ARQUIVO_ENV  # o .env do projeto (ou do usuário, no .exe)
 
 # chave -> valor padrão (o mesmo que o app usa quando a chave não existe)
 # BUILD_ATIVA = id da build escolhida na janela (nome do arquivo em builds/); vazio = todas.

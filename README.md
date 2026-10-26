@@ -369,9 +369,22 @@ O app não lida com senha nem dado de pagamento, mas mexe com chave da Blizzard,
 - **Janela:** monta tudo com `textContent` (nunca `innerHTML`) e tem *Content-Security-Policy*: só os arquivos do app e os ícones do servidor da Blizzard. O `'unsafe-eval'` é exigência do pywebview.
 - **Dependências** com versão fixa no `requirements.txt` e conferidas na base de falhas conhecidas (OSV). O Pillow foi de 10.4.0 (com dezenas de falhas conhecidas) para 13.0.0.
 
+## Baixar pronto (sem Python)
+
+Quem só quer usar: baixe o `D3-Companion-<versão>-windows.zip` na página de [Releases](https://github.com/Ruthraaz/d3-companion/releases/latest), descompacte e abra **`D3 Companion.exe`**. O Tesseract já vem junto. Seus dados (builds, prints, `.env`) ficam em `%APPDATA%\D3 Companion`, então trocar de versão não apaga nada. O `LEIA-ME.txt` dentro do zip explica o resto (inclusive o aviso do SmartScreen, porque o .exe não tem assinatura digital).
+
+### Gerar o .exe
+
+```
+pip install -r requirements-dev.txt
+python ferramentas/empacotar.py
+```
+
+Sai em `dist/` (fora do Git): a pasta `D3 Companion/`, o zip e o `.sha256` do zip. O script desenha o ícone, copia do Tesseract instalado **só** o `tesseract.exe`, as DLLs que ele usa de verdade (lidas da tabela de imports: 26 de 51), o inglês e a licença, e roda o PyInstaller (modo pasta, sem console). O mesmo `.exe` faz os dois papéis: sem argumento abre a janela, com `--overlay` é o overlay (`src/d3companion.py`). Onde cada coisa fica, no código e no .exe: `src/pastas.py`. A versão: `src/versao.py`.
+
 ## Como rodar (Windows)
 
-O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes prontos para as versões fixadas no `requirements.txt` (Pillow 10.4, NumPy 1.26).
+O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes prontos para as versões fixadas no `requirements.txt` (Pillow 13.0, NumPy 1.26).
 
 1. Instale o **Python 3.12** e o **Tesseract** (instalador da UB Mannheim):
    ```

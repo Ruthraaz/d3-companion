@@ -20,7 +20,7 @@ from captura import AMPLIAR, FOLGA_TOPO, grupo_de_dicas, localizar_dica
 from ocr import ler_texto
 from parser import interpretar
 
-PASTA_CAPTURAS = Path(__file__).resolve().parent.parent / "capturas"
+from pastas import PASTA_CAPTURAS  # capturas/ do projeto (ou do usuário, no .exe)
 # Imagens guardadas em capturas/ (as mais novas). O print "sem dica" é a tela
 # inteira e pode pegar outras janelas: não fica pra sempre no PC.
 MAXIMO_DE_CAPTURAS = 200

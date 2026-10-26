@@ -11,3 +11,7 @@ capturas/
 
 # Dados da API da Blizzard guardados pelo app (src/blizzard.py)
 dados/
+
+# Gerados por ferramentas/empacotar.py (o .exe vai pra Release, não pro Git)
+build/
+dist/

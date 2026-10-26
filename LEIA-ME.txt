@@ -1,0 +1,39 @@
+D3 Companion
+============
+
+Ajudante do Diablo III: compara o item embaixo do mouse com a build que você
+escolheu (do Maxroll) e diz se serve, o que tem e o que falta.
+
+COMO USAR
+1. Abra "D3 Companion.exe". Na primeira vez o Windows pode mostrar
+   "O Windows protegeu o computador": clique em "Mais informações" e
+   "Executar assim mesmo" (o app não tem assinatura digital paga).
+2. Na aba Guias, escolha a classe e traga uma build (ou cole o link de uma
+   build do Maxroll na aba Builds).
+3. No jogo, passe o mouse num item e aperte F8 (muda em Configurações).
+
+O app só OLHA a tela. Ele não lê a memória do jogo nem mexe nos arquivos do
+Diablo.
+
+ONDE FICAM SEUS DADOS
+  %APPDATA%\D3 Companion   (cole isso na barra do Explorador de Arquivos)
+  - builds\     as builds que você trouxe
+  - capturas\   os últimos 200 recortes de tela (ficam só no seu PC)
+  - .env        suas configurações
+
+Pra atualizar, apague a pasta do app antiga e use a nova: seus dados ficam.
+
+ÍCONES, NOMES EM PORTUGUÊS E "MEU HERÓI" (opcional)
+Precisam de uma chave gratuita da Blizzard:
+  1. Entre em https://develop.battle.net/access/clients e crie um "client".
+  2. No arquivo %APPDATA%\D3 Companion\.env, coloque:
+       BLIZZARD_CLIENT_ID=...
+       BLIZZARD_CLIENT_SECRET=...
+  A chave é sua: não mande pra ninguém.
+
+LICENÇAS
+O OCR usa o Tesseract (Apache 2.0): tesseract\LICENSE-tesseract.txt.
+Diablo é marca da Blizzard Entertainment. Este app não é da Blizzard nem do
+Maxroll; ícones e textos do jogo vêm da API oficial da Blizzard na hora de usar.
+
+Código: https://github.com/Ruthraaz/d3-companion

@@ -50,10 +50,11 @@ from heroi import comparar, herois, heroi
 from maxroll import (ErroMaxroll, baixar_planner, builds_do_heroi, catalogo, classe_do_planner,
                      link_de_guia, montar, nomes_dos_perfis, planners_do_link, salvar_build)
 from nucleo import PASTA_CAPTURAS, dica_do_mistico
+from pastas import NO_EXE, WEB
 from rede import link_seguro
 
 PASTA_SRC = Path(__file__).resolve().parent
-PAGINA = PASTA_SRC / "web" / "index.html"
+PAGINA = WEB / "index.html"
 ICONE_DE_ITEM = "https://blzmedia-a.akamaihd.net/d3/icons/items/large/{}.png"
 LARGURA_MINIATURA = 220
 
@@ -68,8 +69,10 @@ class Overlay:
     def ligar(self):
         self.desligar()
         self.log.clear()
+        # No .exe o mesmo programa faz o overlay (--overlay); do código, é o app.py.
+        comando = [sys.executable, "--overlay"] if NO_EXE else [sys.executable, "-u", str(PASTA_SRC / "app.py")]
         self._processo = subprocess.Popen(
-            [sys.executable, "-u", str(PASTA_SRC / "app.py")],  # -u: log na hora, sem buffer
+            comando,  # -u: log na hora, sem buffer
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, encoding="utf-8", errors="replace",
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),

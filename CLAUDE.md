@@ -153,6 +153,15 @@ trabalho extra agora, não feche essa porta:
 - `python src/blizzard.py` confere os itens/gemas das builds contra o índice (com sugestão).
 - Testes com uma Blizzard falsa (`FalsaBlizzard`), sem internet nem chaves.
 
+### .exe (26/10/2026) — notas
+- `ferramentas/empacotar.py` (PyInstaller 6.22.3, onedir, windowed). Entrada `src/d3companion.py`
+  (`--overlay` = app.py). Caminhos todos em `src/pastas.py`: no .exe, `PROGRAMA` = `sys._MEIPASS`
+  (`_internal/`) e `SEUS` = `%APPDATA%\D3 Companion` (.env, builds, capturas, dados).
+- Tesseract copiado DEPOIS do PyInstaller (com `--add-data` ele duplicava as DLLs: +100 MB).
+- Testado em 26/10/2026 com APPDATA temporário: janela abre, copia as builds, desenha;
+  `--overlay` sobe (parou na trava porque o overlay do Arthur estava aberto). Zip ~133 MB.
+- Sem assinatura digital: SmartScreen avisa (explicado no LEIA-ME.txt e no site).
+
 ### Segurança (26/10/2026) — notas
 - Pente fino pedido pelo Arthur. Tudo em `tests/test_seguranca.py`; resumo no README ("Segurança e privacidade").
 - `src/rede.py`: `ler()` (limite de 20 MB em toda resposta) e `link_seguro()` (abrir_link só https://maxroll.gg).

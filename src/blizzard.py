@@ -35,11 +35,10 @@ from pathlib import Path
 
 from dotenv import dotenv_values
 
+from pastas import ARQUIVO_ENV, PASTA_DADOS
 from rede import RespostaGrande, ler
 
-RAIZ = Path(__file__).resolve().parent.parent
-ARQUIVO_ENV = RAIZ / ".env"
-PASTA_CACHE = RAIZ / "dados" / "blizzard"
+PASTA_CACHE = PASTA_DADOS / "blizzard"
 
 URL_TOKEN = "https://oauth.battle.net/token"
 URL_API = "https://us.api.blizzard.com"  # Américas (o Brasil joga nesta região)

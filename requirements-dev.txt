@@ -1,0 +1,4 @@
+# Só pra quem gera o .exe (não entra no app). Ver README, "Gerar o .exe".
+-r requirements.txt
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.8

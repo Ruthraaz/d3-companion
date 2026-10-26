@@ -34,8 +34,9 @@ from pathlib import Path
 
 from rede import RespostaGrande, ler
 
-RAIZ = Path(__file__).resolve().parent.parent
-PASTA_CACHE = RAIZ / "dados" / "maxroll"
+from pastas import PASTA_BUILDS, PASTA_DADOS
+
+PASTA_CACHE = PASTA_DADOS / "maxroll"
 URL_PLANNER = "https://planners.maxroll.gg/profiles/load/d3/{}"
 URL_DADOS = "https://assets-ng.maxroll.gg/d3planner/data.json"
 URL_MAPA_DO_SITE = "https://maxroll.gg/d3/sitemap.xml"
@@ -429,7 +430,7 @@ def nome_do_arquivo(build: dict) -> str:
     return re.sub(r"[^a-z0-9]+", "_", texto.lower()).strip("_") or "build_maxroll"
 
 
-def salvar_build(build: dict, pasta: Path = RAIZ / "builds") -> Path:
+def salvar_build(build: dict, pasta: Path = PASTA_BUILDS) -> Path:
     """Grava a build em builds/<apelido>.json. Nunca sobrescreve: se o nome já
     existe, usa _2, _3... Devolve o arquivo criado."""
     base = nome_do_arquivo(build)
