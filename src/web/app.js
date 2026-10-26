@@ -40,6 +40,8 @@ const estado = {
   ultimoVisto: null, // "quando" do registro mais novo já mostrado (ISO, compara como texto)
   guias: null,       // lista de guias do Maxroll (pede ao Python na 1ª vez que abre a aba)
   classe: null,      // classe do boneco: filtra as abas Guias e Builds (as duas usam a mesma)
+  herois: [],        // heróis da BattleTag (aba Meu herói)
+  heroi: null,       // id do herói escolhido
 };
 
 // ------------------------------------------------------------ utilidades
@@ -90,6 +92,7 @@ function abrirAba(nome) {
   if (nome === "config") carregarConfig();
   if (nome === "guias") estado.guias ? desenharGuias() : carregarGuias();
   if (nome === "builds" && estado.api) desenharBuilds();  // a classe pode ter mudado na aba Guias
+  if (nome === "heroi" && !estado.herois.length && document.getElementById("form-heroi").elements.battletag.value) buscarHerois();
 }
 
 // ------------------------------------------------------------ guias do Maxroll
@@ -516,6 +519,114 @@ function blocoGemas(build) {
   return [el("h3", {}, "Gemas lendárias"), etiquetas(build.gemas, "gema")];
 }
 
+// ------------------------------------------------------------ meu herói
+
+async function buscarHerois(evento) {
+  if (evento) evento.preventDefault();
+  const battletag = document.getElementById("form-heroi").elements.battletag.value.trim();
+  const status = document.getElementById("heroi-status");
+  if (!battletag) { status.className = "importar-status"; status.textContent = "Escreva sua BattleTag primeiro."; return; }
+  status.className = "importar-status";
+  status.textContent = "Buscando na Blizzard…";
+  trocar(document.getElementById("lista-herois"));
+  trocar(document.getElementById("comparar-com"));
+  trocar(document.getElementById("resultado-heroi"));
+  const r = await estado.api.herois(battletag);
+  if (r.erro) { status.className = "importar-status erro"; status.textContent = r.erro; return; }
+  estado.herois = r.herois;
+  status.textContent = r.herois.length ? "Escolha o herói." : "Essa conta não tem heróis.";
+  desenharHerois();
+}
+
+function desenharHerois() {
+  trocar(document.getElementById("lista-herois"), estado.herois.map(h =>
+    el("button", {
+      type: "button",
+      class: "chip-build" + (h.id === estado.heroi ? " ativo-heroi" : ""),
+      onclick: () => escolherHeroi(h.id),
+    },
+      el("span", { class: "chip-apelido" }, h.nome),
+      el("span", { class: "chip-nome" }, [CLASSES[h.classe] || h.classe || "?", `nível ${h.nivel}`,
+        h.paragon ? `paragon ${h.paragon}` : "", h.temporada ? "temporada" : "", h.hardcore ? "hardcore" : "",
+        h.morto ? "morto" : ""].filter(Boolean).join(" · ")))));
+}
+
+function escolherHeroi(id) {
+  estado.heroi = id;
+  desenharHerois();
+  const h = estado.herois.find(x => x.id === id);
+  const daClasse = estado.builds.filter(b => b.classe === h.classe);
+  const caixa = document.getElementById("comparar-com");
+  if (!daClasse.length) {
+    trocar(caixa, el("p", { class: "mudo" }, `Você ainda não tem build de ${CLASSES[h.classe] || h.classe}. `,
+      el("button", { class: "link", type: "button", onclick: () => { trocarClasse(h.classe); abrirAba("guias"); } },
+        "Ver os guias dessa classe")));
+    trocar(document.getElementById("resultado-heroi"));
+    return;
+  }
+  // Começa pela build do atalho, se for da classe do herói.
+  const inicial = daClasse.find(b => b.id === estado.ativa) || daClasse[0];
+  const escolha = el("select", { name: "build" }, daClasse.map(b =>
+    el("option", { value: b.id, ...(b.id === inicial.id ? { selected: "" } : {}) }, `${b.apelido} — ${b.nome}`)));
+  escolha.addEventListener("change", () => compararHeroi(escolha.value));
+  trocar(caixa, el("label", { class: "campo" }, el("span", { class: "campo-nome" }, "Comparar com a build"), escolha));
+  compararHeroi(inicial.id);
+}
+
+const VEREDITO = { serve: "✅ Serve", parcial: "🟡 Por enquanto", nao: "❌ Não serve" };
+const MARCA_DA_HABILIDADE = { ok: "✓", runa: "≈", falta: "✗" };
+
+async function compararHeroi(idBuild) {
+  const caixa = document.getElementById("resultado-heroi");
+  const battletag = document.getElementById("form-heroi").elements.battletag.value.trim();
+  trocar(caixa, el("p", { class: "mudo" }, "Comparando…"));
+  const r = await estado.api.comparar_heroi(battletag, estado.heroi, idBuild);
+  if (r.erro) { trocar(caixa, el("p", { class: "importar-status erro" }, r.erro)); return; }
+  const ordem = Object.keys(ESPACOS);
+  const itens = [...r.itens].sort((a, b) => ordem.indexOf(a.espaco) - ordem.indexOf(b.espaco));
+  const conta = v => itens.filter(i => i.veredito === v).length;
+  const quando = r.heroi.atualizado ? new Date(r.heroi.atualizado * 1000).toLocaleString("pt-BR") : null;
+  const h = r.habilidades;
+
+  trocar(caixa,
+    el("p", { class: "resumo-heroi" },
+      el("strong", {}, r.heroi.nome), ` · ${conta("serve")} peças servem, ${conta("parcial")} por enquanto, ${conta("nao")} não servem`,
+      quando && el("span", { class: "mudo" }, ` · dados da Blizzard de ${quando}`)),
+    !r.classe_igual && el("p", { class: "importar-status erro" }, "Esse herói é de outra classe que a build."),
+    el("ul", { class: "itens-heroi" }, itens.map(i =>
+      el("li", { class: `item-heroi ${i.veredito}` },
+        icone(i.icone, "icone-item"),
+        el("div", { class: "item-heroi-texto" },
+          el("p", { class: "item-heroi-cabeca" },
+            el("span", { class: "espaco-nome" }, ESPACOS[i.espaco] || i.espaco), " ",
+            el("span", { class: "item-heroi-nome" }, i.nome),
+            el("span", { class: "veredito" }, VEREDITO[i.veredito])),
+          i.veredito !== "serve" && el("p", { class: "mudo" }, i.motivo),
+          (i.tem.length > 0 || i.falta.length > 0) && el("p", { class: "item-heroi-afixos" },
+            i.tem.map(t => el("span", { class: "t-ok" }, `${t} ✓ `)),
+            i.falta.map(t => el("span", { class: "t-falta" }, `${t} ✗ `))),
+          i.dica && el("p", { class: "dica" }, i.dica),
+          i.encantado && !i.dica && i.falta.length > 0
+            && el("p", { class: "mudo" }, `Já trocado no Místico: "${i.encantado}" (só ele pode ser trocado de novo).`))))),
+    el("h3", {}, "Habilidades"),
+    h.ativas.length || h.passivas.length
+      ? el("ul", { class: "habilidades-heroi" },
+          h.ativas.map(a => el("li", { class: `hab-${a.estado}` },
+            icone(a.icone, "icone-mini"),
+            `${MARCA_DA_HABILIDADE[a.estado]} ${a.nome}`,
+            a.runa_nome && el("span", { class: "mudo" }, ` · runa ${a.runa_nome}`),
+            a.estado === "runa" && el("span", { class: "t-falta" }, ` (você usa ${a.runa_do_heroi_nome || "outra"})`),
+            a.estado === "falta" && el("span", { class: "t-falta" }, " (falta na sua barra)"))),
+          h.passivas.map(p => el("li", { class: `hab-${p.estado}` },
+            icone(p.icone, "icone-mini"),
+            `${MARCA_DA_HABILIDADE[p.estado]} passiva ${p.nome}`,
+            p.estado === "falta" && el("span", { class: "t-falta" }, " (falta)"))))
+      : el("p", { class: "nada" }, "A build não tem habilidades (importe do Maxroll pra comparar)."),
+    h.fora_da_build.length > 0 && el("p", { class: "mudo" }, `No herói, mas fora da build: ${h.fora_da_build.join(", ")}.`),
+    el("p", { class: "nota" }, "Só os itens equipados. Mochila e baú: use o atalho no jogo."),
+  );
+}
+
 // ------------------------------------------------------------ importar do Maxroll
 
 function abrirImportar() {
@@ -730,6 +841,7 @@ async function iniciar(api) {
   document.getElementById("form-importar").addEventListener("submit", buscarMaxroll);
   document.getElementById("fechar-importar").addEventListener("click", fecharImportar);
   document.getElementById("atualizar-guias").addEventListener("click", () => carregarGuias(true));
+  document.getElementById("form-heroi").addEventListener("submit", buscarHerois);
   document.getElementById("reiniciar").addEventListener("click", async () => {
     await estado.api.reiniciar_overlay();
     setTimeout(atualizarEstado, 1500);
@@ -737,7 +849,8 @@ async function iniciar(api) {
 
   estado.builds = await api.builds();
   desenharProblemas(await api.problemas_das_builds());
-  const { BUILD_ATIVA } = await api.config();
+  const { BUILD_ATIVA, BATTLETAG } = await api.config();
+  document.getElementById("form-heroi").elements.battletag.value = BATTLETAG || "";
   const i = estado.builds.findIndex(b => b.id === BUILD_ATIVA);
   if (i >= 0) { estado.ativa = BUILD_ATIVA; estado.build = i; }
   estado.classe = (estado.builds[estado.build] && estado.builds[estado.build].classe) || "Demon Hunter";
@@ -822,7 +935,7 @@ function apiDeExemplo() {
       linhas: [[["✅ ", "normal"], ["Dreadlands", "build"], [" · Gema da build", "normal"]],
                [["✅ ", "normal"], ["LoN", "build"], [" · Gema da build", "normal"]]] },
   ];
-  let config = { ATALHO: "F8", SELO_SEGUNDOS: "6", BUILD_ATIVA: "", AUTOMATICO: "sim" };
+  let config = { ATALHO: "F8", SELO_SEGUNDOS: "6", BUILD_ATIVA: "", AUTOMATICO: "sim", BATTLETAG: "" };
   return {
     builds: async () => builds,
     // ?problema na URL simula uma build com erro, pra ver o aviso.
@@ -846,6 +959,32 @@ function apiDeExemplo() {
     escolher_build: async id => { config = { ...config, BUILD_ATIVA: id }; return { erros: {} }; },
     visual: async id => visualDeExemplo(builds.find(b => b.id === id)),
     abrir_link: async url => { window.open(url, "_blank"); },
+    herois: async tag => /#\d{3,6}$/.test(tag)
+      ? { herois: [{ id: 1, nome: "Caçadora", classe: "Demon Hunter", nivel: 70, paragon: 1520, temporada: true },
+                   { id: 2, nome: "Bruxo", classe: "Witch Doctor", nivel: 43, paragon: 1520, temporada: true }] }
+      : { erro: "Escreva a BattleTag com o número, ex.: Arthur#1234 (aparece no canto do app da Battle.net)." },
+    comparar_heroi: async () => {
+      const I = "https://blzmedia-a.akamaihd.net/d3/icons/items/large/";
+      return {
+        heroi: { nome: "Caçadora", classe: "Demon Hunter", nivel: 70, paragon: 1520, atualizado: Date.now() / 1000 - 3600 },
+        classe_igual: true,
+        itens: [
+          { espaco: "Head", nome: "Accursed Visage", icone: I + "unique_helm_set_03_p2_demonhunter_male.png", veredito: "serve",
+            motivo: "Item da build", tem: ["Destreza", "Vitalidade", "Encaixe"], falta: ["Crítico"],
+            dica: 'Dica: no Místico, troque "+12% Life" por Crítico.' },
+          { espaco: "Hands", nome: "Cain's Scrivener", icone: null, veredito: "parcial", motivo: "A build pede: Fiendish Grips",
+            tem: ["Destreza", "Vitalidade", "Crítico"], falta: ["Dano crítico"], dica: null, encantado: "+700 Vitality" },
+          { espaco: "Weapon", nome: "Dead Man's Legacy", icone: null, veredito: "nao", motivo: "A build pede: Yang's Recurve", tem: [], falta: [] },
+        ],
+        habilidades: {
+          ativas: [{ nome: "Tiro Múltiplo", runa_nome: "Bombardeio", estado: "ok" },
+                   { nome: "Metralhar", runa_nome: "Drifting Shadow", estado: "runa", runa_do_heroi_nome: "Emaranhado" },
+                   { nome: "Vingança", runa_nome: "Coração Negro", estado: "falta" }],
+          passivas: [{ nome: "Emboscada", estado: "ok" }, { nome: "Mira Firme", estado: "falta" }],
+          fora_da_build: ["Companheiro"],
+        },
+      };
+    },
     guias: async () => ({ guias: [
       ["shadow-impale-demon-hunter", "Shadow Impale", "Demon Hunter"],
       ["ue-multishot-demon-hunter", "UE Multishot", "Demon Hunter"],

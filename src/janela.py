@@ -46,12 +46,14 @@ import historico
 from avaliador import ficha_da_build, ler_builds, problemas_da_build
 from blizzard import Blizzard, ErroBlizzard, visual_da_build
 from config import ler_config, salvar_config
+from heroi import comparar, herois, heroi
 from maxroll import (ErroMaxroll, baixar_planner, builds_do_heroi, catalogo, classe_do_planner,
                      link_de_guia, montar, nomes_dos_perfis, planners_do_link, salvar_build)
-from nucleo import PASTA_CAPTURAS
+from nucleo import PASTA_CAPTURAS, dica_do_mistico
 
 PASTA_SRC = Path(__file__).resolve().parent
 PAGINA = PASTA_SRC / "web" / "index.html"
+ICONE_DE_ITEM = "https://blzmedia-a.akamaihd.net/d3/icons/items/large/{}.png"
 LARGURA_MINIATURA = 220
 
 
@@ -163,6 +165,71 @@ class Api:
         Só links do Maxroll: o endereço vem do arquivo da build."""
         if isinstance(url, str) and url.startswith("https://maxroll.gg/"):
             webbrowser.open(url)
+
+    def herois(self, battletag: str) -> dict:
+        """Heróis da conta (API de perfil da Blizzard). Guarda a BattleTag no .env
+        pra não precisar digitar de novo. {"herois"} ou {"erro"}."""
+        try:
+            lista = herois(self._blizzard, battletag)
+        except ErroBlizzard as e:
+            return {"erro": str(e)}
+        salvar_config({"BATTLETAG": battletag.strip()})
+        return {"herois": lista}
+
+    def comparar_heroi(self, battletag: str, id_heroi: int, id_build: str) -> dict:
+        """O herói contra uma build: item por item (o mesmo avaliador do F8) e
+        as habilidades, já com os nomes em português."""
+        build = next((b for b in ler_builds()[0] if b["id"] == id_build), None)
+        if build is None:
+            return {"erro": f"Build {id_build!r} não encontrada."}
+        try:
+            h = heroi(self._blizzard, battletag, int(id_heroi))
+            r = comparar(h, build)
+        except ErroBlizzard as e:
+            return {"erro": str(e)}
+        itens = []
+        for x in r["itens"]:
+            res = x["resultado"]
+            itens.append({
+                "espaco": x["espaco"],
+                "nome": x["item"]["nome"],
+                "qualidade": x["item"]["qualidade"],
+                "icone": ICONE_DE_ITEM.format(x["item"]["icone"]) if x["item"].get("icone") else None,
+                "veredito": "serve" if res["bate"] else "parcial" if res["por_enquanto"] else "nao",
+                "motivo": res["motivo"],
+                "tem": [a["rotulo"] for a in res["afixos"] if a["ok"]],
+                "falta": [a["rotulo"] for a in res["afixos"] if not a["ok"]],
+                "dica": dica_do_mistico(res),
+                "encantado": x["item"].get("encantado"),
+            })
+        nomes, runas = {}, {}
+        try:  # nomes em português; sem eles, ficam os códigos
+            da_classe = self._blizzard.habilidades(build["classe"])
+            nomes = {h["slug"]: h for tipo in ("ativas", "passivas") for h in da_classe[tipo]}
+            for a in r["habilidades"]["ativas"]:
+                if a["habilidade"] in nomes:
+                    runas[a["habilidade"]] = {x["letra"]: x["nome_pt"]
+                                              for x in self._blizzard.runas(build["classe"], a["habilidade"])}
+        except ErroBlizzard:
+            pass
+        def nome(slug):
+            return nomes.get(slug, {}).get("nome_pt", slug)
+        def icone(slug):
+            return nomes.get(slug, {}).get("icone")
+        hab = r["habilidades"]
+        return {
+            "heroi": {k: h[k] for k in ("nome", "classe", "nivel", "paragon", "atualizado")},
+            "classe_igual": r["classe_igual"],
+            "itens": itens,
+            "habilidades": {
+                "ativas": [a | {"nome": nome(a["habilidade"]), "icone": icone(a["habilidade"]),
+                                "runa_nome": runas.get(a["habilidade"], {}).get(a["runa"], ""),
+                                "runa_do_heroi_nome": runas.get(a["habilidade"], {}).get(a["runa_do_heroi"] or "", "")}
+                           for a in hab["ativas"]],
+                "passivas": [p | {"nome": nome(p["habilidade"]), "icone": icone(p["habilidade"])} for p in hab["passivas"]],
+                "fora_da_build": [nome(s) for s in hab["fora_da_build"]],
+            },
+        }
 
     def problemas_das_builds(self) -> dict[str, list[str]]:
         """{arquivo: [o que corrigir]} das builds que ficaram de fora."""

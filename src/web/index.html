@@ -15,6 +15,7 @@
     <nav class="abas" role="tablist">
       <button class="aba" data-aba="guias" role="tab">Guias</button>
       <button class="aba ativa" data-aba="builds" role="tab">Builds</button>
+      <button class="aba" data-aba="heroi" role="tab">Meu herói</button>
       <button class="aba" data-aba="historico" role="tab">Histórico</button>
       <button class="aba" data-aba="config" role="tab">Configurações</button>
     </nav>
@@ -91,6 +92,23 @@
         </div>
         <aside class="detalhe" id="detalhe"></aside>
       </div>
+    </section>
+
+    <!-- MEU HERÓI -->
+    <section class="painel" id="painel-heroi">
+      <div class="cabeca-painel">
+        <h2>Meu herói vs. a build</h2>
+        <p class="mudo">O app pega na Blizzard os itens que seu herói está usando e diz, peça por peça, o que já bate com a build e o que falta.
+          A Blizzard só atualiza quando você <strong>sai do jogo</strong> (ou troca de personagem).</p>
+      </div>
+      <form class="importar-busca busca-heroi" id="form-heroi">
+        <input name="battletag" autocomplete="off" spellcheck="false" placeholder="Sua BattleTag, ex.: Arthur#1234">
+        <button type="submit" class="botao">Buscar heróis</button>
+      </form>
+      <p class="importar-status" id="heroi-status" role="status"></p>
+      <div class="lista-herois" id="lista-herois"></div>
+      <div class="comparar-com" id="comparar-com"></div>
+      <div id="resultado-heroi"></div>
     </section>
 
     <!-- HISTÓRICO -->

@@ -58,7 +58,7 @@ class TestConfig(unittest.TestCase):
         self.pasta.cleanup()
 
     def test_padroes_sem_env(self):
-        self.assertEqual(ler_config(self.env), {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim"})
+        self.assertEqual(ler_config(self.env), {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim", "BATTLETAG": ""})
 
     def test_salva_sem_mexer_no_resto(self):
         self.env.write_text("# meu comentário\nTESSERACT_CMD=C:\\Tess\\tesseract.exe\nATALHO=F8\n",
@@ -67,7 +67,7 @@ class TestConfig(unittest.TestCase):
         texto = self.env.read_text(encoding="utf-8")
         self.assertIn("# meu comentário", texto)
         self.assertIn("TESSERACT_CMD=C:\\Tess\\tesseract.exe", texto)
-        self.assertEqual(ler_config(self.env), {"ATALHO": "Ctrl+F9", "SELO_SEGUNDOS": "4.5", "BUILD_ATIVA": "", "AUTOMATICO": "sim"})
+        self.assertEqual(ler_config(self.env), {"ATALHO": "Ctrl+F9", "SELO_SEGUNDOS": "4.5", "BUILD_ATIVA": "", "AUTOMATICO": "sim", "BATTLETAG": ""})
 
     def test_invalido_nao_grava_nada(self):
         self.env.write_text("ATALHO=F8\n", encoding="utf-8")

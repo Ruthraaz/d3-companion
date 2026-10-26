@@ -48,7 +48,7 @@ A lógica (OCR, parser, avaliador) fica num **núcleo** sem interface (`src/nucl
 | 8d | Aba Guias: todos os guias do Maxroll, por classe | ✅ funcionando |
 | 8e | Upar: o F8 mostra itens parecidos com os da build ("serve por enquanto", selo amarelo) | ✅ funcionando |
 | 8f | Marcadores: em que nível libera cada habilidade/runa e onde pôr o paragon | ✅ funcionando |
-| 8g | Seu herói (BattleTag) vs. a build | ⏳ |
+| 8g | Seu herói (BattleTag) vs. a build | ✅ funcionando |
 
 ## O que aprendemos na Etapa 1
 
@@ -286,6 +286,19 @@ Embaixo da barra de habilidades da aba Builds:
 - **Nível de cada habilidade:** cada botão mostra em que nível ela fica do jeito da build (a habilidade e a runa liberadas). Clicar mostra os dois níveis.
 - **Ao upar: quando libera cada coisa** — a lista em ordem de nível, ex.: `Nv 2 Empalamento`, `Nv 28 runa Penetração Superior (Empalamento)`, `Nv 61 Vingança`. Os níveis vêm da API da Blizzard.
 - **Paragon:** os pontos da build nos 4 grupos (Principal, Ataque, Defesa, Utilidade), na ordem do jogo, com um resumo: *"Principal: 650 em Vitalidade, 50 em Velocidade, 50 em Recurso máximo, e o resto em Destreza. Nos outros grupos, tudo no máximo (50 cada)."* Vem do perfil do Maxroll (`"paragon"` na build).
+
+## Meu herói (BattleTag)
+
+Na aba **Meu herói**, digite sua BattleTag (ex.: `Arthur#1234`). O app pede à Blizzard os heróis da conta; escolha um e a build pra comparar.
+
+- **Cada item equipado** passa pelo mesmo avaliador do F8: ✅ serve, 🟡 por enquanto, ❌ não serve, com o que tem, o que falta e a dica do Místico.
+- **Místico:** a Blizzard diz qual afixo já foi trocado. Se ele já serve, o app não sugere trocar outro, porque só dá pra trocar um por item.
+- **Habilidades:** ✓ igual à build, ≈ runa diferente, ✗ falta na sua barra. Também lista o que você usa e a build não usa.
+- A BattleTag fica salva no `.env` (`BATTLETAG=`), então não precisa digitar de novo.
+
+Limites da API da Blizzard (não do app): só os itens **equipados** (mochila e baú continuam no F8); os dados **atualizam quando você sai do jogo**, não na hora; só contas da região **Américas** (a do Brasil).
+
+Pelo terminal: `python src/heroi.py Arthur#1234` lista os heróis; `python src/heroi.py Arthur#1234 <id> <build>` compara.
 
 ## Builds do Maxroll
 

@@ -116,12 +116,20 @@ def _detalhe(r: dict) -> list[list[tuple[str, str]]]:
         linhas.append(_lista("Tem: ", tem, "✓", "ok"))
     if falta:
         linhas.append(_lista("Falta: ", falta, "✗", "falta"))
-        # O Místico troca UM afixo por item: troca um que a build não usa por um que falta.
-        trocaveis = [a["rotulo"] for a in falta if a["rotulo"] != "Encaixe"] or [falta[0]["rotulo"]]
-        if r.get("sobrando"):
-            alvo = trocaveis[0] + (f" (ou {trocaveis[1]})" if len(trocaveis) > 1 else "")
-            linhas.append([(f"Dica: no Místico, troque \"{r['sobrando'][0]}\" por {alvo}.", "motivo")])
+        dica = dica_do_mistico(r)
+        if dica:
+            linhas.append([(dica, "motivo")])
     return linhas
+
+
+def dica_do_mistico(r: dict) -> str | None:
+    """O Místico troca UM afixo por item: troca um que a build não usa por um que falta."""
+    falta = [a["rotulo"] for a in r["afixos"] if not a["ok"]]
+    if not falta or not r.get("sobrando"):
+        return None
+    trocaveis = [f for f in falta if f != "Encaixe"] or falta[:1]
+    alvo = trocaveis[0] + (f" (ou {trocaveis[1]})" if len(trocaveis) > 1 else "")
+    return f"Dica: no Místico, troque \"{r['sobrando'][0]}\" por {alvo}."
 
 
 def _resumo(r: dict) -> str:

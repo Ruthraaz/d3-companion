@@ -146,6 +146,9 @@ def avaliar(item: dict, build: dict) -> dict:
     sobrando = [a["texto"] for a in item.get("primarios", [])
                 if not any(_tem_afixo({"primarios": [a]}, r)
                            for r in regras_obrigatorias + regras_desejaveis if _modelo(r) != SOQUETE)]
+    if item.get("encantado"):
+        # Já trocado no Místico (a API do perfil diz qual): só esse pode ser trocado de novo.
+        sobrando = [item["encantado"]] if item["encantado"] in sobrando else []
     total = len(desejaveis["ok"]) + len(desejaveis["faltando"])
     nota = round(len(desejaveis["ok"]) / total, 2) if total else 1.0
 

@@ -497,6 +497,44 @@ h3 {
 .guia-acoes .botao { padding: 5px 10px; font-size: 13px; }
 .nota-guias { margin-top: 18px; font-size: 12px; }
 
+/* ------------------------------------------------------------ meu herói */
+.busca-heroi { max-width: 560px; }
+.busca-heroi input {
+  flex: 1; background: var(--fundo); border: 1px solid var(--borda-forte); border-radius: var(--raio);
+  padding: 8px 12px; outline: none;
+}
+.busca-heroi input:focus { border-color: var(--ouro); box-shadow: 0 0 0 2px rgba(201, 162, 90, .2); }
+.lista-herois { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.chip-build.ativo-heroi { border-color: var(--ouro); box-shadow: 0 0 0 1px rgba(201, 162, 90, .25); }
+.comparar-com { max-width: 520px; margin-bottom: 14px; }
+.comparar-com select {
+  width: 100%; background: var(--fundo); border: 1px solid var(--borda-forte); border-radius: var(--raio);
+  padding: 7px 10px; color: var(--texto); font: inherit;
+}
+.resumo-heroi { margin: 0 0 12px; }
+.itens-heroi { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 8px; }
+.item-heroi {
+  display: flex; gap: 10px; align-items: flex-start;
+  border: 1px solid var(--borda); border-left: 3px solid var(--falta); border-radius: var(--raio);
+  background: var(--painel); padding: 10px 12px;
+}
+.item-heroi.serve { border-left-color: var(--ok); }
+.item-heroi.parcial { border-left-color: var(--parcial); }
+.item-heroi-texto { min-width: 0; flex: 1; }
+.item-heroi-texto p { margin: 0; }
+.item-heroi-cabeca { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.item-heroi-nome { font-family: var(--serifa); color: var(--ouro-claro); }
+.item-heroi .veredito { margin-left: auto; font-size: 12px; white-space: nowrap; }
+.item-heroi .mudo { font-size: 12px; }
+.item-heroi-afixos { font-size: 12px; margin-top: 3px !important; }
+.item-heroi .dica { font-size: 12px; color: var(--ouro); margin-top: 3px; }
+.habilidades-heroi { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+.habilidades-heroi li { display: flex; align-items: center; gap: 6px; }
+.hab-ok { color: var(--ok); }
+.hab-runa { color: var(--parcial); }
+.hab-falta { color: var(--falta); }
+#painel-heroi .nota { margin-top: 14px; color: var(--mudo); font-size: 12px; }
+
 /* ------------------------------------------------------------ histórico */
 .filtros { display: flex; gap: 6px; margin-bottom: 16px; }
 .filtro {

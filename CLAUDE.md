@@ -146,6 +146,15 @@ trabalho extra agora, não feche essa porta:
 - `python src/blizzard.py` confere os itens/gemas das builds contra o índice (com sugestão).
 - Testes com uma Blizzard falsa (`FalsaBlizzard`), sem internet nem chaves.
 
+### Meu herói (BattleTag, 8g) — notas
+- `src/heroi.py`: API de perfil `/d3/profile/{Nome-1234}/`, `/hero/{id}`, `/hero/{id}/items`. Funciona com o
+  token client_credentials (não precisa de login do jogador). 404 `NOTFOUND` = BattleTag errada/outra região.
+- Perfil nunca vai pro cache: `Blizzard.pegar(..., guardar=False)`.
+- Item da API → mesmo formato do parser (`item_do_perfil`): qualidade/tipo de `typeName`, linhas
+  "Caldesann" ignoradas, `encantado` = linha com `tooltip-icon-enchant` em `attributesHtml`.
+- Avaliador: com `encantado`, `sobrando` só pode ser ele (o Místico só troca o mesmo afixo).
+- **Não guardar perfil de jogador no repositório**: testes usam dados inventados (`tests/test_heroi.py`).
+
 ### Avaliação automática — notas
 - **Não mostrou selo no jogo do Arthur** (24/10/2026). Overlay subia sem erro; a simulação com
   print de samples/ funcionava. Suspeita: na tela inteira, o fundo escuro/inventário gruda na

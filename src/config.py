@@ -17,7 +17,8 @@ ARQUIVO_ENV = Path(__file__).resolve().parent.parent / ".env"
 # chave -> valor padrão (o mesmo que o app usa quando a chave não existe)
 # BUILD_ATIVA = id da build escolhida na janela (nome do arquivo em builds/); vazio = todas.
 # AUTOMATICO = "sim": avalia sozinho ao passar o mouse num item; "nao": só pelo atalho.
-CHAVES = {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim"}
+# BATTLETAG = a da aba "Meu herói" (ex.: Arthur#1234), pra não digitar toda vez.
+CHAVES = {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim", "BATTLETAG": ""}
 
 
 def ler_config(arquivo: Path = ARQUIVO_ENV) -> dict[str, str]:
@@ -42,6 +43,14 @@ def validar(chave: str, valor: str) -> str | None:
     elif chave == "AUTOMATICO":
         if valor not in ("sim", "nao"):
             return 'Avaliação automática precisa ser "sim" ou "nao".'
+    elif chave == "BATTLETAG":
+        from heroi import conta_da_battletag  # aqui: só a aba do herói precisa
+        from blizzard import ErroBlizzard
+        if valor:
+            try:
+                conta_da_battletag(valor)
+            except ErroBlizzard as e:
+                return str(e)
     elif chave == "BUILD_ATIVA":
         from avaliador import carregar_builds  # aqui: config não precisa das builds pro resto
         if valor and valor not in {b["id"] for b in carregar_builds()}:

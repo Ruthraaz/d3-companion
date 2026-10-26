@@ -126,10 +126,11 @@ class Blizzard:
         nome = re.sub(r"[^A-Za-z0-9_.-]+", "_", caminho.strip("/"))
         return self.pasta_cache / locale / f"{nome}.json"
 
-    def pegar(self, caminho: str, locale: str = "en_US"):
-        """GET em /d3/... da API, com cache em disco."""
+    def pegar(self, caminho: str, locale: str = "en_US", guardar: bool = True):
+        """GET em /d3/... da API, com cache em disco (guardar=False: sempre da
+        Blizzard e sem gravar; é o caso do perfil do herói, que muda)."""
         arquivo = self._arquivo_do_cache(caminho, locale)
-        if arquivo.exists():
+        if guardar and arquivo.exists():
             return json.loads(arquivo.read_text(encoding="utf-8"))
         url = f"{URL_API}{caminho}?{urllib.parse.urlencode({'locale': locale})}"
         pedido = urllib.request.Request(url, headers={"Authorization": "Bearer " + self._token_valido()})
@@ -139,6 +140,8 @@ class Blizzard:
             if e.code == 404:
                 raise ErroBlizzard(f"A Blizzard não conhece {caminho!r}.") from e
             raise ErroBlizzard(f"A Blizzard respondeu com erro {e.code} em {caminho!r}.") from e
+        if not guardar:
+            return dados
         arquivo.parent.mkdir(parents=True, exist_ok=True)
         arquivo.write_text(json.dumps(dados, ensure_ascii=False), encoding="utf-8")
         return dados
