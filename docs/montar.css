@@ -1,0 +1,94 @@
+/* Só o que o "Montar build" tem a mais que o app. O resto é app.css (cópia do
+   src/web/estilo.css), pra ficar igual ao app. */
+
+a.marca, a.aba { color: inherit; text-decoration: none; }
+a.aba { color: var(--mudo); }
+a.aba.ativa, a.aba:hover { color: var(--texto); }
+
+.carregando-jogo { margin: 40px 0; text-align: center; color: var(--mudo); }
+.carregando-jogo[hidden] { display: none; }
+
+/* Cabeçalho: o nome é um campo. */
+.nome-da-build {
+  width: 100%;
+  padding: 4px 8px; margin: 0 0 4px -8px;
+  border: 1px solid transparent; border-radius: var(--raio);
+  background: transparent;
+  font: 600 24px var(--serifa); color: var(--ouro-claro);
+}
+.nome-da-build:hover { border-color: var(--borda); }
+.nome-da-build:focus { outline: none; border-color: var(--ouro); background: var(--fundo-2); }
+.nome-da-build::placeholder { color: var(--apagado); font-weight: 400; }
+
+/* Casas que viram botão aqui (no app são só desenho). */
+button.roda-no { padding: 0; cursor: pointer; color: inherit; }
+button.roda-no:hover { border-color: var(--ouro); }
+.roda-no.selecionado { border-color: var(--acento) !important; box-shadow: 0 0 0 2px var(--acento), 0 4px 12px rgba(0, 0, 0, .5); opacity: 1; }
+button.cubo-carta { font: inherit; color: inherit; text-align: left; cursor: pointer; }
+button.cubo-carta:hover { border-color: var(--ouro); }
+.cubo-carta.selecionado { border-color: var(--acento); box-shadow: 0 0 0 1px var(--acento); }
+.carta-hab.a-escolher, .passiva-jogo.a-escolher { opacity: .6; border-style: dashed; }
+.carta-hab.a-escolher.selecionado, .passiva-jogo.a-escolher.selecionado { opacity: 1; }
+.passiva-jogo.a-escolher { border-color: var(--borda); }
+
+/* Painel da direita: o editor. */
+.detalhe h3 + .chips { margin-top: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.chip-afixo { cursor: pointer; font: inherit; font-size: 12px; }
+.chip-afixo.ligado { border-color: var(--ok); color: #bff0c6; background: rgba(63, 185, 80, .14); }
+.chip-afixo.ligado::before { content: "✓ "; }
+.detalhe select, .busca-lista {
+  width: 100%;
+  margin: 4px 0 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--borda-forte); border-radius: var(--raio);
+  background: var(--fundo);
+}
+.campo-ancient { margin: 8px 0 4px; }
+.lista-escolha {
+  list-style: none; margin: 0; padding: 0;
+  max-height: 420px; overflow-y: auto;
+  border: 1px solid var(--borda); border-radius: var(--raio);
+}
+.lista-escolha li[hidden] { display: none; }
+.opcao {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 6px 10px;
+  border: 0; border-bottom: 1px solid var(--borda);
+  background: none; text-align: left; cursor: pointer;
+}
+.lista-escolha li:last-child .opcao { border-bottom: 0; }
+.opcao:hover { background: var(--painel-2); }
+.opcao.ativo { background: rgba(211, 58, 44, .14); box-shadow: inset 3px 0 0 var(--acento); }
+.opcao > span:last-child { display: flex; flex-direction: column; min-width: 0; }
+.opcao-nome { font-size: 13px; line-height: 1.25; }
+.opcao-sub { font-size: 11px; color: var(--mudo); }
+.opcao-livre { border: 1px dashed var(--borda-forte); border-radius: var(--raio); margin-bottom: 8px; }
+.icone.redondo { border-radius: 50%; }
+.runas { display: grid; gap: 4px; margin-bottom: 10px; }
+.runas .opcao { border: 1px solid var(--borda); border-radius: var(--raio); }
+.t-set { color: var(--set); }
+.t-ouro { color: var(--ouro-claro); }
+.detalhe .botao { margin: 4px 0 8px; }
+
+/* Paragon com campos. */
+.campo-nivel { max-width: 200px; margin-bottom: 14px; }
+.paragon-campos { display: grid; gap: 6px; }
+.paragon-campo { display: grid; grid-template-columns: minmax(0, 1fr) 84px; align-items: center; gap: 8px; font-size: 13px; }
+.paragon input[type="number"] {
+  width: 100%; padding: 5px 8px;
+  border: 1px solid var(--borda-forte); border-radius: 4px;
+  background: var(--fundo);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+.paragon input[type="number"]:focus { outline: none; border-color: var(--ouro); }
+
+@media (max-width: 760px) {
+  .topo { grid-template-columns: 1fr; height: auto; padding: 10px 16px; gap: 8px; }
+  .topo .estado { display: none; }
+  .abas { overflow-x: auto; height: 40px; }
+  .painel { padding: 16px; }
+  .cabeca-build { flex-wrap: wrap; }
+  .cabeca-texto { flex: 1 1 200px; min-width: 0; }
+  .cabeca-acoes { flex-wrap: wrap; flex-basis: 100%; }
+}

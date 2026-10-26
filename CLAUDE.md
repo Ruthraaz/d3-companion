@@ -193,6 +193,16 @@ trabalho extra agora, não feche essa porta:
 - CSP própria (`connect-src https://api.github.com`). Nenhuma imagem/print do jogo no site:
   a dica e o selo da capa são HTML/CSS; `img/janela.webp` é a tela de exemplo do app (sem ícones).
 
+### Montar build no site (26/10/2026) — notas
+- Pedido: "Fazer o site ser igual o app e adicionar o sistema de montar build ... só que no site o cara nao vai
+  poder usar o sistema de avaliacao in-game".
+- `docs/montar.html/js/css` + `docs/app.css` (cópia de `src/web/estilo.css`, testado em tests/test_site.py).
+- `docs/dados/jogo.json` gerado por `ferramentas/dados_do_site.py` (cache da API Blizzard + planner do Maxroll
+  pros afixos). Só nomes/códigos de ícone; imagens ficam no CDN (`blzmedia-a.akamaihd.net`, única origem de img na CSP).
+- Link: `montar.html#b=` + base64url(deflate-raw(JSON da build)). App: `link_do_site.build_do_link` (https, host,
+  caminho, ≤20000 chars, ≤200 KB aberto, força `fonte={"site":"montar"}`, tira "id"/"_*") e `Api.importar_do_site`.
+- Rascunho por classe em localStorage ("d3c-montar-v1"). Ainda falta: seguidor no montador.
+
 ### Segurança (26/10/2026) — notas
 - Pente fino pedido pelo Arthur. Tudo em `tests/test_seguranca.py`; resumo no README ("Segurança e privacidade").
 - `src/rede.py`: `ler()` (limite de 20 MB em toda resposta) e `link_seguro()` (abrir_link só https://maxroll.gg).

@@ -350,6 +350,23 @@ python src/maxroll.py https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-gu
 Cada build do Maxroll tem vários **perfis** (push, speed, bounties…); `--perfil` escolhe qual. O link do planejador aparece no guia ao clicar na build e em "Open in Planner".
 
 
+## Montar build no site
+
+No site (https://ruthraaz.github.io/d3-companion/montar.html) dá pra **montar uma build do zero, sem instalar nada**: a mesma tela do app (boneco, roda de gemas, cubo de Kanai, janela de habilidades com runas e paragon), com os itens, gemas, habilidades e afixos do jogo. Cada classe guarda o seu rascunho no navegador.
+
+O site **não avalia itens**: a avaliação no jogo (F8 e passar o mouse) só existe no app. Pra usar a build no app:
+1. No site, **Copiar link da build** (ou **Baixar .json**).
+2. No app, aba Builds → **+ Colar link** → cole o link → **Importar**.
+
+A build vai inteira **no próprio link**, depois do `#` (JSON comprimido): o site não tem servidor nem banco de dados, e nada sai do seu navegador. O app confere o link antes de importar (só o endereço do site, tamanho máximo antes e depois de abrir, e a mesma conferência das outras builds): `src/link_do_site.py`.
+
+Os dados do jogo do site (`docs/dados/jogo.json`) saem da API oficial da Blizzard: só **nomes e códigos de ícone**. As imagens continuam no servidor da Blizzard. Pra gerar de novo (precisa da chave no `.env`; a chave nunca vai pro site):
+```
+python ferramentas/dados_do_site.py            # dados do jogo + docs/app.css
+python ferramentas/dados_do_site.py --so-css   # só copia src/web/estilo.css -> docs/app.css
+```
+`docs/app.css` é cópia do CSS do app (um teste confere), pra o site ficar igual ao app.
+
 ## Avaliação automática (passar o mouse)
 
 > ⚠️ Feita, mas **não funcionou no jogo** no primeiro teste. Está parada; o F8 continua sendo o jeito de avaliar.

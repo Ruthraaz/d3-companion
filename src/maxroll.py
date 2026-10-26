@@ -60,7 +60,7 @@ ROTULOS = {
     "chc": "Crítico", "chd": "Dano crítico", "ias": "Vel. de ataque", "cdr": "Recarga",
     "rcr": "Custo de recurso", "area": "Dano em área", "resall": "Resistência total",
     "life": "Vida %", "armor": "Armadura", "lph": "Vida por acerto", "regen": "Vida por segundo",
-    "dmgred": "Redução de dano", "edmg": "Dano a elites", "damage": "Dano %", "ms": "Velocidade",
+    "dmgred": "Redução de dano", "edef": "Redução de dano de elites", "edmg": "Dano a elites", "damage": "Dano %", "ms": "Velocidade",
     "dmgphy": "Dano físico", "dmgfir": "Dano de fogo", "dmgcol": "Dano de frio",
     "dmglit": "Dano elétrico", "dmgpsn": "Dano de veneno", "dmgarc": "Dano arcano",
     "dmghol": "Dano sagrado", "damage_demonhunter": "Dano de habilidade",

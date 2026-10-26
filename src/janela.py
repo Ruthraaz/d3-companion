@@ -50,6 +50,7 @@ from heroi import comparar, herois, heroi
 from maxroll import (ErroMaxroll, baixar_planner, builds_do_heroi, catalogo, classe_do_planner,
                      link_de_guia, montar, nomes_dos_perfis, planners_do_link, remover_build,
                      salvar_build)
+from link_do_site import ErroLinkDoSite, build_do_link, e_link_do_site
 from nucleo import PASTA_CAPTURAS, dica_do_mistico
 from pastas import NO_EXE, WEB
 from rede import link_seguro
@@ -132,7 +133,14 @@ class Api:
 
     def buscar_maxroll(self, texto: str) -> dict:
         """Link de guia ou de planner do Maxroll -> builds que ele traz, com os
-        perfis de cada uma. As do seguidor e as de outra classe ficam de fora."""
+        perfis de cada uma. As do seguidor e as de outra classe ficam de fora.
+        Link do "Montar build" do site -> {"site": {nome, apelido, classe}}."""
+        if e_link_do_site(texto):
+            try:
+                build = build_do_link(texto)
+            except ErroLinkDoSite as e:
+                return {"erro": str(e)}
+            return {"site": {"nome": build["nome"], "apelido": build["apelido"], "classe": build["classe"]}}
         try:
             planners = [baixar_planner(n) for n in planners_do_link(texto)]
         except ErroMaxroll as e:
@@ -163,6 +171,16 @@ class Api:
         problemas = problemas_da_build(build)
         if problemas:  # não devia acontecer; se acontecer, não grava build quebrada
             return {"erro": "A build veio com problema: " + " ".join(problemas)}
+        return {"id": salvar_build(build).stem}
+
+    def importar_do_site(self, texto: str, apelido: str = "") -> dict:
+        """Grava em builds/ a build do link do site (nunca sobrescreve). {"id"} ou {"erro"}."""
+        try:
+            build = build_do_link(texto)
+        except ErroLinkDoSite as e:
+            return {"erro": str(e)}
+        if isinstance(apelido, str) and apelido.strip():
+            build["apelido"] = apelido.strip()[:40]
         return {"id": salvar_build(build).stem}
 
     def remover_build(self, id_build: str) -> dict:

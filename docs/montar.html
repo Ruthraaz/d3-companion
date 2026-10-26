@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Só arquivos do site e ícones do servidor da Blizzard. A build fica no endereço
+       (depois do #), que o navegador nunca manda pro servidor. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://blzmedia-a.akamaihd.net; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Montar build — D3 Companion</title>
+  <meta name="description" content="Monte sua build de Diablo III com os itens, gemas, cubo, habilidades e paragon do jogo, e leve pro D3 Companion com um link.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <!-- app.css é cópia de src/web/estilo.css (o mesmo visual do app; um teste confere). -->
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="montar.css">
+</head>
+<body>
+  <header class="topo">
+    <a class="marca" href="./">
+      <span class="marca-runa" aria-hidden="true"></span>
+      <span class="marca-nome">D3 Companion</span>
+    </a>
+    <nav class="abas">
+      <a class="aba" href="./">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg>
+        Início</a>
+      <a class="aba ativa" href="montar.html" aria-current="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5l6 6-9 9-3-3-3 3-2-2 3-3-3-3zM16 8l-6 6"/></svg>
+        Montar build</a>
+      <a class="aba" href="./#baixar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
+        Baixar o app</a>
+    </nav>
+    <div class="estado">
+      <span class="estado-ponto"></span>
+      <span class="estado-texto">No site: monta a build; quem avalia o item é o app</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="painel ativo">
+      <p class="carregando-jogo" id="carregando">Carregando os itens do jogo…</p>
+      <div class="faixa-classes" id="classes-builds" role="tablist"></div>
+      <div class="cabeca-build" id="cabeca-build"></div>
+      <p class="avaliando" id="avaliando" role="status"></p>
+
+      <div class="builds-corpo" id="builds-corpo" hidden>
+        <nav class="sub-abas" role="tablist">
+          <button class="sub-aba ativa" data-sub="equipamento" role="tab">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l1 4-5 3-5-3zM7 7v6l5 8 5-8V7"/></svg>
+            Equipamento</button>
+          <button class="sub-aba" data-sub="habilidades" role="tab">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+            Habilidades</button>
+          <button class="sub-aba" data-sub="paragon" role="tab">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 7h7l-5.5 4.5 2 7.5-6.5-4.5L5.5 21l2-7.5L2 9h7z"/></svg>
+            Paragon</button>
+        </nav>
+        <div class="builds-grade">
+          <div class="coluna-build">
+            <div class="sub-painel ativo" id="sub-equipamento">
+              <div class="boneco">
+                <div class="coluna-equip" id="equip-esq"></div>
+                <div class="centro-equip">
+                  <div class="roda" id="roda"></div>
+                  <div class="extra">
+                    <h3 class="extra-titulo">Gemas lendárias</h3>
+                    <div class="fila-icones" id="gemas"></div>
+                  </div>
+                </div>
+                <div class="coluna-equip direita" id="equip-dir"></div>
+              </div>
+              <p class="legenda">
+                <span class="leg leg-item">item escolhido</span>
+                <span class="leg leg-livre">qualquer item com os afixos</span>
+                <span class="leg leg-geral">ainda vazio</span>
+              </p>
+              <section class="cubo-kanai">
+                <h3 class="faixa-titulo"><span>Cubo de Kanai</span></h3>
+                <div class="cubo-cartas" id="cubo"></div>
+              </section>
+            </div>
+            <div class="sub-painel" id="sub-habilidades">
+              <div class="janela-jogo" id="janela-habilidades"></div>
+            </div>
+            <div class="sub-painel" id="sub-paragon">
+              <div class="paragon" id="paragon"></div>
+            </div>
+          </div>
+          <aside class="detalhe"><div class="detalhe-fixo" id="detalhe"></div></aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="montar.js"></script>
+</body>
+</html>

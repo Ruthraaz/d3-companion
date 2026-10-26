@@ -219,7 +219,7 @@ function desenharCabecaDaBuild(b) {
       el("h1", { class: "build-titulo" }, b.apelido),
       el("p", { class: "build-sub" }, b.nome),
       el("p", { class: "build-meta" }, [CLASSES[b.classe] || b.classe,
-        fonte && fonte.site && `Fonte: ${fonte.site === "maxroll" ? "Maxroll" : fonte.site}`,
+        fonte && fonte.site && (fonte.site === "montar" ? "Montada no site" : `Fonte: ${fonte.site === "maxroll" ? "Maxroll" : fonte.site}`),
         fonte && fonte.perfil].filter(Boolean).join(" · "))),
     el("div", { class: "cabeca-acoes" },
       fonte && fonte.link && el("button", { type: "button", class: "botao botao-leve", onclick: () => estado.api.abrir_link(fonte.link) },
@@ -867,6 +867,11 @@ async function buscarTexto(texto) {
     status.textContent = r.erro;
     return;
   }
+  if (r.site) {
+    status.textContent = `Build montada no site: ${r.site.nome} (${CLASSES[r.site.classe] || r.site.classe}).`;
+    desenharImportarDoSite(texto, r.site);
+    return;
+  }
   status.textContent = r.builds.length > 1
     ? `Esse link tem ${r.builds.length} builds. Escolha uma e o perfil (cada perfil é uma variação da build).`
     : "Escolha o perfil (cada perfil é uma variação da build).";
@@ -898,12 +903,25 @@ function desenharOpcoesDeImportar(builds, escolhida) {
   );
 }
 
-async function importarMaxroll(b, perfil, apelido, botao) {
+// Link do "Montar build" do site: a build já vem pronta, só falta o nome curto.
+function desenharImportarDoSite(texto, site) {
+  const apelido = el("input", { name: "apelido", value: site.apelido, autocomplete: "off", maxlength: "40" });
+  const botao = el("button", { type: "button", class: "botao" }, "Importar");
+  botao.addEventListener("click", () => importarMaxroll(null, 0, apelido.value, botao, texto));
+  trocar(document.getElementById("importar-opcoes"),
+    el("div", { class: "importar-campos" },
+      el("label", { class: "campo" }, el("span", { class: "campo-nome" }, "Nome curto na janela e no selo"), apelido),
+      botao));
+}
+
+async function importarMaxroll(b, perfil, apelido, botao, linkDoSite = null) {
   const status = document.getElementById("importar-status");
   botao.disabled = true;
   status.className = "importar-status";
   status.textContent = "Importando…";
-  const r = await estado.api.importar_maxroll(b.numero, perfil, apelido);
+  const r = linkDoSite
+    ? await estado.api.importar_do_site(linkDoSite, apelido)
+    : await estado.api.importar_maxroll(b.numero, perfil, apelido);
   botao.disabled = false;
   if (r.erro) {
     status.className = "importar-status erro";

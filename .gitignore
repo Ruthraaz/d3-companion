@@ -11,6 +11,8 @@ capturas/
 
 # Dados da API da Blizzard guardados pelo app (src/blizzard.py)
 dados/
+# ...menos os dados do jogo que o site usa (nomes e códigos de ícone, ferramentas/dados_do_site.py)
+!docs/dados/
 
 # Gerados por ferramentas/empacotar.py (o .exe vai pra Release, não pro Git)
 build/
