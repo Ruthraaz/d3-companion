@@ -35,6 +35,8 @@ from pathlib import Path
 
 from dotenv import dotenv_values
 
+from rede import RespostaGrande, ler
+
 RAIZ = Path(__file__).resolve().parent.parent
 ARQUIVO_ENV = RAIZ / ".env"
 PASTA_CACHE = RAIZ / "dados" / "blizzard"
@@ -116,9 +118,11 @@ class Blizzard:
     def _ler(self, pedido) -> dict | list:
         try:
             with self._abrir(pedido, timeout=20) as r:
-                return json.load(r)
+                return json.loads(ler(r))
         except urllib.error.HTTPError:
             raise
+        except RespostaGrande as e:
+            raise ErroBlizzard("A Blizzard mandou uma resposta grande demais; o app não abriu.") from e
         except (urllib.error.URLError, TimeoutError, OSError) as e:
             raise ErroBlizzard("Não consegui falar com a Blizzard. Está sem internet?") from e
 

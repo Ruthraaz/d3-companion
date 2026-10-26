@@ -356,6 +356,19 @@ Como funciona sem pesar no jogo:
 - **Alarme falso não suja o histórico:** no automático, uma "dica" que não deu pra ler não vai pro histórico nem salva print em `capturas/`.
 - **Uma trava** impede o F8 e o vigia de rodarem OCR ao mesmo tempo.
 
+## Segurança e privacidade
+
+O app não lida com senha nem dado de pagamento, mas mexe com chave da Blizzard, BattleTag e prints da tela. O que ele faz pra cuidar disso (revisado em 26/10/2026, testes em `tests/test_seguranca.py`):
+
+- **Chaves da Blizzard** só no `.env`, que nunca vai pro Git (o histórico inteiro foi conferido). A janela não consegue ler nem gravar as chaves: só as configurações da lista (`CHAVES` em `src/config.py`), e cada valor é validado — uma quebra de linha não vira outra linha no `.env`.
+- **O jogo:** só olha a tela. Nada de ler memória, injetar DLL ou mexer no DirectX.
+- **Prints:** ficam só no seu PC (`capturas/`, fora do Git) e o app guarda **só os 200 mais novos**; os mais antigos são apagados sozinhos. O print "sem dica" é a tela inteira, por isso não fica pra sempre.
+- **Internet:** só HTTPS, com certificado conferido, e só com o Maxroll e a Blizzard. Cada resposta tem limite de 20 MB (`src/rede.py`).
+- **BattleTag:** só letras e números antes do `#`, então não dá pra montar outro endereço na API da Blizzard com ela. O perfil do herói nunca é guardado em disco.
+- **Links:** o app só abre no navegador endereços `https://maxroll.gg/...` (sem porta, usuário, espaço ou caractere escondido).
+- **Janela:** monta tudo com `textContent` (nunca `innerHTML`) e tem *Content-Security-Policy*: só os arquivos do app e os ícones do servidor da Blizzard. O `'unsafe-eval'` é exigência do pywebview.
+- **Dependências** com versão fixa no `requirements.txt` e conferidas na base de falhas conhecidas (OSV). O Pillow foi de 10.4.0 (com dezenas de falhas conhecidas) para 13.0.0.
+
 ## Como rodar (Windows)
 
 O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes prontos para as versões fixadas no `requirements.txt` (Pillow 10.4, NumPy 1.26).

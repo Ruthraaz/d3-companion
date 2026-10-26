@@ -32,6 +32,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from rede import RespostaGrande, ler
+
 RAIZ = Path(__file__).resolve().parent.parent
 PASTA_CACHE = RAIZ / "dados" / "maxroll"
 URL_PLANNER = "https://planners.maxroll.gg/profiles/load/d3/{}"
@@ -106,7 +108,9 @@ def planners_do_link(texto: str, abrir=urllib.request.urlopen) -> list[int]:
         return [id_do_link(texto)]
     try:
         with abrir(urllib.request.Request(guia, headers=CABECALHO), timeout=30) as r:
-            html = r.read().decode("utf-8", "replace")
+            html = ler(r).decode("utf-8", "replace")
+    except RespostaGrande as e:
+        raise ErroMaxroll("O Maxroll mandou uma resposta grande demais; o app não abriu.") from e
     except urllib.error.HTTPError as e:
         if e.code == 404:
             raise ErroMaxroll("Esse guia não existe no Maxroll. O link está certo?") from e
@@ -159,8 +163,8 @@ def catalogo(pasta: Path = PASTA_CACHE, abrir=urllib.request.urlopen, atualizar:
         return guardado["guias"]
     try:
         with abrir(urllib.request.Request(URL_MAPA_DO_SITE, headers=CABECALHO), timeout=30) as r:
-            mapa = r.read().decode("utf-8", "replace")
-    except (urllib.error.URLError, TimeoutError, OSError) as e:
+            mapa = ler(r).decode("utf-8", "replace")
+    except (urllib.error.URLError, TimeoutError, OSError, RespostaGrande) as e:
         if guardado:
             return guardado["guias"]
         raise ErroMaxroll("Não consegui falar com o Maxroll. Está sem internet?") from e
@@ -196,7 +200,9 @@ def builds_do_heroi(planners: list[dict], texto: str) -> list[dict]:
 def _baixar(url: str, abrir=urllib.request.urlopen):
     try:
         with abrir(urllib.request.Request(url, headers=CABECALHO), timeout=30) as r:
-            return json.load(r)
+            return json.loads(ler(r))
+    except RespostaGrande as e:
+        raise ErroMaxroll("O Maxroll mandou uma resposta grande demais; o app não abriu.") from e
     except urllib.error.HTTPError as e:
         if e.code == 404:
             raise ErroMaxroll("O Maxroll não achou essa build. O link está certo e a build é pública?") from e

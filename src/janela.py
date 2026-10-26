@@ -50,6 +50,7 @@ from heroi import comparar, herois, heroi
 from maxroll import (ErroMaxroll, baixar_planner, builds_do_heroi, catalogo, classe_do_planner,
                      link_de_guia, montar, nomes_dos_perfis, planners_do_link, salvar_build)
 from nucleo import PASTA_CAPTURAS, dica_do_mistico
+from rede import link_seguro
 
 PASTA_SRC = Path(__file__).resolve().parent
 PAGINA = PASTA_SRC / "web" / "index.html"
@@ -162,8 +163,9 @@ class Api:
 
     def abrir_link(self, url: str) -> None:
         """Abre o guia da build no navegador do Windows (não dentro da janela).
-        Só links do Maxroll: o endereço vem do arquivo da build."""
-        if isinstance(url, str) and url.startswith("https://maxroll.gg/"):
+        Só links do Maxroll: o endereço vem do arquivo da build (que pode ter
+        sido editado à mão), então confere tudo antes de passar pro Windows."""
+        if link_seguro(url):
             webbrowser.open(url)
 
     def herois(self, battletag: str) -> dict:

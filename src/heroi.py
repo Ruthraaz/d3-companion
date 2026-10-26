@@ -36,8 +36,11 @@ QUALIDADE = re.compile(r"^((?:Primal )?(?:Ancient )?(?:Legendary|Set|Rare|Magic)
 
 
 def conta_da_battletag(texto: str) -> str:
-    """"Arthur#1234" -> "Arthur-1234" (como a API quer). Erro claro se não parecer BattleTag."""
-    m = re.fullmatch(r"\s*([^\s#-]{2,12})\s*[#-]\s*(\d{3,6})\s*", texto or "")
+    """"Arthur#1234" -> "Arthur-1234" (como a API quer). Erro claro se não parecer BattleTag.
+
+    Nome só com letras (com acento) e números, como a Battle.net exige: assim "/",
+    "." ou "?" nunca entram no endereço da API (não dá pra cair em outra página dela)."""
+    m = re.fullmatch(r"\s*([^\W_]{2,12})\s*[#-]\s*(\d{3,6})\s*", texto or "")
     if not m:
         raise ErroBlizzard("Escreva a BattleTag com o número, ex.: Arthur#1234 "
                            "(aparece no canto do app da Battle.net).")
@@ -56,7 +59,7 @@ def _pegar(api: Blizzard, caminho: str) -> dict:
 
 def herois(api: Blizzard, battletag: str) -> list[dict]:
     """Os heróis da conta, do jogado mais recente pro mais antigo."""
-    conta = urllib.parse.quote(conta_da_battletag(battletag))
+    conta = urllib.parse.quote(conta_da_battletag(battletag), safe="")
     perfil = _pegar(api, f"/d3/profile/{conta}/")
     lista = [{
         "id": h["id"],
@@ -100,7 +103,7 @@ def item_do_perfil(dados: dict, espaco: str) -> dict:
 
 def heroi(api: Blizzard, battletag: str, id_heroi: int) -> dict:
     """Um herói com os itens equipados (por lugar da API) e as habilidades."""
-    conta = urllib.parse.quote(conta_da_battletag(battletag))
+    conta = urllib.parse.quote(conta_da_battletag(battletag), safe="")
     dados = _pegar(api, f"/d3/profile/{conta}/hero/{int(id_heroi)}")
     itens = _pegar(api, f"/d3/profile/{conta}/hero/{int(id_heroi)}/items")
     skills = dados.get("skills") or {}

@@ -21,6 +21,19 @@ from ocr import ler_texto
 from parser import interpretar
 
 PASTA_CAPTURAS = Path(__file__).resolve().parent.parent / "capturas"
+# Imagens guardadas em capturas/ (as mais novas). O print "sem dica" é a tela
+# inteira e pode pegar outras janelas: não fica pra sempre no PC.
+MAXIMO_DE_CAPTURAS = 200
+
+
+def limpar_capturas(pasta: Path = PASTA_CAPTURAS, maximo: int = MAXIMO_DE_CAPTURAS) -> int:
+    """Apaga as imagens mais antigas de capturas/ além das `maximo` mais novas.
+    Só .png com nome de data (as do app); o histórico e o resto ficam. Devolve quantas apagou."""
+    imagens = sorted(p for p in pasta.glob("[0-9]*_[0-9]*.png") if p.is_file())
+    velhas = imagens[:-maximo] if maximo > 0 else imagens
+    for p in velhas:
+        p.unlink(missing_ok=True)
+    return len(velhas)
 
 
 def processo_vivo(pid: int) -> bool:
@@ -69,6 +82,7 @@ def avaliar_print(imagem: Image.Image, cursor: tuple[int, int] | None,
         if salvar and salvar_sem_dica:
             av.arquivo = PASTA_CAPTURAS / f"{carimbo}_sem_dica.png"
             imagem.save(av.arquivo)
+            limpar_capturas()
     else:
         bgr = cv2.cvtColor(np.array(imagem.convert("RGB")), cv2.COLOR_RGB2BGR)
         av.grupo = grupo_de_dicas(bgr, av.caixa)
@@ -76,6 +90,7 @@ def avaliar_print(imagem: Image.Image, cursor: tuple[int, int] | None,
         if salvar:
             av.arquivo = PASTA_CAPTURAS / f"{carimbo}.png"
             recorte.save(av.arquivo)
+            limpar_capturas()
         try:
             av.item = interpretar(ler_texto(recorte, ampliar=AMPLIAR))
             av.resultados = avaliar_todas(av.item, builds)

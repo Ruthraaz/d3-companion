@@ -153,6 +153,13 @@ trabalho extra agora, não feche essa porta:
 - `python src/blizzard.py` confere os itens/gemas das builds contra o índice (com sugestão).
 - Testes com uma Blizzard falsa (`FalsaBlizzard`), sem internet nem chaves.
 
+### Segurança (26/10/2026) — notas
+- Pente fino pedido pelo Arthur. Tudo em `tests/test_seguranca.py`; resumo no README ("Segurança e privacidade").
+- `src/rede.py`: `ler()` (limite de 20 MB em toda resposta) e `link_seguro()` (abrir_link só https://maxroll.gg).
+- BattleTag: nome `[^\W_]{2,12}` + `quote(safe="")` (antes "/" e "." passavam pro caminho da API).
+- `capturas/`: `limpar_capturas()` guarda só as 200 imagens mais novas (o print sem dica é a tela inteira).
+- Pillow 10.4.0 → 13.0.0 (OSV: dezenas de CVEs na 10.4; 0 na 13.0). Conferir de novo antes de cada versão do .exe.
+
 ### Meu herói (BattleTag, 8g) — notas
 - `src/heroi.py`: API de perfil `/d3/profile/{Nome-1234}/`, `/hero/{id}`, `/hero/{id}/items`. Funciona com o
   token client_credentials (não precisa de login do jogador). 404 `NOTFOUND` = BattleTag errada/outra região.
