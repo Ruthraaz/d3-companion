@@ -162,6 +162,17 @@ trabalho extra agora, não feche essa porta:
   `--overlay` sobe (parou na trava porque o overlay do Arthur estava aberto). Zip ~133 MB.
 - Sem assinatura digital: SmartScreen avisa (explicado no LEIA-ME.txt e no site).
 
+### Habilidades e seguidor (26/10/2026) — notas
+- Pedido do Arthur (com prints do d4builds e das janelas do jogo): a roda é **só das gemas** (p0/p2/p4);
+  cubo virou 3 cartas embaixo do boneco. Sub-abas novas **Habilidades** (estilo janela Skills: mouse,
+  barra 1–4, passivas) e **Seguidor** (estilo painel do Templário: itens + 4 habilidades por nível).
+- `maxroll.seguidor_do_perfil`: `follower` + `followerItems` + `followerSkills`. data.json do Maxroll tem
+  `followerSkills[código].id` = slug da Blizzard (cache subiu pra VERSAO 3). Sem ele, guarda o código em
+  minúsculas, que é igual ao `icon` da Blizzard: `_visual_do_seguidor` acha por slug ou por ícone.
+- `Blizzard.seguidor(quem)` (`/d3/data/follower/templar`, pt_BR: Templário, Vigarista, Sibila).
+- Ícones do seguidor: `skills/64/<icon>.png` (conferido: 200).
+- Detalhe do lado: aparece em Equipamento e Habilidades; em Habilidades começa na 1ª habilidade.
+
 ### Builds de cada um + Paragon (26/10/2026) — notas
 - Pedido do Arthur: builds que vinham no app estavam bugadas (faltando itens). Agora o app **não traz builds**:
   `builds/*.json` no .gitignore (só `builds/exemplos/` no Git), o .exe não empacota `builds/` (antes empacotava

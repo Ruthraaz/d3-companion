@@ -56,6 +56,9 @@ CLASSES = {
 }
 
 
+SEGUIDORES = ("templar", "scoundrel", "enchantress")
+
+
 class ErroBlizzard(Exception):
     """Erro com mensagem em português, pronta pra mostrar ao Arthur."""
 
@@ -189,6 +192,22 @@ class Blizzard:
                  "nivel": r.get("level")}
                 for r in en.get("runes", [])]
 
+    def seguidor(self, quem: str) -> dict:
+        """O seguidor ("templar"): nome_pt e as habilidades (slug, nome, nome_pt,
+        nivel, icone, descricao_pt, codigo = nome do ícone, igual ao código do Maxroll)."""
+        if quem not in SEGUIDORES:
+            raise ErroBlizzard(f"Seguidor {quem!r} não existe. Opções: {', '.join(SEGUIDORES)}.")
+        caminho = f"/d3/data/follower/{quem}"
+        en, pt = self.pegar(caminho, "en_US"), self.pegar(caminho, "pt_BR")
+        em_pt = {h["slug"]: h for h in pt.get("skills", [])}
+        return {"quem": quem, "nome": en.get("name"), "nome_pt": pt.get("name") or en.get("name"),
+                "habilidades": [{
+                    "slug": h["slug"], "codigo": h.get("icon", ""),
+                    "nome": h["name"], "nome_pt": em_pt.get(h["slug"], h)["name"],
+                    "nivel": h.get("level"), "icone": icone_da_habilidade(h["icon"]),
+                    "descricao_pt": em_pt.get(h["slug"], h).get("description", ""),
+                } for h in en.get("skills", [])]}
+
     # ------------------------------------------------------------ itens
 
     def indice_de_itens(self) -> dict[str, dict]:
@@ -236,6 +255,7 @@ def visual_da_build(build: dict, api: "Blizzard") -> dict:
     indice = api.indice_de_itens()
     nomes = [n for e in build.get("espacos", {}).values() for n in e.get("itens", [])]
     nomes += list(build.get("cubo", {}).values()) + build.get("gemas", [])
+    nomes += list((build.get("seguidor") or {}).get("itens", {}).values())
     itens = {}
     for nome in nomes:
         achado = indice.get(chave_do_nome(nome))
@@ -259,7 +279,25 @@ def visual_da_build(build: dict, api: "Blizzard") -> dict:
         for slug in escolhidas.get("passivas", []):
             habilidades["passivas"].append(por_slug.get(slug) or {
                 "slug": slug, "nome": slug, "nome_pt": slug, "icone": None, "descricao_pt": ""})
-    return {"itens": itens, "habilidades": habilidades}
+    return {"itens": itens, "habilidades": habilidades, "seguidor": _visual_do_seguidor(build, api)}
+
+
+def _visual_do_seguidor(build: dict, api: "Blizzard") -> dict | None:
+    """Nome em português e as habilidades escolhidas (na ordem do nível).
+    A build guarda o slug ("guardian") ou o código do Maxroll ("templar_cheatdeath_passive")."""
+    escolhido = build.get("seguidor")
+    if not escolhido:
+        return None
+    try:
+        dele = api.seguidor(escolhido["quem"])
+    except ErroBlizzard:
+        return None
+    achar = {h["codigo"].lower(): h for h in dele["habilidades"]} | {h["slug"]: h for h in dele["habilidades"]}
+    habilidades = [achar.get(s.lower()) or {"slug": s, "nome": s, "nome_pt": s, "nivel": None, "icone": None,
+                                            "descricao_pt": ""}
+                   for s in escolhido.get("habilidades", [])]
+    habilidades.sort(key=lambda h: h["nivel"] or 99)
+    return {"nome": dele["nome"], "nome_pt": dele["nome_pt"], "habilidades": habilidades}
 
 
 def itens_desconhecidos(build: dict, indice: dict[str, dict]) -> list[str]:

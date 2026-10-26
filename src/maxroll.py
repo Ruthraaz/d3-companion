@@ -40,7 +40,7 @@ PASTA_CACHE = PASTA_DADOS / "maxroll"
 URL_PLANNER = "https://planners.maxroll.gg/profiles/load/d3/{}"
 URL_DADOS = "https://assets-ng.maxroll.gg/d3planner/data.json"
 URL_MAPA_DO_SITE = "https://maxroll.gg/d3/sitemap.xml"
-VERSAO_DO_CACHE = 2  # sobe quando o que guardamos do data.json muda
+VERSAO_DO_CACHE = 3  # sobe quando o que guardamos do data.json muda
 CABECALHO = {"User-Agent": "D3Companion/1.0 (app pessoal; uma build por vez)"}
 
 # classe do Maxroll -> (classe nas builds, atributo principal, rótulo, chave do atributo no Maxroll)
@@ -78,6 +78,13 @@ ESPACOS = {
     "mainhand": "Weapon", "offhand": "Off-Hand",
 }
 CUBO = {"weapon": "arma", "armor": "armadura", "jewelry": "joia"}
+# Espaço do seguidor no Maxroll -> na build. Os anéis ficam separados e "follower" é a relíquia.
+ESPACOS_DO_SEGUIDOR = {
+    "head": "Head", "shoulders": "Shoulders", "neck": "Neck", "torso": "Torso",
+    "hands": "Hands", "wrists": "Wrists", "waist": "Waist", "legs": "Legs", "feet": "Feet",
+    "leftfinger": "FingerL", "rightfinger": "FingerR", "mainhand": "Weapon", "offhand": "Off-Hand",
+    "follower": "Relic",
+}
 RUNAS = ("a", "b", "c", "d", "e")
 
 
@@ -180,6 +187,7 @@ def catalogo(pasta: Path = PASTA_CACHE, abrir=urllib.request.urlopen, atualizar:
     return guias
 
 
+SEGUIDORES_DO_JOGO = ("templar", "scoundrel", "enchantress")
 SEGUIDORES = re.compile(r"enchantress|templar|scoundrel|follower", re.I)
 
 
@@ -253,7 +261,10 @@ def dados_do_planejador(pasta: Path = PASTA_CACHE, abrir=urllib.request.urlopen)
                # Texto de cada afixo, igual ao do jogo: "Critical Hit Chance Increased by %.1f%%".
                "stats": {k: {"name": v.get("name"), "format": v.get("format"),
                              "secondary": bool(v.get("secondary")), "args": v.get("args")}
-                         for k, v in dados.get("stats", {}).items() if isinstance(v, dict)}}
+                         for k, v in dados.get("stats", {}).items() if isinstance(v, dict)},
+               # Habilidade do seguidor: código do Maxroll -> slug da Blizzard ("guardian") e nível.
+               "followerSkills": {k: {"id": v.get("id"), "level": v.get("level")}
+                                  for k, v in dados.get("followerSkills", {}).items() if isinstance(v, dict)}}
     pasta.mkdir(parents=True, exist_ok=True)
     arquivo.write_text(json.dumps(pequeno, ensure_ascii=False), encoding="utf-8")
     return pequeno
@@ -418,9 +429,31 @@ def converter(planner: dict, dados: dict, habilidades_da_classe: dict | None = N
         # Mesma ordem do jogo: Principal (atributo, Vitalidade, Velocidade, Recurso máx.),
         # Ataque, Defesa e Utilidade.
         build["paragon"] = {"nivel": int(paragon.get("level") or 0), "pontos": pontos}
+    seguidor = seguidor_do_perfil(p, dados)
+    if seguidor:
+        build["seguidor"] = seguidor
     if desconhecidos:
         build["_itens_nao_reconhecidos"] = desconhecidos
     return build
+
+
+def seguidor_do_perfil(p: dict, dados: dict) -> dict | None:
+    """O seguidor que o guia escolheu: quem é, os itens dele e as 4 habilidades
+    (slug da Blizzard; sem o data.json novo, o código do Maxroll em minúsculas,
+    que é o nome do ícone na Blizzard). Item que o app não conhece fica de fora."""
+    quem = p.get("follower")
+    if quem not in SEGUIDORES_DO_JOGO:
+        return None
+    itens = {}
+    for espaco_mx, item in (p.get("followerItems") or {}).items():
+        if espaco_mx in ESPACOS_DO_SEGUIDOR and item and item.get("id"):
+            nome = _nome_do_item(item["id"], dados)
+            if nome:
+                itens[ESPACOS_DO_SEGUIDOR[espaco_mx]] = nome
+    conhecidas = dados.get("followerSkills", {})
+    habilidades = [(conhecidas.get(c) or {}).get("id") or c.lower()
+                   for c in (p.get("followerSkills") or []) if isinstance(c, str) and c][:4]
+    return {"quem": quem, "itens": itens, "habilidades": habilidades}
 
 
 def nome_do_arquivo(build: dict) -> str:

@@ -41,6 +41,14 @@ RESPOSTAS = {
     "/d3/data/hero/demon-hunter/skill/multishot?locale=pt_BR": {"skill": {}, "runes": [
         {"slug": "full broadside", "type": "a", "name": "Banda de Artilharia", "description": "Mais dano"},
         {"slug": "arsenal", "type": "c", "name": "Arsenal", "description": "Foguetes"}]},
+    "/d3/data/follower/templar?locale=en_US": {"slug": "templar", "name": "Templar", "skills": [
+        {"slug": "heal", "name": "Heal", "icon": "templar_heal_110", "level": 5, "description": "Heals"},
+        {"slug": "onslaught", "name": "Onslaught", "icon": "templar_onslaught_v2", "level": 15, "description": "Charge"},
+        {"slug": "guardian", "name": "Guardian", "icon": "templar_cheatdeath_passive", "level": 20, "description": "Saves"}]},
+    "/d3/data/follower/templar?locale=pt_BR": {"slug": "templar", "name": "Templário", "skills": [
+        {"slug": "heal", "name": "Cura", "icon": "templar_heal_110", "level": 5, "description": "Cura"},
+        {"slug": "onslaught", "name": "Investida", "icon": "templar_onslaught_v2", "level": 15, "description": "Avança"},
+        {"slug": "guardian", "name": "Guardião", "icon": "templar_cheatdeath_passive", "level": 20, "description": "Salva"}]},
     "/d3/data/item-type?locale=en_US": [{"path": "item-type/ring"}, {"path": "item-type/gem"}],
     "/d3/data/item-type/ring?locale=en_US": [
         {"id": "Unique_Ring_021_x1", "name": "Litany of the Undaunted", "icon": "litany", "path": "item/litany"}],
@@ -161,6 +169,22 @@ class TestVisualDaBuild(unittest.TestCase):
                  "habilidades": {"ativas": [{"habilidade": "multishoot", "runa": "a"}], "passivas": []}}
         [h] = visual_da_build(build, self.api)["habilidades"]["ativas"]
         self.assertEqual((h["nome"], h["icone"], h["runa"]), ("multishoot", None, None))
+
+    def test_seguidor_em_portugues_na_ordem_do_nivel(self):
+        build = {"classe": "Demon Hunter", "espacos": {},
+                 "seguidor": {"quem": "templar", "itens": {"Relic": "Litany of the Undaunted"},
+                              "habilidades": ["guardian", "templar_onslaught_v2", "heal", "inventada"]}}
+        v = visual_da_build(build, self.api)
+        s = v["seguidor"]
+        self.assertEqual(s["nome_pt"], "Templário")
+        # Acha pelo slug ou pelo código do Maxroll; a que não existe aparece por último, sem ícone.
+        self.assertEqual([h["nome_pt"] for h in s["habilidades"]], ["Cura", "Investida", "Guardião", "inventada"])
+        self.assertTrue(s["habilidades"][0]["icone"].endswith("/skills/64/templar_heal_110.png"))
+        self.assertIsNone(s["habilidades"][3]["icone"])
+        self.assertIn("Litany of the Undaunted", v["itens"])  # o ícone do item do seguidor também vem
+
+    def test_build_sem_seguidor(self):
+        self.assertIsNone(visual_da_build({"classe": "Demon Hunter", "espacos": {}}, self.api)["seguidor"])
 
     def test_build_sem_habilidades_nem_pede_a_classe(self):
         falsa = FalsaBlizzard()

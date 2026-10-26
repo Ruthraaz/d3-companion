@@ -283,6 +283,21 @@ Clicar numa habilidade mostra no painel da direita a descrição em português e
 - **Habilidades:** o código da Blizzard em inglês com hífen (`smoke-screen`), até 6 ativas e 4 passivas, na ordem botão esquerdo, botão direito, 1, 2, 3, 4.
 - **Runa:** uma letra de `a` a `e`, a mesma que a Blizzard e o Maxroll usam.
 
+## Habilidades e seguidor
+
+A aba Builds tem as sub-abas **Equipamento · Habilidades · Seguidor · Paragon · Ao upar**:
+
+- **Equipamento:** os itens em volta de uma roda que é **só das 3 gemas lendárias** (como as runas no d4builds). O **Cubo de Kanai** fica embaixo, em três cartas (Arma, Armadura, Joia).
+- **Habilidades:** no formato da janela de Skills do jogo: *Habilidades do mouse* (primária e secundária), *Barra de ação* (teclas 1 a 4), cada uma com a runa, e as 4 *Passivas*. Clicar numa mostra, ao lado, o que ela e a runa fazem.
+- **Seguidor:** quem é (Templário, Vigarista ou Sibila), os itens dele e as 4 habilidades na ordem do nível em que se escolhe (5, 10, 15, 20), com o texto em português.
+
+O seguidor vem do perfil do Maxroll (`follower`, `followerItems`, `followerSkills`) e fica na build assim:
+```json
+"seguidor": { "quem": "templar", "itens": { "Head": "Leoric's Crown", "FingerL": "Unity", "Relic": "Enchanting Favor" },
+              "habilidades": ["heal", "loyalty", "onslaught", "guardian"] }
+```
+Espaços do seguidor: os mesmos do herói, com os anéis separados (`FingerL`, `FingerR`) e a relíquia (`Relic`). Os nomes e ícones das habilidades vêm da API da Blizzard (`/d3/data/follower/<quem>`). Build importada antes disto não tem seguidor: é só colar o link de novo.
+
 ## Ao upar e paragon
 
 Embaixo da barra de habilidades da aba Builds:

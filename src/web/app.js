@@ -348,7 +348,7 @@ async function carregarVisual(build) {
 
 function visualDa(build) {
   const v = estado.visual[build.id];
-  return v && v !== "carregando" ? v : { itens: {}, habilidades: { ativas: [], passivas: [] }, carregando: v === "carregando" };
+  return v && v !== "carregando" ? v : { itens: {}, habilidades: { ativas: [], passivas: [] }, seguidor: null, carregando: v === "carregando" };
 }
 
 function iconeDoItem(nome) {
@@ -414,28 +414,27 @@ const PARTES_DO_CUBO = { arma: "Arma", armadura: "Armadura", joia: "Joia" };
 function desenharExtras() {
   const build = estado.builds[estado.build];
   const cubo = build.cubo || {};
-  trocar(document.getElementById("cubo"), Object.keys(cubo).length
-    ? Object.entries(PARTES_DO_CUBO).filter(([parte]) => cubo[parte]).map(([parte, rotulo]) =>
-        el("div", { class: "mini-item", title: `${rotulo}: ${cubo[parte]}` },
-          icone(iconeDoItem(cubo[parte]), "icone-mini"),
-          el("span", {}, el("span", { class: "mini-rotulo" }, rotulo), cubo[parte])))
-    : el("p", { class: "nada" }, "A build não diz."));
+  // Cubo de Kanai: os 3 poderes, como as 3 casas do cubo no jogo.
+  trocar(document.getElementById("cubo"), Object.entries(PARTES_DO_CUBO).map(([parte, rotulo]) =>
+    el("div", { class: "cubo-carta" + (cubo[parte] ? "" : " vazio"), title: cubo[parte] ? `${rotulo}: ${cubo[parte]}` : "" },
+      icone(cubo[parte] && iconeDoItem(cubo[parte]), "icone-cubo"),
+      el("div", {},
+        el("p", { class: "cubo-rotulo" }, rotulo),
+        el("p", { class: "cubo-nome" + (cubo[parte] ? " t-lendario" : " mudo") }, cubo[parte] || "a build não diz")))));
   trocar(document.getElementById("gemas"), build.gemas.length
     ? build.gemas.map(g => el("div", { class: "mini-item", title: g },
         icone(iconeDoItem(g), "icone-mini"), el("span", { class: "t-lendario" }, g)))
     : el("p", { class: "nada" }, "A build não diz."));
 
-  // A roda: os 3 poderes do cubo em cima e as 3 gemas embaixo.
-  const no = (nome, tipo, pos, rotulo) => {
+  // A roda é só das gemas lendárias (como as runas no d4builds): 3 casas em triângulo.
+  const no = (nome, pos) => {
     const url = nome && iconeDoItem(nome);
-    return el("span", { class: `roda-no ${tipo} p${pos}` + (nome ? "" : " vazio"), title: nome ? `${rotulo}: ${nome}` : `${rotulo}: a build não diz` },
+    return el("span", { class: `roda-no gema p${pos}` + (nome ? "" : " vazio"), title: nome || "Gema: a build não diz" },
       url && el("img", { src: url, alt: "", draggable: "false", onerror: e => e.target.remove() }));
   };
-  const gemas = [0, 1, 2].map(i => build.gemas[i] || null);
   trocar(document.getElementById("roda"),
     el("span", { class: "roda-centro", "aria-hidden": "true" }),
-    no(cubo.arma, "cubo", 5, "Cubo · Arma"), no(cubo.armadura, "cubo", 0, "Cubo · Armadura"), no(cubo.joia, "cubo", 1, "Cubo · Joia"),
-    gemas.map((g, i) => no(g, "gema", [2, 3, 4][i], "Gema")));
+    [0, 1, 2].map(i => no(build.gemas[i] || null, [0, 2, 4][i])));
 }
 
 // Paragon na ordem do jogo: 4 grupos de 4 atributos (o 1º do Principal é o da classe).
@@ -451,28 +450,24 @@ const PARAGON = [
 ];
 const MAXIMO_DO_PARAGON = 50;  // por atributo, fora o atributo principal e a Vitalidade
 
-// Tecla de cada lugar da barra, na ordem em que o Maxroll guarda as habilidades
-// (botão esquerdo e direito do mouse, depois 1 a 4).
-const TECLAS = ["Esq.", "Dir.", "1", "2", "3", "4"];
+// Os 6 lugares da barra, na ordem do Maxroll: os dois do mouse e depois 1 a 4.
+const LUGARES = [["Primária", "Botão esquerdo"], ["Secundária", "Botão direito"],
+                 ["Tecla 1", "1"], ["Tecla 2", "2"], ["Tecla 3", "3"], ["Tecla 4", "4"]];
 
 function desenharHabilidades() {
   const build = estado.builds[estado.build];
   const v = visualDa(build);
   const escolhidas = build.habilidades || { ativas: [], passivas: [] };
   const vazio = !escolhidas.ativas.length && !escolhidas.passivas.length;
-  const botao = (tipo, i, h, rotulo) => el("button", {
-    class: "habilidade" + (h ? "" : " vazia")
-      + (estado.habilidade && estado.habilidade.tipo === tipo && estado.habilidade.i === i ? " selecionado" : ""),
-    ...(h ? {} : { disabled: "" }),  // el() grava qualquer valor; só põe quando vazio
-    title: h ? h.nome_pt + (nivelDe(h) ? ` · libera no nível ${nivelDe(h)}` : "") : "",
-    onclick: () => { estado.habilidade = { tipo, i }; desenharVisual(); },
-  },
-    icone(h && h.icone, tipo === "passivas" ? "icone-passiva" : "icone-habilidade"),
-    rotulo && el("span", { class: "tecla" }, rotulo),
-    el("span", { class: "habilidade-nome" }, h ? h.nome_pt : ""),
-    h && h.runa && el("span", { class: "habilidade-runa" }, h.runa.nome_pt),
-    h && nivelDe(h) && el("span", { class: "nivel-hab" }, `nível ${nivelDe(h)}`),
-  );
+  desenharParagon(build);
+  desenharSeguidor(build);
+  const janela = document.getElementById("janela-habilidades");
+  if (vazio) {
+    trocar(janela, el("p", { class: "nada" },
+      "Esta build ainda não tem habilidades. Elas vêm junto quando a build é importada do Maxroll."));
+    trocar(document.getElementById("ao-upar"), el("p", { class: "nada" }, "Sem habilidades na build."));
+    return;
+  }
 
   // Enquanto a Blizzard não respondeu, mostra o código da build (sem ícone).
   const daBuild = (tipo, i) => {
@@ -482,20 +477,98 @@ function desenharHabilidades() {
     const slug = typeof cru === "string" ? cru : cru.habilidade;
     return { slug, nome: slug, nome_pt: slug, icone: null, descricao_pt: "", runa: null };
   };
-  const ativas = document.getElementById("barra-ativas");
-  const passivas = document.getElementById("barra-passivas");
-  desenharParagon(build);
-  document.querySelector(".hab-grupo-passivas").hidden = vazio;
-  if (vazio) {
-    trocar(ativas, el("p", { class: "nada" },
-      "Esta build ainda não tem habilidades. Elas vêm junto quando a build é importada do Maxroll."));
-    trocar(passivas);
-    trocar(document.getElementById("ao-upar"), el("p", { class: "nada" }, "Sem habilidades na build."));
+  const escolhida = (tipo, i) => estado.habilidade && estado.habilidade.tipo === tipo && estado.habilidade.i === i;
+  const escolher = (tipo, i) => { estado.habilidade = { tipo, i }; desenharHabilidades(); desenharDetalhe(); };
+
+  const carta = i => {
+    const h = daBuild("ativas", i);
+    const [lugar, tecla] = LUGARES[i];
+    return el("button", {
+      type: "button", class: "carta-hab" + (h ? "" : " vazia") + (escolhida("ativas", i) ? " selecionado" : ""),
+      ...(h ? {} : { disabled: "" }),
+      onclick: () => escolher("ativas", i),
+    },
+      el("span", { class: "carta-lugar" }, lugar),
+      el("span", { class: "carta-corpo" },
+        icone(h && h.icone, "icone-habilidade"),
+        el("span", { class: "carta-texto" },
+          el("span", { class: "carta-nome" }, h ? h.nome_pt : "vazio"),
+          h && el("span", { class: "carta-runa" + (h.runa ? "" : " sem") }, h.runa ? h.runa.nome_pt : "sem runa"))),
+      el("span", { class: "carta-tecla" }, tecla),
+      h && nivelDe(h) && el("span", { class: "carta-nivel" }, `nível ${nivelDe(h)}`));
+  };
+  const passiva = i => {
+    const h = daBuild("passivas", i);
+    return el("button", {
+      type: "button", class: "passiva-jogo" + (h ? "" : " vazia") + (escolhida("passivas", i) ? " selecionado" : ""),
+      ...(h ? {} : { disabled: "" }),
+      title: h ? h.nome_pt + (nivelDe(h) ? ` · libera no nível ${nivelDe(h)}` : "") : "",
+      onclick: () => escolher("passivas", i),
+    }, icone(h && h.icone, "icone-passiva icone-grande"), el("span", {}, h ? h.nome_pt : "vazio"));
+  };
+
+  trocar(janela,
+    el("section", { class: "secao-jogo" },
+      el("h3", { class: "faixa-titulo" }, el("span", {}, "Habilidades do mouse")),
+      el("div", { class: "grade-cartas" }, [0, 1].map(carta))),
+    el("section", { class: "secao-jogo" },
+      el("h3", { class: "faixa-titulo" }, el("span", {}, "Barra de ação")),
+      el("div", { class: "grade-cartas" }, [2, 3, 4, 5].map(carta))),
+    el("section", { class: "secao-jogo" },
+      el("h3", { class: "faixa-titulo" }, el("span", {}, "Passivas")),
+      el("div", { class: "fila-passivas" }, [0, 1, 2, 3].map(passiva))),
+    el("p", { class: "nota" }, "Clique numa habilidade pra ver o que ela e a runa fazem."));
+  desenharAoUpar(v);
+}
+
+// ------------------------------------------------------------ seguidor
+
+const SEGUIDORES = { templar: "Templário", scoundrel: "Vigarista", enchantress: "Sibila" };
+const ESPACOS_DO_SEGUIDOR = [
+  ["Head", "Cabeça"], ["Shoulders", "Ombros"], ["Neck", "Amuleto"], ["Torso", "Peito"],
+  ["Hands", "Mãos"], ["Wrists", "Braçadeiras"], ["Waist", "Cintura"], ["Legs", "Pernas"],
+  ["Feet", "Pés"], ["FingerL", "Anel 1"], ["FingerR", "Anel 2"], ["Weapon", "Arma"],
+  ["Off-Hand", "Mão secundária"], ["Relic", "Relíquia"],
+];
+
+function desenharSeguidor(build) {
+  const caixa = document.getElementById("janela-seguidor");
+  const s = build.seguidor;
+  if (!s) {
+    trocar(caixa, el("p", { class: "nada" }, "Esta build não traz seguidor. As builds importadas do Maxroll trazem o seguidor ",
+      "do guia; se esta é de antes, cole o link de novo pra importar com ele."));
     return;
   }
-  trocar(ativas, TECLAS.map((tecla, i) => botao("ativas", i, daBuild("ativas", i), tecla)));
-  trocar(passivas, [0, 1, 2, 3].map(i => botao("passivas", i, daBuild("passivas", i), null)));
-  desenharAoUpar(v);
+  const v = visualDa(build);
+  const dele = v.seguidor;
+  const habilidades = dele ? dele.habilidades
+    : s.habilidades.map(slug => ({ slug, nome_pt: slug, nome: slug, nivel: null, icone: null, descricao_pt: "" }));
+  const itens = ESPACOS_DO_SEGUIDOR.filter(([chave]) => s.itens[chave]);
+
+  trocar(caixa,
+    el("div", { class: "seguidor-cabeca" },
+      el("p", { class: "seguidor-nome" }, (dele && dele.nome_pt) || SEGUIDORES[s.quem] || s.quem),
+      el("p", { class: "mudo" }, "O seguidor que o guia usa, com os itens e as 4 habilidades (uma a cada 5 níveis dele).")),
+    el("div", { class: "seguidor-grade" },
+      el("section", { class: "secao-jogo" },
+        el("h3", { class: "faixa-titulo" }, el("span", {}, "Itens")),
+        itens.length
+          ? el("ul", { class: "seguidor-itens" }, itens.map(([chave, rotulo]) =>
+              el("li", { title: s.itens[chave] },
+                icone(iconeDoItem(s.itens[chave]), "icone-mini"),
+                el("span", {}, el("span", { class: "mini-rotulo" }, rotulo), el("span", { class: "t-lendario" }, s.itens[chave])))))
+          : el("p", { class: "nada" }, "O guia não diz os itens.")),
+      el("section", { class: "secao-jogo" },
+        el("h3", { class: "faixa-titulo" }, el("span", {}, "Habilidades")),
+        el("ol", { class: "seguidor-habilidades" }, habilidades.map(h =>
+          el("li", {},
+            icone(h.icone, "icone-habilidade"),
+            el("div", {},
+              el("p", { class: "seguidor-nivel" }, h.nivel ? `Escolhida no nível ${h.nivel}` : "Habilidade"),
+              el("p", { class: "seguidor-hab-nome" }, h.nome_pt),
+              h.descricao_pt && el("p", { class: "descricao" }, h.descricao_pt))))))),
+    !dele && el("p", { class: "nota" }, v.carregando ? "Buscando nomes e ícones na Blizzard…" : "Sem nomes em português: falta a chave da Blizzard?"),
+  );
 }
 
 // Nível em que a habilidade fica do jeito da build (ela e a runa liberadas).
@@ -589,6 +662,9 @@ function etiquetas(lista, classe) {
 }
 
 function desenharDetalhe() {
+  // Na aba Habilidades o detalhe é sempre de uma habilidade (trocar de build limpa a escolha).
+  const sub = document.querySelector(".sub-aba.ativa");
+  if (!estado.habilidade && sub && sub.dataset.sub === "habilidades") estado.habilidade = { tipo: "ativas", i: 0 };
   if (estado.habilidade) return desenharDetalheDaHabilidade();
   const build = estado.builds[estado.build];
   const espaco = build.espacos[estado.espaco];
@@ -623,7 +699,7 @@ function desenharDetalheDaHabilidade() {
   }
   trocar(caixa,
     el("div", { class: "detalhe-slot" },
-      tipo === "passivas" ? "Passiva" : `Habilidade · tecla ${TECLAS[i]}`),
+      tipo === "passivas" ? "Passiva" : `Habilidade · ${LUGARES[i][0]} (${LUGARES[i][1]})`),
     el("div", { class: "detalhe-cabeca" },
       icone(h.icone, tipo === "passivas" ? "icone-passiva icone-grande" : "icone-habilidade icone-grande"),
       el("div", {},
@@ -1017,8 +1093,15 @@ function abertura(pct, texto, erro = false) {
 function abrirSubAba(nome) {
   document.querySelectorAll(".sub-aba").forEach(s => s.classList.toggle("ativa", s.dataset.sub === nome));
   document.querySelectorAll(".sub-painel").forEach(p => p.classList.toggle("ativo", p.id === `sub-${nome}`));
-  // O detalhe do lado é do equipamento e das habilidades: no paragon e no "ao upar" só atrapalha.
-  document.querySelector(".builds-grade").classList.toggle("sem-detalhe", nome !== "equipamento");
+  // O detalhe do lado é do equipamento e das habilidades: no resto só atrapalha.
+  document.querySelector(".builds-grade").classList.toggle("sem-detalhe", !["equipamento", "habilidades"].includes(nome));
+  // Nas habilidades o detalhe mostra uma habilidade (a 1ª, se nenhuma foi clicada); no equipamento, o espaço.
+  const build = estado.builds[estado.build];
+  if (!build) return;
+  if (nome === "habilidades" && !estado.habilidade) estado.habilidade = { tipo: "ativas", i: 0 };
+  if (nome === "equipamento") estado.habilidade = null;
+  desenharHabilidades();
+  desenharDetalhe();
 }
 
 if (window.pywebview && window.pywebview.api) {
@@ -1070,6 +1153,9 @@ function apiDeExemplo() {
                guia: "https://maxroll.gg/d3/guides/ue-multishot-demon-hunter-guide" },
       cubo: { arma: "Odyssey's End", armadura: "Mantle of Channeling", joia: "Ring of Royal Grandeur" },
       paragon: { nivel: 5000, pontos: [[3950, 400, 50, 0], [50, 50, 50, 50], [50, 50, 50, 50], [50, 50, 50, 50]] },
+      seguidor: { quem: "templar", habilidades: ["heal", "loyalty", "onslaught", "guardian"],
+                  itens: { Head: "Leoric's Crown", FingerL: "Unity", Weapon: "Thunderfury, Blessed Blade of the Windseeker",
+                           Relic: "Enchanting Favor" } },
       habilidades: {
         ativas: ["entangling-shot", "multishot", "strafe", "preparation", "smoke-screen", "vengeance"]
           .map(habilidade => ({ habilidade, runa: "a" })),
@@ -1212,5 +1298,10 @@ function visualDeExemplo(build) {
       ativas: h.ativas.map(a => ({ ...habilidade(a.habilidade), runa: { letra: "a", nome: "Rune", nome_pt: "Runa de exemplo", descricao_pt: "O que a runa muda.", nivel: 30 } })),
       passivas: h.passivas.map(p => habilidade(p, true)),
     },
+    seguidor: build.seguidor ? { nome: "Templar", nome_pt: "Templário", habilidades: [
+      ["Cura", 5, "templar_heal_110"], ["Lealdade", 10, "templar_loyalty"],
+      ["Investida", 15, "templar_onslaught_v2"], ["Guardião", 20, "templar_cheatdeath_passive"],
+    ].map(([nome_pt, nivel, i]) => ({ nome_pt, nome: nome_pt, nivel, icone: `${ICONES}/skills/64/${i}.png`,
+                                     descricao_pt: "Descrição de exemplo (no app vem da Blizzard, em português)." })) } : null,
   };
 }

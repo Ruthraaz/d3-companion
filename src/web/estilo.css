@@ -520,7 +520,7 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
 .espaco-icone { position: relative; flex-shrink: 0; }
 .espaco-icone .selo-ancient { right: -4px; bottom: -4px; }
 
-/* Roda no meio: cubo de Kanai em cima, gemas embaixo (desenho próprio, só CSS). */
+/* Roda no meio, só das gemas lendárias (desenho próprio, só CSS). */
 .centro-equip { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .roda {
   position: relative;
@@ -551,8 +551,7 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
   overflow: hidden;
 }
 .roda-no img { width: 80%; height: 80%; object-fit: contain; }
-.roda-no.cubo { border-color: rgba(240, 140, 46, .55); }
-.roda-no.gema { border-color: rgba(66, 211, 94, .35); }
+.roda-no.gema { width: 62px; height: 62px; margin: -31px 0 0 -31px; border-color: rgba(66, 211, 94, .45); }
 .roda-no.vazio { opacity: .35; border-style: dashed; }
 .roda-centro {
   position: absolute; left: 50%; top: 50%;
@@ -570,11 +569,11 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
   border: 1px solid rgba(242, 196, 131, .6);
   border-radius: 3px;
 }
-/* 6 pontos em hexágono: 3 do cubo em cima, 3 gemas embaixo. */
+/* Pontos em hexágono; as 3 gemas usam p0, p2 e p4 (um triângulo). */
 .p0 { left: 50%; top: 12%; } .p1 { left: 88%; top: 31%; } .p2 { left: 88%; top: 69%; }
 .p3 { left: 50%; top: 88%; } .p4 { left: 12%; top: 69%; } .p5 { left: 12%; top: 31%; }
 
-.extras { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; }
+.centro-equip .extra { width: 100%; }
 .extra-titulo { margin: 0 0 6px; }
 .fila-icones { display: flex; flex-direction: column; gap: 4px; }
 .mini-item { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.2; color: var(--lendario); }
@@ -606,45 +605,103 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
 }
 .aviso-visual[hidden] { display: none; }
 
-/* ------------------------------------------------------------ habilidades */
-.habilidades-bloco {
-  display: flex; justify-content: center; align-items: flex-start; gap: 28px;
-  flex-wrap: wrap;
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid var(--borda);
+/* ------------------------------------------------------------ cubo de Kanai */
+.cubo-kanai { margin-top: 22px; }
+.cubo-cartas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.cubo-carta {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(240, 140, 46, .35); border-radius: var(--raio);
+  background: linear-gradient(180deg, rgba(240, 140, 46, .07), transparent 70%), var(--painel);
 }
-.hab-grupo { display: flex; flex-direction: column; align-items: center; }
-.hab-grupo-passivas { padding-left: 28px; border-left: 1px solid var(--borda); }
-.barra { display: flex; gap: 8px; }
-.barra .nada { max-width: 420px; text-align: center; }
-.habilidade {
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  width: 78px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: none;
-  padding: 6px 2px;
-  cursor: pointer;
+.cubo-carta.vazio { border-style: dashed; border-color: var(--borda); background: transparent; }
+.cubo-carta p { margin: 0; }
+.icone-cubo { width: 46px; height: 46px; flex-shrink: 0; border-color: rgba(240, 140, 46, .45); }
+.cubo-rotulo { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--mudo); }
+.cubo-nome { font-size: 13px; line-height: 1.25; }
+
+/* ------------------------------------------------------------ janelas no estilo do jogo */
+/* Faixa com o título no meio, como nas janelas de Skills e do seguidor do jogo (desenho próprio). */
+.faixa-titulo {
+  display: flex; align-items: center; gap: 12px;
+  margin: 0 0 12px;
+  font: 600 12px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ouro);
+}
+.faixa-titulo::before, .faixa-titulo::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(224, 164, 88, .45));
+}
+.faixa-titulo::after { background: linear-gradient(90deg, rgba(224, 164, 88, .45), transparent); }
+.janela-jogo { display: grid; gap: 18px; }
+.secao-jogo {
+  padding: 14px 16px 16px;
+  border: 1px solid var(--borda); border-radius: 8px;
+  background: radial-gradient(ellipse at top, rgba(211, 58, 44, .06), transparent 70%), var(--fundo-2);
+}
+.janela-jogo .nota { margin: 0; }
+
+.grade-cartas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+.carta-hab {
   position: relative;
-  transition: background .15s, border-color .15s;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px 10px 18px;
+  border: 1px solid var(--borda-forte); border-radius: 6px;
+  background: linear-gradient(180deg, var(--painel-2), var(--painel));
+  color: var(--texto); text-align: left; font: inherit;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
 }
-.habilidade:hover:not(:disabled) { background: var(--painel-2); }
-.habilidade.selecionado { background: var(--painel-2); border-color: var(--borda-forte); }
-.habilidade.selecionado .icone { border-color: var(--acento); box-shadow: 0 0 0 1px var(--acento); }
-.habilidade.vazia { cursor: default; opacity: .4; }
-.tecla {
-  position: absolute; top: 2px; right: 6px;
-  font: 600 10px var(--sans);
-  color: #fff;
-  background: rgba(0, 0, 0, .75);
-  border: 1px solid var(--borda-forte);
-  border-radius: 3px;
-  padding: 0 4px;
+.carta-hab:hover:not(:disabled) { border-color: var(--ouro); }
+.carta-hab.selecionado { border-color: var(--acento); box-shadow: 0 0 0 1px var(--acento); }
+.carta-hab.vazia { cursor: default; opacity: .45; }
+.carta-lugar { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--mudo); text-align: center; }
+.carta-corpo { display: flex; align-items: center; gap: 10px; }
+.carta-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.carta-nome { font-size: 14px; font-weight: 600; color: #f1e3c8; }
+.carta-runa { font-size: 12px; color: var(--ouro-claro); }
+.carta-runa::before { content: "◆ "; color: var(--acento-claro); font-size: 10px; }
+.carta-runa.sem { color: var(--apagado); }
+.carta-tecla {
+  position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%);
+  min-width: 34px; padding: 1px 8px;
+  border: 1px solid var(--borda-forte); border-radius: 3px;
+  background: #0c0c0f; color: var(--ouro-claro);
+  font: 600 11px var(--sans); text-align: center; white-space: nowrap;
 }
-.habilidade-nome { font-size: 12px; line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
-.habilidade-runa { font-size: 11px; line-height: 1.2; color: var(--mudo); text-align: center; overflow-wrap: anywhere; }
-.nivel-hab { font-size: 10px; color: var(--ouro); }
+.carta-nivel { position: absolute; top: 8px; right: 10px; font-size: 10px; color: var(--ouro); }
+
+.fila-passivas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.passiva-jogo {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 10px 4px;
+  border: 1px solid transparent; border-radius: 8px;
+  background: none; color: var(--texto); font: inherit; font-size: 13px; text-align: center;
+  cursor: pointer;
+}
+.passiva-jogo:hover:not(:disabled) { background: var(--painel-2); }
+.passiva-jogo.selecionado { background: var(--painel-2); border-color: var(--borda-forte); }
+.passiva-jogo.selecionado .icone { border-color: var(--acento); box-shadow: 0 0 0 2px var(--acento); }
+.passiva-jogo .icone { box-shadow: 0 0 0 2px rgba(224, 164, 88, .35); }
+.passiva-jogo.vazia { cursor: default; opacity: .4; }
+
+/* Seguidor */
+.seguidor-cabeca p { margin: 0; }
+.seguidor-nome { font-family: var(--serifa); font-size: 22px; color: var(--ouro-claro); }
+.seguidor-grade { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.seguidor-itens { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
+.seguidor-itens li { display: flex; align-items: center; gap: 8px; line-height: 1.25; }
+.seguidor-itens .icone-mini { flex-shrink: 0; }
+.seguidor-habilidades { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.seguidor-habilidades li {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--borda-forte); border-radius: 6px;
+  background: linear-gradient(180deg, var(--painel-2), var(--painel));
+}
+.seguidor-habilidades p { margin: 0; }
+.seguidor-nivel { font-size: 11px; color: var(--ouro); }
+.seguidor-hab-nome { font-size: 15px; font-weight: 600; color: #f1e3c8; }
+.seguidor-habilidades .descricao { margin-top: 4px; font-size: 12px; color: var(--mudo); white-space: pre-line; }
 
 /* ------------------------------------------------------------ ao upar */
 .ao-upar .nada, .paragon .nada { margin: 0; }
@@ -724,7 +781,6 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
   min-width: 0;
 }
 .detalhe-fixo { position: sticky; top: 16px; }
-.hab-grupo[hidden] { display: none; }
 .detalhe-slot { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--mudo); }
 .detalhe-titulo { font-size: 20px; font-weight: 600; margin: 2px 0 0; line-height: 1.25; }
 .detalhe-titulo.com-item { color: var(--set); }
@@ -886,9 +942,8 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
   .grade-classes { position: static; }
   .boneco { grid-template-columns: 1fr 1fr; }
   .centro-equip { grid-column: 1 / -1; order: 3; }
-  .habilidades-bloco { gap: 18px; }
-  .hab-grupo-passivas { padding-left: 0; border-left: 0; }
-  .barra { flex-wrap: wrap; justify-content: center; }
+  .seguidor-grade, .cubo-cartas { grid-template-columns: 1fr; }
+  .fila-passivas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .importar-campos { grid-template-columns: 1fr; }
 
 }

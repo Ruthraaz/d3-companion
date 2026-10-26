@@ -25,6 +25,19 @@ def build_minima(**mudancas) -> dict:
     return {"formato": 1, "nome": "Teste", "classe": "Demon Hunter"} | mudancas
 
 
+class TestSeguidor(unittest.TestCase):
+    def test_seguidor_certo(self):
+        b = build_minima(seguidor={"quem": "scoundrel", "itens": {"FingerL": "Unity"}, "habilidades": ["anatomy"]})
+        self.assertEqual(problemas_da_build(b), [])
+
+    def test_seguidor_errado_avisa(self):
+        b = build_minima(seguidor={"quem": "lobo", "itens": {"Finger": "Unity"}, "habilidades": ["a"] * 5})
+        texto = " ".join(problemas_da_build(b))
+        self.assertIn("seguidor.quem", texto)
+        self.assertIn("seguidor.itens: chave 'Finger'", texto)
+        self.assertIn("até 4", texto)
+
+
 class TestBuildsDoProjeto(unittest.TestCase):
     def test_todas_as_builds_estao_ok(self):
         _, problemas = ler_builds(PASTA_DOS_TESTES)

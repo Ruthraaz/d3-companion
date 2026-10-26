@@ -33,7 +33,12 @@ DADOS = {
         "P61_Unique_Bow_104_x1": {"name": "Yang's Recurve", "ids": []},
         "P69_Unique_Bow_102": {"name": "Odyssey's End", "ids": []},
         "P3_Unique_Ring_107": {"name": "Ring of Royal Grandeur", "ids": ["Unique_Ring_107_x1"]},
+        "Unique_Helm_002_p1": {"name": "Leoric's Crown", "ids": []},
+        "x1_FollowerItem_Templar_Legendary_01": {"name": "Enchanting Favor", "ids": []},
     },
+    # Igual ao "followerSkills" do data.json: o "id" é o slug da Blizzard.
+    "followerSkills": {"Templar_Heal_110": {"id": "heal", "level": 5},
+                       "Templar_CheatDeath_Passive": {"id": "guardian", "level": 20}},
     "legendaryGems": {"zei": {"name": "Zei's Stone of Vengeance"}, "trapped": {"name": "Bane of the Trapped"}},
     # Formato igual ao "stats" do data.json do Maxroll (conferido em out/2026).
     "stats": {
@@ -66,6 +71,10 @@ PERFIL = {
         "mainhand": {"id": "P61_Unique_Bow_104_x1", "stats": {"wpncol": {}, "sockets": {}}},
         "waist": {"id": "Item_Que_Nao_Existe"},
     },
+    "follower": "templar",
+    "followerItems": {"head": {"id": "Unique_Helm_002_p1"}, "follower": {"id": "x1_FollowerItem_Templar_Legendary_01"},
+                      "feet": {"id": "Bota_Que_Nao_Existe"}},
+    "followerSkills": ["Templar_Heal_110", "Templar_Onslaught_V2", "Templar_CheatDeath_Passive"],
 }
 PLANNER = {"_nome": "Sanc UE Multishot", "_numero": 345357607, "activeProfile": 0, "class": "demonhunter",
            "profiles": [PERFIL, {"name": "Speed", "class": "demonhunter", "items": {}}]}
@@ -118,6 +127,18 @@ class TestConverter(unittest.TestCase):
         self.assertEqual(e["Head"]["itens"], ["Accursed Visage"])
         self.assertEqual(e["Finger"]["itens"], ["Focus", "Restraint"])
         self.assertEqual(e["Weapon"]["itens"], ["Yang's Recurve"])
+
+    def test_seguidor_com_itens_e_habilidades(self):
+        s = self.build["seguidor"]
+        self.assertEqual(s["quem"], "templar")
+        # Item do seguidor que o app não conhece fica de fora (e não entra no aviso do herói).
+        self.assertEqual(s["itens"], {"Head": "Leoric's Crown", "Relic": "Enchanting Favor"})
+        # Sem o código no data.json, fica o do Maxroll em minúsculas (é o nome do ícone na Blizzard).
+        self.assertEqual(s["habilidades"], ["heal", "templar_onslaught_v2", "guardian"])
+        self.assertEqual(problemas_da_build(self.build), [])
+
+    def test_perfil_sem_seguidor_nao_tem_a_chave(self):
+        self.assertNotIn("seguidor", converter(PLANNER, DADOS, HABILIDADES, perfil=1))
 
     def test_item_desconhecido_fica_avisado_e_fora(self):
         self.assertNotIn("Waist", self.build["espacos"])
@@ -192,7 +213,7 @@ class TestConverter(unittest.TestCase):
             fora = Path(raiz) / "segredo.json"
             fora.write_text("{}", encoding="utf-8")
             arquivo = salvar_build(self.build, pasta)
-            for ruim in ("../segredo", "..\segredo", "sanc_ue_multishot.json", "", "a/b", "nao_existe"):
+            for ruim in ("../segredo", r"..\segredo", "sanc_ue_multishot.json", "", "a/b", "nao_existe"):
                 self.assertFalse(remover_build(ruim, pasta), ruim)
             self.assertTrue(fora.exists())
             self.assertTrue(remover_build(arquivo.stem, pasta))
