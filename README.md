@@ -350,22 +350,28 @@ python src/maxroll.py https://maxroll.gg/d3/guides/shadow-impale-demon-hunter-gu
 Cada build do Maxroll tem vários **perfis** (push, speed, bounties…); `--perfil` escolhe qual. O link do planejador aparece no guia ao clicar na build e em "Open in Planner".
 
 
-## Montar build no site
+## Montar build (app e site)
 
-No site (https://ruthraaz.github.io/d3-companion/montar.html) dá pra **montar uma build do zero, sem instalar nada**: a mesma tela do app (boneco, roda de gemas, cubo de Kanai, janela de habilidades com runas e paragon), com os itens, gemas, habilidades e afixos do jogo. Cada classe guarda o seu rascunho no navegador.
+**No app, aba Montar** (ou no site, https://ruthraaz.github.io/d3-companion/montar.html, sem instalar nada): monte uma build do zero na mesma tela da build (boneco, roda de gemas, cubo de Kanai, janela de habilidades com runas e paragon), com os itens, gemas, habilidades e afixos do jogo. Clique num espaço e escolha no painel da direita. Cada classe guarda o seu rascunho.
 
-O site **não avalia itens**: a avaliação no jogo (F8 e passar o mouse) só existe no app. Pra usar a build no app:
-1. No site, **Copiar link da build** (ou **Baixar .json**).
-2. No app, aba Builds → **+ Colar link** → cole o link → **Importar**.
+- **No app:** **Salvar no app** grava em `builds/`; a build aparece na aba Builds e o atalho passa a usar ela. Depois, **Salvar mudanças** altera a mesma build.
+- **Mudar uma build:** na aba Builds, **Mudar no montador** (as feitas no montador) ou **Copiar pro montador** (as do Maxroll: abre uma cópia; a original não muda).
+- **No site:** **Copiar link da build** (ou **Baixar .json**) e, no app, aba Builds → **+ Colar link** → **Importar**. O site **não avalia itens**: a avaliação no jogo (F8) só existe no app.
 
-A build vai inteira **no próprio link**, depois do `#` (JSON comprimido): o site não tem servidor nem banco de dados, e nada sai do seu navegador. O app confere o link antes de importar (só o endereço do site, tamanho máximo antes e depois de abrir, e a mesma conferência das outras builds): `src/link_do_site.py`.
+No site, a build vai inteira **no próprio link**, depois do `#` (JSON comprimido): não tem servidor nem banco de dados, e nada sai do seu navegador. O app confere tudo que vem do montador antes de gravar (endereço do site, tamanho, e a mesma conferência das outras builds): `src/link_do_site.py`. Uma build importada do Maxroll nunca é alterada pelo montador.
 
-Os dados do jogo do site (`docs/dados/jogo.json`) saem da API oficial da Blizzard: só **nomes e códigos de ícone**. As imagens continuam no servidor da Blizzard. Pra gerar de novo (precisa da chave no `.env`; a chave nunca vai pro site):
+### Dica do item (passar o mouse)
+
+Na tela da build, no montador e no site, **passe o mouse num item ou numa gema** e aparece o que ele faz: nome em português (e em inglês), tipo, o poder lendário, os bônus do set e, se não tiver poder, o texto do item.
+
+### Dados do jogo
+
+`src/web/dados/jogo.json` (o que o montador oferece) e `src/web/dados/dicas.json` (o que cada item faz) saem da API oficial da Blizzard: só **nomes, textos e códigos de ícone**. As imagens continuam no servidor da Blizzard. O HTML que a API manda é lido no gerador e vira texto puro; a tela nunca recebe HTML. Pra gerar de novo (precisa da chave no `.env`; a chave nunca vai pro site):
 ```
-python ferramentas/dados_do_site.py            # dados do jogo + docs/app.css
-python ferramentas/dados_do_site.py --so-css   # só copia src/web/estilo.css -> docs/app.css
+python ferramentas/dados_do_site.py              # dados do jogo e dicas + copia pro site
+python ferramentas/dados_do_site.py --so-copiar  # só copia pro site (docs/)
 ```
-`docs/app.css` é cópia do CSS do app (um teste confere), pra o site ficar igual ao app.
+O site usa os mesmos arquivos do app: `docs/app.css` (= `src/web/estilo.css`), `montar.css`, `montar.js`, `dica.js` e `dados/` são cópias. Um teste confere que estão em dia.
 
 ## Avaliação automática (passar o mouse)
 

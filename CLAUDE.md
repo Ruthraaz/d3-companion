@@ -203,6 +203,21 @@ trabalho extra agora, não feche essa porta:
   caminho, ≤20000 chars, ≤200 KB aberto, força `fonte={"site":"montar"}`, tira "id"/"_*") e `Api.importar_do_site`.
 - Rascunho por classe em localStorage ("d3c-montar-v1"). Ainda falta: seguidor no montador.
 
+### Montar no app + dica do item (26/10/2026) — notas
+- Pedido: "Quando passar o mouse por cima mostrar oque a gema faz, se for possivel ou os itens no geral. e fazer o
+  sistema de montar builds para os usuarios conseguirem criar suas builds no app/site".
+- Fonte única em `src/web/` (montar.js/css, dica.js, dados/); `docs/` tem cópias (`dados_do_site.py --so-copiar`,
+  teste `test_copias_do_site_estao_em_dia`). `.gitignore` libera `docs/dados/` e `src/web/dados/`.
+- montar.js é um IIFE (`window.Montador.iniciar(raiz, {modo, carregar, salvar, aoSalvar})`, `.abrir(build, id)`);
+  acha tudo por `data-m` dentro de `[data-montador]` (o app tem os mesmos ids na aba Builds). montar.css também
+  fica dentro de `[data-montador]`. app.js: seletores de sub-aba presos a `#painel-builds`.
+- Api: `dados_do_jogo("jogo"|"dicas")`, `salvar_montada(build, id)` (passa por `link_do_site.build_montada`,
+  ≤200 KB; com id usa `maxroll.regravar_build`, que só grava por cima de build com fonte "montar"),
+  `build_para_montar(id)`.
+- dicas.json: `{itens: {nome_en: {n, t, p?, s?, f?}}, sets: {nome_set: [bônus]}}`. Poder = spans laranja
+  (`d3-color-ffff8000`); sem laranja, azul fora "Engastes" (ex.: RoRG). Faixa cinza vai junto no item, não na gema.
+  Texto puro (HTMLParser no gerador; dica.js usa textContent).
+
 ### Segurança (26/10/2026) — notas
 - Pente fino pedido pelo Arthur. Tudo em `tests/test_seguranca.py`; resumo no README ("Segurança e privacidade").
 - `src/rede.py`: `ler()` (limite de 20 MB em toda resposta) e `link_seguro()` (abrir_link só https://maxroll.gg).

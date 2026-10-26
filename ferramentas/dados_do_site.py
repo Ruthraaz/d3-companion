@@ -1,5 +1,11 @@
 """
-Gera docs/dados/jogo.json: o que o "Montar build" do site oferece pra escolher.
+Gera os dados do jogo do "Montar build" (app e site) e das dicas de item:
+
+    src/web/dados/jogo.json   o que o montador oferece pra escolher
+    src/web/dados/dicas.json  o que cada item e gema faz (aparece ao passar o mouse)
+
+e copia pro site (docs/) esses dados e os arquivos que o site usa iguais ao app
+(o CSS, o montador e a dica). Um teste confere que as cópias estão em dia.
 
     .venv\\Scripts\\activate
     python ferramentas/dados_do_site.py
@@ -11,14 +17,22 @@ códigos de ícone e níveis: as imagens continuam vindo do servidor da Blizzard
   - itens lendários e de set por espaço (com a classe, quando o tipo é de uma só);
   - gemas lendárias;
   - habilidades, runas e passivas de cada classe, com o nome em português;
-  - os afixos, no mesmo formato de regra que o app usa ao importar do Maxroll.
+  - os afixos, no mesmo formato de regra que o app usa ao importar do Maxroll;
+  - nas dicas: nome e tipo em português, o poder lendário e os bônus do set,
+    só como texto (o HTML da Blizzard é lido aqui e nunca vai pra tela).
 
-Rode de novo quando sair temporada nova (itens novos).
+Rode de novo quando sair temporada nova (itens novos). Só copiar (sem API):
+
+    python ferramentas/dados_do_site.py --so-copiar
 """
 
 import datetime
+import html.parser
 import json
+import re
+import shutil
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -28,7 +42,16 @@ from blizzard import CLASSES, Blizzard  # noqa: E402
 from maxroll import CLASSES as CLASSES_MX  # noqa: E402
 from maxroll import dados_do_planejador, regras_do_item  # noqa: E402
 
-DESTINO = RAIZ / "docs" / "dados" / "jogo.json"
+DADOS = RAIZ / "src" / "web" / "dados"
+# Arquivo do app -> cópia no site.
+COPIAS = {
+    RAIZ / "src" / "web" / "estilo.css": RAIZ / "docs" / "app.css",
+    RAIZ / "src" / "web" / "montar.css": RAIZ / "docs" / "montar.css",
+    RAIZ / "src" / "web" / "montar.js": RAIZ / "docs" / "montar.js",
+    RAIZ / "src" / "web" / "dica.js": RAIZ / "docs" / "dica.js",
+    DADOS / "jogo.json": RAIZ / "docs" / "dados" / "jogo.json",
+    DADOS / "dicas.json": RAIZ / "docs" / "dados" / "dicas.json",
+}
 
 # Tipo de item da Blizzard (id em minúsculas) -> espaço da build.
 ESPACO_DO_TIPO = {
@@ -131,15 +154,124 @@ def afixos(dados: dict) -> list[dict]:
     return lista
 
 
-def copiar_css():
-    """O site usa o mesmo CSS do app: docs/app.css é cópia do src/web/estilo.css."""
-    (RAIZ / "docs" / "app.css").write_bytes((RAIZ / "src" / "web" / "estilo.css").read_bytes())
-    print("docs/app.css atualizado.")
+# ------------------------------------------------------------ dicas
+
+# Cores da Blizzard no HTML do item.
+LARANJA, CINZA, VERMELHO, VERDE = "d3-color-ffff8000", "d3-color-ff9b9b9b", "d3-color-ffff0000", "d3-color-ff00ff00"
+AZUL = "d3-color-ff6969ff"
+
+
+class _Trechos(html.parser.HTMLParser):
+    """HTML da Blizzard -> [(cor, texto)]: cada <span> de cor de fora vira um
+    trecho, com o texto de dentro dele. Só texto sai daqui (nenhuma tag)."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.trechos, self._pilha = [], []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "span":
+            cor = next((c for c in (dict(attrs).get("class") or "").split() if c.startswith("d3-color-")), None)
+            if cor and not any(self._pilha):
+                self.trechos.append([cor, ""])
+            self._pilha.append(cor)
+        elif tag == "br" and any(self._pilha):
+            self.trechos[-1][1] += "\n"
+
+    def handle_endtag(self, tag):
+        if tag == "span" and self._pilha:
+            self._pilha.pop()
+
+    def handle_data(self, dados):
+        if any(self._pilha):
+            self.trechos[-1][1] += dados
+
+
+def trechos(texto_html: str) -> list[tuple[str, str]]:
+    leitor = _Trechos()
+    leitor.feed(texto_html or "")
+    return [(cor, re.sub(r"[ \t]+", " ", t).strip()) for cor, t in leitor.trechos if t.strip()]
+
+
+def poderes(item: dict, e_gema: bool) -> list[str]:
+    """As linhas laranja (poder lendário). No item, a faixa do valor (cinza) vai
+    junto; na gema o cinza só repete o valor e fica de fora."""
+    linhas = []
+    for linha in ((item.get("attributes") or {}).get("secondary") or []):
+        partes = trechos(linha.get("textHtml", ""))
+        poder = " ".join(t for c, t in partes if c == LARANJA)
+        if not poder:
+            continue
+        faixa = next((t for c, t in partes if c == CINZA), "")
+        so = next((t.strip("()") for c, t in partes if c == VERMELHO), "")
+        linhas.append(poder + (f" (no jogo: {faixa})" if faixa and not e_gema else "") + (f" · {so}" if so else ""))
+    if not linhas:  # alguns poderes vêm em azul, como afixo fixo (ex.: Ring of Royal Grandeur)
+        for linha in ((item.get("attributes") or {}).get("secondary") or []):
+            texto = " ".join(t for c, t in trechos(linha.get("textHtml", "")) if c == AZUL)
+            if texto and not texto.startswith("Engaste"):
+                linhas.append(texto)
+    return linhas
+
+
+def bonus_do_set(item: dict) -> list[str]:
+    """"Conjunto (2): ..." de cada bônus, numa linha só cada."""
+    return [re.sub(r"\s*\n\s*", " ", t) for c, t in trechos(item.get("setDescriptionHtml") or "") if c == VERDE]
+
+
+def dica(api: Blizzard, nome: str, e_gema: bool):
+    """(nome, dica, (set, bônus) ou None), ou None se a Blizzard não conhece o item."""
+    achado = api.item(nome)
+    if not achado:
+        return None
+    item = api.pegar("/d3/data/" + achado["caminho"], locale="pt_BR")
+    d = {"n": item.get("name") or nome, "t": item.get("typeName") or ""}
+    poder = poderes(item, e_gema)
+    if poder:
+        d["p"] = poder
+    elif not item.get("setName") and item.get("flavorText"):
+        d["f"] = item["flavorText"][:300]  # sem poder: ao menos o texto do item
+    conjunto = None
+    if item.get("setName"):
+        d["s"] = item["setName"]
+        conjunto = (item["setName"], bonus_do_set(item))
+    return nome, d, conjunto
+
+
+def dicas(api: Blizzard, por_espaco: dict, gemas: list) -> dict:
+    nomes = sorted({i["n"] for lista in por_espaco.values() for i in lista})
+    pedidos = [(n, False) for n in nomes] + [(g["n"], True) for g in gemas]
+    api._token_valido()  # um token só, antes das threads
+    with ThreadPoolExecutor(max_workers=8) as grupo:
+        achados = [r for r in grupo.map(lambda p: dica(api, *p), pedidos) if r]
+    resultado = {"itens": {}, "sets": {}}
+    for nome, d, conjunto in achados:
+        resultado["itens"][nome] = d
+        if conjunto and conjunto[1]:
+            resultado["sets"][conjunto[0]] = conjunto[1]
+    return resultado
+
+
+# ------------------------------------------------------------ gravar e copiar
+
+def copiar():
+    """O site usa os mesmos arquivos do app: copia pra docs/."""
+    for origem, destino in COPIAS.items():
+        if origem.exists():
+            destino.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(origem, destino)
+    print("Cópias do site (docs/) atualizadas.")
+
+
+def gravar(nome: str, dados: dict) -> Path:
+    DADOS.mkdir(parents=True, exist_ok=True)
+    arquivo = DADOS / nome
+    arquivo.write_text(json.dumps(dados, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    return arquivo
 
 
 def main():
-    copiar_css()
-    if "--so-css" in sys.argv:
+    if "--so-copiar" in sys.argv:
+        copiar()
         return
     api = Blizzard()
     dados = dados_do_planejador()
@@ -155,11 +287,15 @@ def main():
         "gemas": gemas,
         "afixos": afixos(dados),
     }
-    DESTINO.parent.mkdir(parents=True, exist_ok=True)
-    DESTINO.write_text(json.dumps(jogo, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    arquivo = gravar("jogo.json", jogo)
     total = sum(len(v) for v in por_espaco.values())
-    print(f"Pronto: {DESTINO.relative_to(RAIZ)} ({DESTINO.stat().st_size // 1024} KB, "
+    print(f"Pronto: {arquivo.relative_to(RAIZ)} ({arquivo.stat().st_size // 1024} KB, "
           f"{total} itens, {len(gemas)} gemas, {len(jogo['afixos'])} afixos)")
+    print("Dicas (o que cada item faz; na 1ª vez são ~840 pedidos)…")
+    arquivo = gravar("dicas.json", {"versao": 1, "gerado": jogo["gerado"], "fonte": jogo["fonte"]}
+                     | dicas(api, por_espaco, gemas))
+    print(f"Pronto: {arquivo.relative_to(RAIZ)} ({arquivo.stat().st_size // 1024} KB)")
+    copiar()
 
 
 if __name__ == "__main__":

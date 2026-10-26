@@ -487,6 +487,23 @@ def remover_build(id_build: str, pasta: Path = PASTA_BUILDS) -> bool:
     return True
 
 
+def regravar_build(id_build: str, build: dict, pasta: Path = PASTA_BUILDS) -> Path | None:
+    """Grava por cima de builds/<id>.json, mas só se ela foi feita no "Montar
+    build" (fonte "montar"): as importadas do Maxroll não são trocadas. Mesmo
+    cuidado com o id do remover_build. None se não pode."""
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", id_build or ""):
+        return None
+    arquivo = pasta / f"{id_build}.json"
+    try:
+        antiga = json.loads(arquivo.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(antiga, dict) or (antiga.get("fonte") or {}).get("site") != "montar":
+        return None
+    arquivo.write_text(json.dumps(build, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return arquivo
+
+
 def montar(planner: dict, perfil: int | None = None, apelido: str | None = None,
            blizzard=None) -> dict:
     """Planner já baixado -> build pronta pra salvar, com os códigos das

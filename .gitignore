@@ -13,6 +13,7 @@ capturas/
 dados/
 # ...menos os dados do jogo que o site usa (nomes e códigos de ícone, ferramentas/dados_do_site.py)
 !docs/dados/
+!src/web/dados/
 
 # Gerados por ferramentas/empacotar.py (o .exe vai pra Release, não pro Git)
 build/

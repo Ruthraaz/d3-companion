@@ -20,6 +20,7 @@ Fechar a janela desliga o overlay junto.
 
 import base64
 import io
+import json
 import os
 import subprocess
 import sys
@@ -48,9 +49,9 @@ from blizzard import Blizzard, ErroBlizzard, visual_da_build
 from config import ler_config, salvar_config
 from heroi import comparar, herois, heroi
 from maxroll import (ErroMaxroll, baixar_planner, builds_do_heroi, catalogo, classe_do_planner,
-                     link_de_guia, montar, nomes_dos_perfis, planners_do_link, remover_build,
-                     salvar_build)
-from link_do_site import ErroLinkDoSite, build_do_link, e_link_do_site
+                     link_de_guia, montar, nomes_dos_perfis, planners_do_link, regravar_build,
+                     remover_build, salvar_build)
+from link_do_site import ErroLinkDoSite, build_do_link, build_montada, e_link_do_site
 from nucleo import PASTA_CAPTURAS, dica_do_mistico
 from pastas import NO_EXE, WEB
 from rede import link_seguro
@@ -59,6 +60,7 @@ PASTA_SRC = Path(__file__).resolve().parent
 PAGINA = WEB / "index.html"
 ICONE_DE_ITEM = "https://blzmedia-a.akamaihd.net/d3/icons/items/large/{}.png"
 LARGURA_MINIATURA = 220
+MAXIMO_DA_BUILD = 200_000  # caracteres do JSON de uma build montada (como no link do site)
 
 
 class Overlay:
@@ -182,6 +184,43 @@ class Api:
         if isinstance(apelido, str) and apelido.strip():
             build["apelido"] = apelido.strip()[:40]
         return {"id": salvar_build(build).stem}
+
+    # ------------------------------------------------------------ Montar build
+
+    def dados_do_jogo(self, qual: str = "jogo") -> dict:
+        """dados/jogo.json (o que o montador oferece) ou dados/dicas.json (o que
+        cada item faz). Vêm junto com o app, gerados por ferramentas/dados_do_site.py."""
+        if qual not in ("jogo", "dicas"):
+            return {"erro": "Não sei que dados são esses."}
+        try:
+            return json.loads((WEB / "dados" / f"{qual}.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {"erro": f"Falta o arquivo dados/{qual}.json do app."}
+
+    def salvar_montada(self, build: dict, id_build: str = "") -> dict:
+        """Grava a build da aba Montar. Sem id cria uma nova (nunca sobrescreve);
+        com id altera essa, se ela também foi feita no montador. {"id"} ou {"erro"}."""
+        try:
+            if len(json.dumps(build, ensure_ascii=False)) > MAXIMO_DA_BUILD:
+                return {"erro": "Essa build está grande demais."}
+            build = build_montada(build)
+        except (ErroLinkDoSite, TypeError, ValueError) as e:
+            return {"erro": str(e)}
+        if id_build:
+            arquivo = regravar_build(id_build, build)
+            if arquivo is None:
+                return {"erro": "Não achei essa build pra alterar (só as feitas no montador podem ser alteradas)."}
+            return {"id": arquivo.stem}
+        return {"id": salvar_build(build).stem}
+
+    def build_para_montar(self, id_build: str) -> dict:
+        """A build inteira, pra abrir na aba Montar. pode_alterar: se "Salvar
+        mudanças" grava em cima dela (só as feitas no montador)."""
+        build = next((b for b in ler_builds()[0] if b["id"] == id_build), None)
+        if build is None:
+            return {"erro": f"Build {id_build!r} não encontrada."}
+        return {"build": {k: v for k, v in build.items() if k != "id"},
+                "pode_alterar": (build.get("fonte") or {}).get("site") == "montar"}
 
     def remover_build(self, id_build: str) -> dict:
         """Tira a build do app (apaga o arquivo dela em builds/). Se era a do

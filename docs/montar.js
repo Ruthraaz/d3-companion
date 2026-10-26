@@ -1,13 +1,21 @@
-// D3 Companion — Montar build (site). O mesmo visual do app (app.css), mas aqui
-// a pessoa escolhe: itens de cada espaço, afixos, gemas, cubo, habilidades e
-// paragon. Os dados do jogo vêm de dados/jogo.json (gerado da API da Blizzard por
-// ferramentas/dados_do_site.py); os ícones, do servidor da Blizzard.
+// D3 Companion — Montar build. O mesmo código no app (aba Montar) e no site
+// (docs/montar.js é cópia): a pessoa escolhe itens de cada espaço, afixos,
+// gemas, cubo, habilidades e paragon. Os dados do jogo vêm de dados/jogo.json
+// (gerado da API da Blizzard por ferramentas/dados_do_site.py); os ícones, do
+// servidor da Blizzard.
 //
-// A build sai no formato do app (builds/*.json) e vai num link: o JSON é
-// comprimido e fica depois do "#", que o navegador nunca manda pra servidor
-// nenhum. No app: aba Builds → "+ Colar link". Avaliar item é só no app.
+// A build sai no formato do app (builds/*.json):
+//   - no app, "Salvar no app" grava em builds/ (o Python confere tudo antes);
+//   - no site, vai num link: o JSON é comprimido e fica depois do "#", que o
+//     navegador nunca manda pra servidor nenhum. No app: "+ Colar link".
+// Avaliar item é só no app.
+//
+// Tudo fica dentro do elemento [data-montador] (os data-m="..." de dentro), pra
+// não se misturar com o resto da janela do app.
 
 "use strict";
+
+(() => {
 
 const CLASSES = {
   Barbarian: "Bárbaro", Crusader: "Cruzado", "Demon Hunter": "Caçador de Demônios", Monk: "Monge",
@@ -50,6 +58,14 @@ const PARAGON = [
 const GUARDADO = "d3c-montar-v1";      // rascunho por classe (só neste navegador)
 const MAXIMO_DO_LINK = 20000;          // caracteres depois de "#b="
 const SITE = "https://ruthraaz.github.io/d3-companion/montar.html";
+
+// Onde o montador está e o que ele pode fazer:
+//   modo "site": carregar() traz o jogo.json;
+//   modo "app":  carregar() e salvar(build, id) vão pro Python; aoSalvar(id) avisa o app.
+let raiz = null;
+let opcoes = { modo: "site" };
+const $ = nome => raiz.querySelector(`[data-m="${nome}"]`);
+const noApp = () => opcoes.modo === "app";
 
 const estado = {
   jogo: null,
@@ -99,8 +115,9 @@ function guardar() {
 
 function buildVazia() {
   return {
+    id: "",                            // no app: a build de builds/ que este rascunho altera ("" = nova)
     apelido: "",
-    lugares: {},                       // lugar -> {item, afixos: [modelo], ancient}
+    lugares: {},                      // lugar -> {item, afixos: [modelo], ancient}
     gemas: [null, null, null],
     cubo: {},
     ativas: [null, null, null, null, null, null],  // {s, r}
@@ -252,7 +269,7 @@ async function abrirLinkDoEndereco() {
 // ------------------------------------------------------------ desenho
 
 function avisar(texto, erro = false) {
-  trocar(document.getElementById("avaliando"), el("span", { class: erro ? "t-falta" : "" }, texto));
+  trocar($("avaliando"), el("span", { class: erro ? "t-falta" : "" }, texto));
 }
 
 function desenhar() {
@@ -266,7 +283,7 @@ function desenhar() {
 }
 
 function desenharClasses() {
-  trocar(document.getElementById("classes-builds"), Object.keys(CLASSES).map(cl =>
+  trocar($("classes-builds"), Object.keys(CLASSES).map(cl =>
     el("button", {
       class: "classe" + (cl === estado.classe ? " ativo" : ""), role: "tab",
       onclick: () => { estado.classe = cl; estado.alvo = { tipo: "espaco", lugar: "Head" }; estado.busca = ""; mudou(); },
@@ -285,19 +302,37 @@ function desenharCabeca() {
   });
   nome.addEventListener("input", () => { b.apelido = nome.value; guardar(); });
 
-  const copiar = el("button", { type: "button", class: "botao" }, "Copiar link da build");
+  // No app: grava em builds/. A 1ª vez cria; depois, altera a mesma build.
+  const salvar = noApp() && el("button", { type: "button", class: "botao" }, b.id ? "Salvar mudanças" : "Salvar no app");
+  if (salvar) salvar.addEventListener("click", async () => {
+    salvar.disabled = true;
+    let r;
+    try { r = await opcoes.salvar(paraBuild(), b.id || ""); } catch (e) { r = { erro: String(e) }; }
+    salvar.disabled = false;
+    if (!r || r.erro) { avisar((r && r.erro) || "Não consegui salvar.", true); return; }
+    const nova = !b.id;
+    b.id = r.id;
+    guardar();
+    desenharCabeca();
+    avisar(nova ? `Salva no app: ${paraBuild().apelido}. Ela já está na aba Builds e o atalho passa a usar ela.`
+                : `Mudanças salvas em ${paraBuild().apelido}.`);
+    if (opcoes.aoSalvar) opcoes.aoSalvar(r.id);
+  });
+
+  const copiar = el("button", { type: "button", class: noApp() ? "botao botao-leve" : "botao" }, "Copiar link da build");
   copiar.addEventListener("click", async () => {
     try {
       const link = await linkDaBuild();
-      history.replaceState(null, "", link.slice(link.indexOf("#")));
+      if (!noApp()) history.replaceState(null, "", link.slice(link.indexOf("#")));
       await navigator.clipboard.writeText(link);
-      avisar("Link copiado. No app: aba Builds → \"+ Colar link\" e cole. A build fica salva lá e o atalho já usa ela.");
+      avisar(noApp() ? "Link copiado: quem abrir vê a build no site e pode colar no app dele."
+                     : "Link copiado. No app: aba Builds → \"+ Colar link\" e cole. A build fica salva lá e o atalho já usa ela.");
     } catch {
-      avisar("Não deu pra copiar sozinho: o link está na barra de endereço, copie de lá.", true);
+      avisar(noApp() ? "Não deu pra copiar o link." : "Não deu pra copiar sozinho: o link está na barra de endereço, copie de lá.", true);
     }
   });
-  const baixar = el("button", { type: "button", class: "botao botao-leve" }, "Baixar .json");
-  baixar.addEventListener("click", () => {
+  const baixar = !noApp() && el("button", { type: "button", class: "botao botao-leve" }, "Baixar .json");
+  if (baixar) baixar.addEventListener("click", () => {
     const build = paraBuild();
     const arquivo = (build.apelido.normalize("NFKD").replace(/[^\w]+/g, "_").replace(/^_|_$/g, "").toLowerCase() || "build") + ".json";
     const a = el("a", { href: URL.createObjectURL(new Blob([JSON.stringify(build, null, 2)], { type: "application/json" })), download: arquivo });
@@ -316,17 +351,18 @@ function desenharCabeca() {
     }
     clearTimeout(confirmando);
     delete estado.rascunhos[estado.classe];
-    history.replaceState(null, "", location.pathname);
-    avisar("Build apagada. Comece escolhendo os itens.");
+    if (!noApp()) history.replaceState(null, "", location.pathname);
+    avisar(noApp() ? "Rascunho limpo. O que você já salvou continua na aba Builds." : "Build apagada. Comece escolhendo os itens.");
     mudou();
   });
 
-  trocar(document.getElementById("cabeca-build"),
+  const onde = noApp() ? (b.id ? "salva no app" : "ainda não salva") : "montada no site";
+  trocar($("cabeca-build"),
     icone(ICONE_HAB(ICONE_DA_CLASSE[estado.classe]), "emblema"),
     el("div", { class: "cabeca-texto" },
       nome,
-      el("p", { class: "build-meta" }, `${CLASSES[estado.classe]} · montada no site · atributo principal: ${daClasse().atributo.rotulo}`)),
-    el("div", { class: "cabeca-acoes" }, copiar, baixar, limpar));
+      el("p", { class: "build-meta" }, `${CLASSES[estado.classe]} · ${onde} · atributo principal: ${daClasse().atributo.rotulo}`)),
+    el("div", { class: "cabeca-acoes" }, salvar, copiar, baixar, limpar));
 }
 
 function botaoDoLugar(nome) {
@@ -336,6 +372,7 @@ function botaoDoLugar(nome) {
   const selecionado = estado.alvo.tipo === "espaco" && estado.alvo.lugar === nome;
   return el("button", {
     class: `espaco ${classe}` + (selecionado ? " selecionado" : "") + (item && item.s ? " de-set" : ""),
+    "data-dica": l.item,
     onclick: () => { estado.alvo = { tipo: "espaco", lugar: nome }; estado.busca = ""; desenhar(); },
   },
     el("span", { class: "espaco-icone" },
@@ -348,8 +385,8 @@ function botaoDoLugar(nome) {
 }
 
 function desenharBoneco() {
-  trocar(document.getElementById("equip-esq"), LUGARES_DO_BONECO.esq.map(botaoDoLugar));
-  trocar(document.getElementById("equip-dir"), LUGARES_DO_BONECO.dir.map(botaoDoLugar));
+  trocar($("equip-esq"), LUGARES_DO_BONECO.esq.map(botaoDoLugar));
+  trocar($("equip-dir"), LUGARES_DO_BONECO.dir.map(botaoDoLugar));
 }
 
 function desenharGemasECubo() {
@@ -359,22 +396,22 @@ function desenharGemasECubo() {
     const sel = estado.alvo.tipo === "gema" && estado.alvo.i === i;
     return el("button", {
       type: "button", class: `roda-no gema p${pos}` + (b.gemas[i] ? "" : " vazio") + (sel ? " selecionado" : ""),
-      title: b.gemas[i] || "Escolher gema", "aria-label": b.gemas[i] || `Gema ${i + 1}: escolher`,
+      title: b.gemas[i] ? null : "Escolher gema", "data-dica": b.gemas[i], "aria-label": b.gemas[i] || `Gema ${i + 1}: escolher`,
       onclick: () => { estado.alvo = { tipo: "gema", i }; estado.busca = ""; desenhar(); },
     }, g && el("img", { src: ICONE_ITEM(g.i), alt: "", draggable: "false" }));
   };
-  trocar(document.getElementById("roda"), el("span", { class: "roda-centro", "aria-hidden": "true" }), [0, 1, 2].map(i => no(i, [0, 2, 4][i])));
+  trocar($("roda"), el("span", { class: "roda-centro", "aria-hidden": "true" }), [0, 1, 2].map(i => no(i, [0, 2, 4][i])));
   const gemas = b.gemas.filter(Boolean);
-  trocar(document.getElementById("gemas"), gemas.length
-    ? gemas.map(g => el("div", { class: "mini-item" }, el("span", { class: "t-lendario" }, g)))
+  trocar($("gemas"), gemas.length
+    ? gemas.map(g => el("div", { class: "mini-item", "data-dica": g }, el("span", { class: "t-lendario" }, g)))
     : el("p", { class: "nada" }, "Clique nas casas da roda."));
 
-  trocar(document.getElementById("cubo"), Object.entries(PARTES_DO_CUBO).map(([parte, rotulo]) => {
+  trocar($("cubo"), Object.entries(PARTES_DO_CUBO).map(([parte, rotulo]) => {
     const nome = b.cubo[parte];
     const item = nome && itemPorNome(nome);
     const sel = estado.alvo.tipo === "cubo" && estado.alvo.parte === parte;
     return el("button", {
-      type: "button", class: "cubo-carta" + (nome ? "" : " vazio") + (sel ? " selecionado" : ""),
+      type: "button", class: "cubo-carta" + (nome ? "" : " vazio") + (sel ? " selecionado" : ""), "data-dica": nome,
       onclick: () => { estado.alvo = { tipo: "cubo", parte }; estado.busca = ""; desenhar(); },
     },
       icone(item && ICONE_ITEM(item.i), "icone-cubo"),
@@ -413,7 +450,7 @@ function desenharHabilidades() {
       onclick: () => { estado.alvo = { tipo: "passiva", i }; estado.busca = ""; desenhar(); },
     }, icone(h && ICONE_HAB(h.i), "icone-passiva icone-grande"), el("span", {}, h ? h.p : "Escolher…"));
   };
-  trocar(document.getElementById("janela-habilidades"),
+  trocar($("janela-habilidades"),
     el("section", { class: "secao-jogo" },
       el("h3", { class: "faixa-titulo" }, el("span", {}, "Habilidades do mouse")),
       el("div", { class: "grade-cartas" }, [0, 1].map(carta))),
@@ -438,7 +475,7 @@ function desenharParagon() {
     });
     return campo;
   };
-  trocar(document.getElementById("paragon"),
+  trocar($("paragon"),
     el("div", { class: "paragon-explica" },
       el("p", {}, el("strong", {}, "Pontos de cada atributo "), "no nível de paragon que você escolher. ",
         "No jogo, cada grupo vai até 50 por atributo, menos o atributo principal e a Vitalidade, que não têm limite."),
@@ -459,7 +496,7 @@ function campoDeBusca(dica) {
   const campo = el("input", { type: "search", class: "busca-lista", value: estado.busca, placeholder: dica, autocomplete: "off", spellcheck: "false" });
   campo.addEventListener("input", () => {
     estado.busca = campo.value;
-    const lista = document.querySelector(".lista-escolha");
+    const lista = raiz.querySelector(".lista-escolha");
     const b = normalizar(campo.value.trim());
     lista.querySelectorAll("[data-busca]").forEach(li => { li.hidden = b && !li.dataset.busca.includes(b); });
   });
@@ -470,13 +507,13 @@ function lista(opcoes, escolhido, escolher) {
   const b = normalizar(estado.busca.trim());
   return el("ul", { class: "lista-escolha" }, opcoes.map(o =>
     el("li", { "data-busca": normalizar(`${o.nome} ${o.sub || ""}`), hidden: b && !normalizar(`${o.nome} ${o.sub || ""}`).includes(b) ? "" : null },
-      el("button", { type: "button", class: "opcao" + (o.nome === escolhido || o.valor === escolhido ? " ativo" : ""), onclick: () => escolher(o) },
+      el("button", { type: "button", class: "opcao" + (o.nome === escolhido || o.valor === escolhido ? " ativo" : ""), "data-dica": o.dica, onclick: () => escolher(o) },
         icone(o.icone, o.redondo ? "icone-mini redondo" : "icone-mini"),
         el("span", {}, el("span", { class: "opcao-nome " + (o.cor || "") }, o.nome), o.sub && el("span", { class: "opcao-sub" }, o.sub))))));
 }
 
 function desenharEditor() {
-  const caixa = document.getElementById("detalhe");
+  const caixa = $("detalhe");
   const a = estado.alvo;
   if (a.tipo === "espaco") return editorDoLugar(caixa, a.lugar);
   if (a.tipo === "gema") return editorDaGema(caixa, a.i);
@@ -485,7 +522,7 @@ function desenharEditor() {
   if (a.tipo === "passiva") return editorDaPassiva(caixa, a.i);
 }
 
-const opcaoDeItem = i => ({ nome: i.n, icone: ICONE_ITEM(i.i), cor: i.s ? "t-set" : "t-lendario", sub: i.s ? "Set" : "Lendário" });
+const opcaoDeItem = i => ({ nome: i.n, dica: i.n, icone: ICONE_ITEM(i.i), cor: i.s ? "t-set" : "t-lendario", sub: i.s ? "Set" : "Lendário" });
 
 function editorDoLugar(caixa, nome) {
   const l = lugar(nome);
@@ -532,7 +569,7 @@ function editorDaGema(caixa, i) {
     el("p", { class: "detalhe-titulo livre" }, b.gemas[i] || "Escolha uma gema"),
     b.gemas[i] && el("button", { type: "button", class: "botao botao-leve", onclick: () => { b.gemas[i] = null; mudou(); } }, "Tirar a gema"),
     campoDeBusca("Buscar gema"),
-    lista(estado.jogo.gemas.filter(g => !outras.includes(g.n)).map(g => ({ nome: g.n, icone: ICONE_ITEM(g.i), cor: "t-lendario", redondo: true })),
+    lista(estado.jogo.gemas.filter(g => !outras.includes(g.n)).map(g => ({ nome: g.n, dica: g.n, icone: ICONE_ITEM(g.i), cor: "t-lendario", redondo: true })),
       b.gemas[i], o => { b.gemas[i] = o.nome; mudou(); }));
 }
 
@@ -594,9 +631,9 @@ function editorDaPassiva(caixa, i) {
 
 function abrirSubAba(nome) {
   estado.sub = nome;
-  document.querySelectorAll(".sub-aba").forEach(s => s.classList.toggle("ativa", s.dataset.sub === nome));
-  document.querySelectorAll(".sub-painel").forEach(p => p.classList.toggle("ativo", p.id === `sub-${nome}`));
-  document.querySelector(".builds-grade").classList.toggle("sem-detalhe", nome === "paragon");
+  raiz.querySelectorAll(".sub-aba").forEach(s => s.classList.toggle("ativa", s.dataset.sub === nome));
+  raiz.querySelectorAll(".sub-painel").forEach(p => p.classList.toggle("ativo", p.dataset.m === `sub-${nome}`));
+  raiz.querySelector(".builds-grade").classList.toggle("sem-detalhe", nome === "paragon");
   if (nome === "habilidades" && !["ativa", "passiva"].includes(estado.alvo.tipo)) estado.alvo = { tipo: "ativa", i: 0 };
   if (nome === "equipamento" && ["ativa", "passiva"].includes(estado.alvo.tipo)) estado.alvo = { tipo: "espaco", lugar: "Head" };
   estado.busca = "";
@@ -605,26 +642,68 @@ function abrirSubAba(nome) {
   desenharBoneco();
 }
 
-async function iniciar() {
-  document.querySelectorAll(".sub-aba").forEach(s => s.addEventListener("click", () => abrirSubAba(s.dataset.sub)));
+let pronto = null;  // a promessa do iniciar (o app pode pedir abrir() antes de terminar)
+
+async function iniciar(elemento, escolhas) {
+  raiz = elemento;
+  opcoes = escolhas;
+  raiz.querySelectorAll(".sub-aba").forEach(s => s.addEventListener("click", () => abrirSubAba(s.dataset.sub)));
   try {
-    const r = await fetch("dados/jogo.json");
-    if (!r.ok) throw new Error(String(r.status));
-    estado.jogo = await r.json();
+    estado.jogo = await opcoes.carregar();
+    if (!estado.jogo || !estado.jogo.classes) throw new Error("sem dados");
   } catch {
-    trocar(document.getElementById("carregando"), el("span", { class: "t-falta" }, "Não consegui carregar os itens do jogo. Recarregue a página."));
-    return;
+    trocar($("carregando"), el("span", { class: "t-falta" },
+      noApp() ? "Não consegui abrir os itens do jogo (falta o arquivo dados/jogo.json do app)." : "Não consegui carregar os itens do jogo. Recarregue a página."));
+    return false;
   }
   const guardado = lerGuardado();
   if (guardado.rascunhos && typeof guardado.rascunhos === "object") {
     for (const [cl, b] of Object.entries(guardado.rascunhos)) if (CLASSES[cl] && b && b.lugares) estado.rascunhos[cl] = b;
   }
   if (CLASSES[guardado.classe]) estado.classe = guardado.classe;
-  const doLink = await abrirLinkDoEndereco();
-  document.getElementById("carregando").hidden = true;
-  document.getElementById("builds-corpo").hidden = false;
-  if (!doLink) avisar("Escolha a classe, clique nos espaços e monte. No fim, \"Copiar link da build\" e cole no app.");
+  const doLink = !noApp() && await abrirLinkDoEndereco();
+  $("carregando").hidden = true;
+  $("builds-corpo").hidden = false;
+  if (!doLink) {
+    avisar(noApp() ? "Escolha a classe, clique nos espaços e monte. No fim, \"Salvar no app\": a build vai pra aba Builds e o atalho passa a usar ela."
+                   : "Escolha a classe, clique nos espaços e monte. No fim, \"Copiar link da build\" e cole no app.");
+  }
+  desenhar();
+  return true;
+}
+
+// Uma build do app aberta pra mudar. id: a que "Salvar mudanças" altera ("" = salvar como nova).
+async function abrir(build, id = "") {
+  if (!(await pronto)) return;
+  try {
+    estado.classe = build.classe;
+    estado.rascunhos[build.classe] = Object.assign(doBuild(build), { id });
+  } catch {
+    avisar("Não consegui abrir essa build no montador.", true);
+    return;
+  }
+  estado.alvo = { tipo: "espaco", lugar: "Head" };
+  estado.busca = "";
+  guardar();
+  avisar(id ? `Mudando ${build.apelido}: "Salvar mudanças" grava em cima dela.`
+            : `Cópia de ${build.apelido}: ao salvar, vira uma build nova (a original fica como está).`);
   desenhar();
 }
 
-iniciar();
+window.Montador = {
+  iniciar: (elemento, escolhas) => (pronto ||= iniciar(elemento, escolhas)),
+  abrir,
+};
+
+// No site, liga sozinho (no app quem liga é o app.js, ao abrir a aba Montar).
+const noSite = document.querySelector('[data-montador="site"]');
+if (noSite) {
+  const json = async caminho => {
+    const r = await fetch(caminho);
+    if (!r.ok) throw new Error(String(r.status));
+    return r.json();
+  };
+  window.Montador.iniciar(noSite, { modo: "site", carregar: () => json("dados/jogo.json") });
+  if (window.Dicas) window.Dicas.ligar(() => json("dados/dicas.json"));
+}
+})();

@@ -113,7 +113,40 @@ function abrirAba(nome) {
   if (nome === "config") carregarConfig();
   if (nome === "guias") estado.guias ? desenharGuias() : carregarGuias();
   if (nome === "builds" && estado.api) desenharBuilds();  // a classe pode ter mudado na aba Guias
+  if (nome === "montar" && estado.api) ligarMontador();
   if (nome === "heroi" && !estado.herois.length && document.getElementById("form-heroi").elements.battletag.value) buscarHerois();
+}
+
+// ------------------------------------------------------------ montar build
+
+// O montador é o mesmo do site (montar.js). Aqui ele lê os dados do jogo e
+// grava pelo Python, que confere a build antes (Api.salvar_montada).
+function ligarMontador() {
+  return window.Montador.iniciar(document.getElementById("painel-montar"), {
+    modo: "app",
+    carregar: async () => {
+      const r = await estado.api.dados_do_jogo("jogo");
+      if (r.erro) throw new Error(r.erro);
+      return r;
+    },
+    salvar: (build, id) => estado.api.salvar_montada(build, id),
+    aoSalvar: async id => {
+      estado.builds = await estado.api.builds();
+      const i = estado.builds.findIndex(b => b.id === id);
+      if (i >= 0) { estado.build = i; estado.classe = estado.builds[i].classe; estado.habilidade = null; }
+      delete estado.visual[id];  // ícones e textos da build mudaram
+      if (estado.ativa !== id) await escolherBuild(id);
+    },
+  });
+}
+
+// "Mudar no montador": abre a build na aba Montar. As feitas lá são alteradas
+// no lugar; as do Maxroll abrem como cópia (o original fica como está).
+async function abrirNoMontador(b) {
+  const r = await estado.api.build_para_montar(b.id);
+  if (r.erro) { trocar(document.getElementById("avaliando"), el("span", { class: "t-falta" }, r.erro)); return; }
+  abrirAba("montar");
+  await window.Montador.abrir(r.build, r.pode_alterar ? b.id : "");
 }
 
 // ------------------------------------------------------------ guias do Maxroll
@@ -229,6 +262,11 @@ function desenharCabecaDaBuild(b) {
         title: noAtalho ? "O atalho já avalia os itens com esta build" : "O atalho passa a avaliar os itens só com esta build",
         onclick: () => { if (!noAtalho) escolherBuild(b.id); },
       }, noAtalho ? "✓ No atalho" : "Usar no atalho"),
+      el("button", {
+        type: "button", class: "botao botao-leve",
+        title: fonte && fonte.site === "montar" ? "Abrir na aba Montar pra mudar" : "Abrir uma cópia na aba Montar (a original fica como está)",
+        onclick: () => abrirNoMontador(b),
+      }, fonte && fonte.site === "montar" ? "Mudar no montador" : "Copiar pro montador"),
       botaoDeRemover(b)),
   ]);
 }
@@ -389,7 +427,7 @@ function botaoDoEspaco(build, chave, area) {
   const selecionado = chave === estado.espaco && !estado.habilidade;
   return el("button", {
     class: `espaco ${classe}` + (selecionado ? " selecionado" : ""),
-    title: espaco.definido ? item : "A build não fala deste espaço: valem só as regras gerais",
+    ...(itens.length ? { "data-dica": itens[0] } : { title: espaco.definido ? item : "A build não fala deste espaço: valem só as regras gerais" }),
     onclick: () => { estado.espaco = chave; estado.habilidade = null; desenharVisual(); },
   },
     el("span", { class: "espaco-icone" },
@@ -416,20 +454,20 @@ function desenharExtras() {
   const cubo = build.cubo || {};
   // Cubo de Kanai: os 3 poderes, como as 3 casas do cubo no jogo.
   trocar(document.getElementById("cubo"), Object.entries(PARTES_DO_CUBO).map(([parte, rotulo]) =>
-    el("div", { class: "cubo-carta" + (cubo[parte] ? "" : " vazio"), title: cubo[parte] ? `${rotulo}: ${cubo[parte]}` : "" },
+    el("div", { class: "cubo-carta" + (cubo[parte] ? "" : " vazio"), ...(cubo[parte] ? { "data-dica": cubo[parte] } : {}) },
       icone(cubo[parte] && iconeDoItem(cubo[parte]), "icone-cubo"),
       el("div", {},
         el("p", { class: "cubo-rotulo" }, rotulo),
         el("p", { class: "cubo-nome" + (cubo[parte] ? " t-lendario" : " mudo") }, cubo[parte] || "a build não diz")))));
   trocar(document.getElementById("gemas"), build.gemas.length
-    ? build.gemas.map(g => el("div", { class: "mini-item", title: g },
+    ? build.gemas.map(g => el("div", { class: "mini-item", "data-dica": g },
         icone(iconeDoItem(g), "icone-mini"), el("span", { class: "t-lendario" }, g)))
     : el("p", { class: "nada" }, "A build não diz."));
 
   // A roda é só das gemas lendárias (como as runas no d4builds): 3 casas em triângulo.
   const no = (nome, pos) => {
     const url = nome && iconeDoItem(nome);
-    return el("span", { class: `roda-no gema p${pos}` + (nome ? "" : " vazio"), title: nome || "Gema: a build não diz" },
+    return el("span", { class: `roda-no gema p${pos}` + (nome ? "" : " vazio"), ...(nome ? { "data-dica": nome } : { title: "Gema: a build não diz" }) },
       url && el("img", { src: url, alt: "", draggable: "false", onerror: e => e.target.remove() }));
   };
   trocar(document.getElementById("roda"),
@@ -554,7 +592,7 @@ function desenharSeguidor(build) {
         el("h3", { class: "faixa-titulo" }, el("span", {}, "Itens")),
         itens.length
           ? el("ul", { class: "seguidor-itens" }, itens.map(([chave, rotulo]) =>
-              el("li", { title: s.itens[chave] },
+              el("li", { "data-dica": s.itens[chave] },
                 icone(iconeDoItem(s.itens[chave]), "icone-mini"),
                 el("span", {}, el("span", { class: "mini-rotulo" }, rotulo), el("span", { class: "t-lendario" }, s.itens[chave])))))
           : el("p", { class: "nada" }, "O guia não diz os itens.")),
@@ -663,7 +701,7 @@ function etiquetas(lista, classe) {
 
 function desenharDetalhe() {
   // Na aba Habilidades o detalhe é sempre de uma habilidade (trocar de build limpa a escolha).
-  const sub = document.querySelector(".sub-aba.ativa");
+  const sub = document.querySelector("#painel-builds .sub-aba.ativa");
   if (!estado.habilidade && sub && sub.dataset.sub === "habilidades") estado.habilidade = { tipo: "ativas", i: 0 };
   if (estado.habilidade) return desenharDetalheDaHabilidade();
   const build = estado.builds[estado.build];
@@ -1055,6 +1093,7 @@ async function salvarConfig(evento) {
 
 async function iniciar(api) {
   estado.api = api;
+  window.Dicas.ligar(() => api.dados_do_jogo("dicas"));
   document.querySelectorAll(".aba").forEach(a => a.addEventListener("click", () => abrirAba(a.dataset.aba)));
   document.querySelectorAll(".filtro").forEach(f => f.addEventListener("click", () => {
     estado.filtro = f.dataset.filtro;
@@ -1071,7 +1110,7 @@ async function iniciar(api) {
     setTimeout(atualizarEstado, 1500);
   });
   document.getElementById("filtro-guias").addEventListener("input", () => { if (estado.guias) desenharGuias(); });
-  document.querySelectorAll(".sub-aba").forEach(s => s.addEventListener("click", () => abrirSubAba(s.dataset.sub)));
+  document.querySelectorAll("#painel-builds .sub-aba").forEach(s => s.addEventListener("click", () => abrirSubAba(s.dataset.sub)));
 
   try {
     abertura(15, "Lendo as builds…");
@@ -1109,10 +1148,10 @@ function abertura(pct, texto, erro = false) {
 }
 
 function abrirSubAba(nome) {
-  document.querySelectorAll(".sub-aba").forEach(s => s.classList.toggle("ativa", s.dataset.sub === nome));
-  document.querySelectorAll(".sub-painel").forEach(p => p.classList.toggle("ativo", p.id === `sub-${nome}`));
+  document.querySelectorAll("#painel-builds .sub-aba").forEach(s => s.classList.toggle("ativa", s.dataset.sub === nome));
+  document.querySelectorAll("#painel-builds .sub-painel").forEach(p => p.classList.toggle("ativo", p.id === `sub-${nome}`));
   // O detalhe do lado é do equipamento e das habilidades: no resto só atrapalha.
-  document.querySelector(".builds-grade").classList.toggle("sem-detalhe", !["equipamento", "habilidades"].includes(nome));
+  document.querySelector("#painel-builds .builds-grade").classList.toggle("sem-detalhe", !["equipamento", "habilidades"].includes(nome));
   // Nas habilidades o detalhe mostra uma habilidade (a 1ª, se nenhuma foi clicada); no equipamento, o espaço.
   const build = estado.builds[estado.build];
   if (!build) return;
@@ -1201,7 +1240,30 @@ function apiDeExemplo() {
                [["✅ ", "normal"], ["LoN", "build"], [" · Gema da build", "normal"]]] },
   ];
   let config = { ATALHO: "F8", SELO_SEGUNDOS: "6", BUILD_ATIVA: "", AUTOMATICO: "sim", BATTLETAG: "" };
+  const fichaDe = (build, id) => ({
+    ...build, id,
+    gerais: { obrigatorios: ["Destreza"], desejaveis: [] },
+    espacos: Object.fromEntries(Object.keys(ESPACOS).map(k => {
+      const e = (build.espacos || {})[k] || {};
+      return [k, { definido: k in (build.espacos || {}), itens: e.itens || [], obrigatorios: ["Destreza"],
+                   desejaveis: (e.desejaveis || []).map(r => r.rotulo), exige_ancient: !!e.exige_ancient }];
+    })),
+  });
+  const montadas = {};
   return {
+    dados_do_jogo: async qual => (await fetch(`dados/${qual}.json`)).json(),
+    salvar_montada: async (build, id) => {
+      id ||= `montada_${Object.keys(montadas).length + 1}`;
+      montadas[id] = build;
+      const i = builds.findIndex(b => b.id === id);
+      if (i >= 0) builds[i] = fichaDe(build, id); else builds.push(fichaDe(build, id));
+      return { id };
+    },
+    build_para_montar: async id => {
+      const b = builds.find(x => x.id === id);
+      return { build: montadas[id] || { ...b, espacos: Object.fromEntries(Object.entries(b.espacos).filter(([, e]) => e.definido)
+        .map(([k, e]) => [k, { itens: e.itens }])) }, pode_alterar: id in montadas };
+    },
     builds: async () => builds,
     // ?problema na URL simula uma build com erro, pra ver o aviso.
     problemas_das_builds: async () => location.search.includes("problema")

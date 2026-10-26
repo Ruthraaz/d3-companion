@@ -36,8 +36,6 @@ def e_link_do_site(texto: str) -> bool:
 
 def build_do_link(texto: str) -> dict:
     """O link do site -> build no formato do app (sem gravar). ErroLinkDoSite se não der."""
-    from avaliador import problemas_da_build  # aqui: o resto do módulo não precisa
-
     texto = (texto or "").strip()
     if len(texto) > MAXIMO_DO_LINK + 200 or any(c.isspace() for c in texto):
         raise ErroLinkDoSite("Esse link está estranho (grande demais ou com espaço no meio). Copie de novo no site.")
@@ -58,7 +56,18 @@ def build_do_link(texto: str) -> dict:
         raise ErroLinkDoSite("Não consegui abrir a build desse link (ele pode ter sido cortado ao copiar).") from e
     if not isinstance(build, dict):
         raise ErroLinkDoSite("Não consegui abrir a build desse link.")
-    build["fonte"] = {"site": "montar"}  # o que vem no link não escolhe a fonte
+    return build_montada(build, "A build do link tem problema: ")
+
+
+def build_montada(build, aviso: str = "A build tem problema: ") -> dict:
+    """Build feita no "Montar build" (do link do site ou da aba Montar do app),
+    conferida como qualquer coisa que vem de fora. ErroLinkDoSite se não serve."""
+    from avaliador import problemas_da_build
+
+    if not isinstance(build, dict):
+        raise ErroLinkDoSite("Isso não é uma build.")
+    build = dict(build)
+    build["fonte"] = {"site": "montar"}  # quem manda não escolhe a fonte
     for chave in [k for k in build if k == "id" or k.startswith("_")]:
         del build[chave]  # comentário ("_...") e id não vêm de fora
     nome = build.get("nome") if isinstance(build.get("nome"), str) else ""
@@ -66,5 +75,5 @@ def build_do_link(texto: str) -> dict:
     build["nome"], build["apelido"] = nome.strip()[:80], (apelido.strip() or nome.strip())[:40]
     problemas = problemas_da_build(build)
     if problemas:
-        raise ErroLinkDoSite("A build do link tem problema: " + " ".join(problemas[:3]))
+        raise ErroLinkDoSite(aviso + " ".join(problemas[:3]))
     return build

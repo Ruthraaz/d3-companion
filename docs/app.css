@@ -953,3 +953,27 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
 }
 
 .botao[hidden] { display: none; }
+
+/* Dica do item (dica.js): o que o item ou a gema faz, ao passar o mouse.
+   Quadro próprio, no estilo do app (nada da arte do jogo). */
+.t-set { color: var(--set); }
+.dica-item {
+  position: fixed; z-index: 50;
+  width: 320px; max-width: calc(100vw - 20px);
+  padding: 12px 14px;
+  border: 1px solid var(--borda-forte); border-top: 2px solid var(--lendario); border-radius: var(--raio);
+  background: rgba(14, 15, 18, .97);
+  box-shadow: var(--sombra);
+  pointer-events: none;
+  font-size: 13px; line-height: 1.45;
+}
+.dica-item[hidden] { display: none; }
+.dica-item:has(.dica-nome.t-set) { border-top-color: var(--set); }
+.dica-item p { margin: 0; }
+.dica-nome { font: 600 16px/1.25 var(--serifa); }
+.dica-ingles { font-size: 11px; color: var(--apagado); }
+.dica-tipo { margin-top: 2px !important; color: var(--mudo); font-size: 12px; }
+.dica-poder { margin-top: 10px !important; color: var(--lendario); }
+.dica-set-nome { margin-top: 10px !important; color: var(--set); font-weight: 600; }
+.dica-set { margin-top: 4px !important; color: #b9dcbf; font-size: 12px; }
+.dica-sabor { margin-top: 10px !important; color: var(--ouro); font-style: italic; font-size: 12px; }
