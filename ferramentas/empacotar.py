@@ -131,6 +131,7 @@ def empacotar() -> Path:
     # copia de novo na pasta principal (mais de 100 MB repetidos).
     shutil.copytree(tesseract, pasta / "_internal" / "tesseract")
     shutil.copy2(RAIZ / "LEIA-ME.txt", pasta / "LEIA-ME.txt")
+    shutil.copy2(RAIZ / "LICENSE", pasta / "LICENSE.txt")
     arquivo = SAIDA / f"D3-Companion-{VERSAO}-windows.zip"
     arquivo.unlink(missing_ok=True)
     with zipfile.ZipFile(arquivo, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:

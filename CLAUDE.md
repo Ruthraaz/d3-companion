@@ -263,6 +263,10 @@ trabalho extra agora, não feche essa porta:
   `item_da_build` (o selo não depende mais do texto do motivo). Teste: o `ast` acha todo `t("...")` do src/*.py.
 - Cache do navegador segura o site.css velho no teste local: recarregar o próprio .css com Ctrl+Shift+R.
 
+### Licença (26/10/2026)
+- MIT, em `LICENSE` (titular: Ruthraaz), com aviso de que nomes/ícones do jogo são da Blizzard e o Tesseract tem a
+  licença dele. Vai no zip como `LICENSE.txt`; link no rodapé do site (en e pt) e no topo do README.
+
 ### Segurança (26/10/2026) — notas
 - Pente fino pedido pelo Arthur. Tudo em `tests/test_seguranca.py`; resumo no README ("Segurança e privacidade").
 - `src/rede.py`: `ler()` (limite de 20 MB em toda resposta) e `link_seguro()` (abrir_link só https://maxroll.gg).

@@ -14,7 +14,7 @@
 
 **Seguro de usar:** o app só **olha a tela** quando você aperta o atalho (captura + OCR). Não lê a memória do jogo, não se injeta nele e não mexe no DirectX. Suas chaves ficam só no seu PC. Veja [SECURITY.md](SECURITY.md) (e como avisar de uma falha em particular).
 
-> Projeto independente e de código aberto. Não é da Blizzard Entertainment nem do Maxroll. Diablo é marca registrada da Blizzard Entertainment, Inc.
+> Projeto independente e de código aberto. Não é da Blizzard Entertainment nem do Maxroll. Diablo é marca registrada da Blizzard Entertainment, Inc. Código sob a [licença MIT](LICENSE).
 
 **Gostou?** Mande o site pros amigos: https://ruthraaz.github.io/d3-companion/ · Ideias e problemas: [Issues](https://github.com/Ruthraaz/d3-companion/issues)
 
