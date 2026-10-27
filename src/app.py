@@ -43,6 +43,7 @@ from PySide6.QtWidgets import QApplication  # noqa: E402
 import historico  # noqa: E402
 from avaliador import builds_escolhidas, ler_builds, resumo, texto_dos_problemas  # noqa: E402
 from config import ler_config  # noqa: E402
+from idioma import t  # noqa: E402
 from atalho import ler_atalho, registrar, sugestoes_livres  # noqa: E402
 from captura import capturar_perto_do_cursor, jogo_em_foco, olhada_rapida  # noqa: E402
 from nucleo import avaliar_print, caixa_na_tela, montar_selo, processo_vivo  # noqa: E402
@@ -198,8 +199,8 @@ def main():
         return
 
     if not _unico_overlay():
-        print("Já tem um D3 Companion (overlay) aberto — talvez num terminal ou noutra janela.\n"
-              "Feche aquele primeiro (Ctrl+C no terminal dele) e tente de novo.")
+        print(t("Já tem outro overlay do D3 Companion aberto (talvez de uma versão antiga ou de um terminal). "
+                "Feche o outro e clique em Reiniciar overlay (ou reinicie o PC)."))
         sys.exit(1)
 
     try:

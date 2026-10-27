@@ -21,7 +21,7 @@ ONDE FICAM SEUS DADOS
   - capturas\   os últimos 200 recortes de tela (ficam só no seu PC)
   - .env        suas configurações
 
-Pra atualizar, apague a pasta do app antiga e use a nova: seus dados ficam.
+Pra atualizar, rode o instalador da versão nova (ou, no zip, troque a pasta do app): seus dados ficam.
 
 ÍCONES, NOMES EM PORTUGUÊS E "MEU HERÓI" (opcional)
 Precisam de uma chave gratuita da Blizzard:

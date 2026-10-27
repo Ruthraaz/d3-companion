@@ -100,8 +100,9 @@ class Blizzard:
         if self._token and time.time() < self._token_vence:
             return self._token
         if not self._id or not self._segredo:
-            raise ErroBlizzard(t("Faltam as chaves da Blizzard. Coloque BLIZZARD_CLIENT_ID e "
-                                 "BLIZZARD_CLIENT_SECRET no .env (veja o README)."))
+            raise ErroBlizzard(t("Esta parte precisa de uma chave grátis da Blizzard. O LEIA-ME.txt, na pasta do app, "
+                                 "mostra como criar em develop.battle.net e onde colocar "
+                                 "(BLIZZARD_CLIENT_ID e BLIZZARD_CLIENT_SECRET no .env)."))
         cred = base64.b64encode(f"{self._id}:{self._segredo}".encode()).decode()
         pedido = urllib.request.Request(
             URL_TOKEN, data=b"grant_type=client_credentials",

@@ -462,5 +462,7 @@
   "{n} prints, {tamanho} no total.": "{n} screenshots, {tamanho} in total.",
   "Nenhum print guardado.": "No screenshots saved.",
   "O histórico fica, só sem as miniaturas.": "History stays, just without the thumbnails.",
-  "Prints apagados.": "Screenshots deleted."
+  "Prints apagados.": "Screenshots deleted.",
+  "Esta parte precisa de uma chave grátis da Blizzard. O LEIA-ME.txt, na pasta do app, mostra como criar em develop.battle.net e onde colocar (BLIZZARD_CLIENT_ID e BLIZZARD_CLIENT_SECRET no .env).": "This part needs a free Blizzard key. The LEIA-ME.txt in the app folder shows how to create one at develop.battle.net and where to put it (BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET in .env).",
+  "Já tem outro overlay do D3 Companion aberto (talvez de uma versão antiga ou de um terminal). Feche o outro e clique em Reiniciar overlay (ou reinicie o PC).": "Another D3 Companion overlay is already open (maybe from an old version or a terminal). Close it and click Restart overlay (or restart the PC)."
 }
