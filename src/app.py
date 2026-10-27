@@ -88,7 +88,8 @@ def _unico_overlay() -> bool:
     return ctypes.get_last_error() != 183  # ERROR_ALREADY_EXISTS
 
 
-def ouvir_atalho(ponte: Ponte, builds: list[dict], pronto: threading.Event, falhou: list):
+def ouvir_atalho(ponte: Ponte, builds: list[dict], pronto: threading.Event, falhou: list,
+                 gravacao: bool = False):
     """Roda na thread do atalho. O atalho fica preso a esta thread."""
     user32 = ctypes.windll.user32
     if not registrar(ATALHO):
@@ -101,8 +102,12 @@ def ouvir_atalho(ponte: Ponte, builds: list[dict], pronto: threading.Event, falh
     while user32.GetMessageW(ctypes.byref(msg), None, 0, 0) > 0:
         if msg.message != WM_HOTKEY:
             continue
-        # O selo não aparece no print (overlay._fora_dos_prints), então nem
-        # precisa esconder antes.
+        # O selo não aparece no print (overlay._nunca_pegar_foco), então nem
+        # precisa esconder antes. No modo gravação ele aparece: esconde e espera
+        # o Windows redesenhar a tela.
+        if gravacao:
+            ponte.esconder.emit()
+            time.sleep(0.15)
         imagem, cursor, origem = capturar_perto_do_cursor()
         av, selo, caixa = avaliar(imagem, cursor, origem, builds)
         ponte.mostrar.emit(selo, caixa, SEGUNDOS_DO_SELO)
@@ -132,7 +137,8 @@ def vigiar(ponte: Ponte, builds: list[dict]):
         time.sleep(INTERVALO_DO_VIGIA)
         if time.monotonic() >= proxima_leitura:  # a janela pode ligar/desligar a qualquer hora
             config, proxima_leitura = ler_config(), time.monotonic() + 1
-        if config["AUTOMATICO"] != "sim" or not jogo_em_foco():
+        # No modo gravação o selo aparece nos prints: o vigia se veria e reavaliaria sem parar.
+        if config["AUTOMATICO"] != "sim" or config["GRAVACAO"] == "sim" or not jogo_em_foco():
             if vigia.esquecer_tela():
                 ponte.esconder.emit()
             continue
@@ -165,7 +171,8 @@ def main():
 
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
-    selo = JanelaSelo(SEGUNDOS_DO_SELO)
+    gravacao = ler_config()["GRAVACAO"] == "sim"
+    selo = JanelaSelo(SEGUNDOS_DO_SELO, gravacao=gravacao)
 
     # Ctrl+C no terminal fecha o app (o Qt precisa "acordar" de vez em quando pra notar).
     signal.signal(signal.SIGINT, lambda *_: app.quit())
@@ -213,7 +220,7 @@ def main():
     ponte.mostrar.connect(selo.mostrar)
     ponte.esconder.connect(selo.hide)
     pronto, falhou = threading.Event(), []
-    threading.Thread(target=ouvir_atalho, args=(ponte, builds, pronto, falhou), daemon=True).start()
+    threading.Thread(target=ouvir_atalho, args=(ponte, builds, pronto, falhou, gravacao), daemon=True).start()
     threading.Thread(target=vigiar, args=(ponte, builds), daemon=True).start()
     pronto.wait()
     if falhou:
@@ -224,7 +231,9 @@ def main():
         sys.exit(1)
 
     modo = ("passe o mouse num item (avaliação automática) ou aperte "
-            if ler_config()["AUTOMATICO"] == "sim" else "passe o mouse num item e aperte ")
+            if ler_config()["AUTOMATICO"] == "sim" and not gravacao else "passe o mouse num item e aperte ")
+    if gravacao:
+        print("Modo gravação: o selo aparece em gravações de tela; avaliação só pelo atalho.", flush=True)
     print(f"D3 Companion rodando com {len(builds)} builds: {modo}{ATALHO}. (Ctrl+C pra sair)", flush=True)
     app.exec()
     print("Até mais!")

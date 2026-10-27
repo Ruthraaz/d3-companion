@@ -11,6 +11,8 @@ COMO USAR
 2. Na aba Guias, escolha a classe e traga uma build (ou cole o link de uma
    build do Maxroll na aba Builds).
 3. No jogo, passe o mouse num item e aperte F8 (muda em Configurações).
+   Vai gravar vídeo? Ligue Configurações → Modo gravação (senão o selo não
+   aparece na gravação) e desligue depois.
 
 O app só OLHA a tela. Ele não lê a memória do jogo nem mexe nos arquivos do
 Diablo.

@@ -479,5 +479,9 @@
   "Instalando… o app fecha e abre de novo sozinho.": "Installing… the app will close and reopen by itself.",
   "Endereço da atualização estranho; não baixei.": "Unexpected update address; nothing was downloaded.",
   "Não consegui baixar a atualização. Está sem internet?": "Could not download the update. Are you offline?",
-  "O arquivo baixado veio diferente do publicado; não instalei. Tente de novo.": "The downloaded file does not match the published one; nothing was installed. Try again."
+  "O arquivo baixado veio diferente do publicado; não instalei. Tente de novo.": "The downloaded file does not match the published one; nothing was installed. Try again.",
+  "Modo gravação": "Recording mode",
+  "Pra gravar vídeo do app (OBS, Xbox Game Bar): o selo aparece na gravação. Enquanto ligado, avalia só pelo atalho. Desligue depois de gravar.": "For recording videos of the app (OBS, Xbox Game Bar): the badge shows up in the recording. While on, items are checked only with the shortcut. Turn it off after recording.",
+  "gravação + ": "recording + ",
+  "Modo gravação precisa ser \"sim\" ou \"nao\".": "Recording mode must be \"sim\" or \"nao\"."
 }

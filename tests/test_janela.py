@@ -63,7 +63,7 @@ class TestConfig(unittest.TestCase):
     def test_padroes_sem_env(self):
         with mock.patch("config.idioma_do_windows", return_value="pt"):
             self.assertEqual(ler_config(self.env), {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim",
-                                                    "BATTLETAG": "", "IDIOMA": "pt"})
+                                                    "BATTLETAG": "", "IDIOMA": "pt", "GRAVACAO": "nao"})
 
     def test_idioma_escolhido_ou_o_do_windows(self):
         self.assertEqual(salvar_config({"IDIOMA": "en"}, self.env), {})
@@ -83,7 +83,8 @@ class TestConfig(unittest.TestCase):
         self.assertIn("TESSERACT_CMD=C:\\Tess\\tesseract.exe", texto)
         config = ler_config(self.env)
         config.pop("IDIOMA")
-        self.assertEqual(config, {"ATALHO": "Ctrl+F9", "SELO_SEGUNDOS": "4.5", "BUILD_ATIVA": "", "AUTOMATICO": "sim", "BATTLETAG": ""})
+        self.assertEqual(config, {"ATALHO": "Ctrl+F9", "SELO_SEGUNDOS": "4.5", "BUILD_ATIVA": "", "AUTOMATICO": "sim", "BATTLETAG": "",
+                                  "GRAVACAO": "nao"})
 
     def test_invalido_nao_grava_nada(self):
         self.env.write_text("ATALHO=F8\n", encoding="utf-8")
@@ -133,6 +134,12 @@ class TestBuildEscolhida(unittest.TestCase):
         self.assertEqual(salvar_config({"AUTOMATICO": "nao"}, self.env), {})
         self.assertEqual(ler_config(self.env)["AUTOMATICO"], "nao")
         self.assertIn("AUTOMATICO", salvar_config({"AUTOMATICO": "talvez"}, self.env))
+
+    def test_config_modo_gravacao(self):
+        self.assertEqual(ler_config(self.env)["GRAVACAO"], "nao")  # padrão: selo fora das gravações
+        self.assertEqual(salvar_config({"GRAVACAO": "sim"}, self.env), {})
+        self.assertEqual(ler_config(self.env)["GRAVACAO"], "sim")
+        self.assertIn("GRAVACAO", salvar_config({"GRAVACAO": "talvez"}, self.env))
 
     def test_config_recusa_build_que_nao_existe(self):
         self.assertIn("BUILD_ATIVA", salvar_config({"BUILD_ATIVA": "inventada"}, self.env))

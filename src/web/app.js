@@ -1098,7 +1098,7 @@ async function atualizarEstado() {
   caixa.classList.toggle("ligado", e.rodando);
   caixa.classList.toggle("parado", !e.rodando);
   caixa.querySelector(".estado-texto").textContent = e.rodando
-    ? `${t("Overlay ativo")} · ${e.config.AUTOMATICO === "sim" ? t("automático + ") : ""}${e.config.ATALHO} · ${apelidoAtivo(e.config)}`
+    ? `${t("Overlay ativo")} · ${e.config.GRAVACAO === "sim" ? t("gravação + ") : e.config.AUTOMATICO === "sim" ? t("automático + ") : ""}${e.config.ATALHO} · ${apelidoAtivo(e.config)}`
     : t("Overlay parado — veja Configurações");
   document.getElementById("log").textContent = e.log.join("\n") || t("(sem mensagens)");
 }
@@ -1122,6 +1122,7 @@ async function salvarConfig(evento) {
     ATALHO: form.elements.ATALHO.value,
     SELO_SEGUNDOS: form.elements.SELO_SEGUNDOS.value,
     AUTOMATICO: form.elements.AUTOMATICO.checked ? "sim" : "nao",
+    GRAVACAO: form.elements.GRAVACAO.checked ? "sim" : "nao",
     IDIOMA: form.elements.IDIOMA.value,
   };
   const aviso = document.getElementById("aviso-config");
@@ -1345,7 +1346,7 @@ function apiDeExemplo() {
         linhas: [[["✅ ", "normal"], ["Dreadlands", "build"], gema], [["✅ ", "normal"], ["LoN", "build"], gema]] },
     ];
   };
-  let config = { ATALHO: "F8", SELO_SEGUNDOS: "6", BUILD_ATIVA: "", AUTOMATICO: "sim", BATTLETAG: "", IDIOMA: "" };
+  let config = { ATALHO: "F8", SELO_SEGUNDOS: "6", BUILD_ATIVA: "", AUTOMATICO: "sim", BATTLETAG: "", IDIOMA: "", GRAVACAO: "nao" };
   const fichaDe = (build, id) => ({
     ...build, id,
     gerais: { obrigatorios: ["Destreza"], desejaveis: [] },

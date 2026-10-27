@@ -158,6 +158,9 @@ trabalho extra agora, não feche essa porta:
   perfil 5 min), 240 pedidos/min por IP (o índice faz ~135), Verify JWT desligado. 429 e outros erros da
   ponte têm mensagem própria. `D3C_PONTE` no ambiente troca o endereço (vazio = volta a exigir chave).
   Com chave no .env o app fala direto com a Blizzard, como antes. Mudou a função? Arthur cola de novo no painel.
+- **Modo gravação (27/10/2026, 1.0.4):** `GRAVACAO=sim` no .env (Configurações). `JanelaSelo(gravacao=True)` não chama
+  `SetWindowDisplayAffinity` (o selo aparece no OBS); o vigia para (ele se veria) e o F8 emite `esconder` e espera
+  0,15 s antes do print. Feito pro Arthur gravar o vídeo de divulgação.
 - **Atualização pelo app (27/10/2026, a partir da 1.0.3):** `src/atualizar.py`. `versao_nova()` lê
   `api.github.com/repos/Ruthraaz/d3-companion/releases/latest` (erro = None, faixa não aparece); o instalador só vale
   com nome `D3-Companion-Setup-X.Y.Z.exe`, URL exata `releases/download/vX.Y.Z/...`, `digest` sha256 e tamanho <= 400 MB.

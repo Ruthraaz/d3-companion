@@ -496,6 +496,7 @@ Como funciona sem pesar no jogo:
   - o que não era item (dica de habilidade, menu): guarda "não era item" e não tenta de novo.
 - **Só olha com o jogo em primeiro plano** (título da janela "Diablo III"): fora dele, um site de tema escuro poderia parecer uma dica.
 - **O selo não aparece nos prints** (`SetWindowDisplayAffinity`, Windows 10 2004+): você vê o selo, mas a captura não. Sem isso o vigia veria o próprio selo, acharia que a tela mudou e reavaliaria sem parar. De brinde, o F8 não precisa mais esconder o selo antes do print.
+- **Modo gravação** (Configurações, `GRAVACAO=sim`): pra gravar vídeo do app, o selo **aparece** nas gravações (OBS, Xbox Game Bar). Enquanto ligado o vigia fica parado (ele se veria) e o atalho esconde o selo 0,15 s antes do print, pra não ler o próprio selo. Desligue depois de gravar.
 - **Alarme falso não suja o histórico:** no automático, uma "dica" que não deu pra ler não vai pro histórico nem salva print em `capturas/`.
 - **Uma trava** impede o F8 e o vigia de rodarem OCR ao mesmo tempo.
 

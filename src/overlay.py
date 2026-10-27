@@ -55,7 +55,7 @@ def _html_da_linha(linha: list[tuple[str, str]]) -> str:
 
 
 class JanelaSelo(QWidget):
-    def __init__(self, segundos: float = 6.0):
+    def __init__(self, segundos: float = 6.0, gravacao: bool = False):
         super().__init__(None, Qt.WindowType.Tool
                          | Qt.WindowType.FramelessWindowHint
                          | Qt.WindowType.WindowStaysOnTopHint
@@ -77,6 +77,7 @@ class JanelaSelo(QWidget):
         fora.setContentsMargins(0, 0, 0, 0)
         fora.addWidget(self.moldura)
 
+        self.gravacao = gravacao  # modo gravação: o selo aparece nas gravações de tela
         self.timer = QTimer(self)
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.hide)
@@ -128,6 +129,9 @@ class JanelaSelo(QWidget):
             # Fora dos prints: o selo some da captura de tela (o jogador continua
             # vendo). Sem isso o modo automático veria o próprio selo, acharia que
             # a tela mudou e reavaliaria sem parar. Windows 10 2004 ou mais novo.
-            user32.SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE)
+            # No modo gravação fica visível (pro OBS pegar); aí o automático
+            # fica desligado e o atalho esconde o selo antes do print (app.py).
+            if not self.gravacao:
+                user32.SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE)
         except (AttributeError, OSError):
             pass

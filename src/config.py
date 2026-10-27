@@ -19,10 +19,11 @@ from pastas import ARQUIVO_ENV  # o .env do projeto (ou do usuário, no .exe)
 # chave -> valor padrão (o mesmo que o app usa quando a chave não existe)
 # BUILD_ATIVA = id da build escolhida na janela (nome do arquivo em builds/); vazio = todas.
 # AUTOMATICO = "sim": avalia sozinho ao passar o mouse num item; "nao": só pelo atalho.
+# GRAVACAO = "sim": o selo aparece em gravações de tela (OBS etc.); só pelo atalho enquanto ligado.
 # BATTLETAG = a da aba "Meu herói" (ex.: Jogador#1234), pra não digitar toda vez.
 # IDIOMA = "en" ou "pt" (janela e selo); vazio = o idioma do Windows.
 CHAVES = {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim", "BATTLETAG": "",
-          "IDIOMA": ""}
+          "IDIOMA": "", "GRAVACAO": "nao"}
 IDIOMAS = ("en", "pt")
 
 
@@ -65,6 +66,9 @@ def validar(chave: str, valor: str) -> str | None:
     elif chave == "AUTOMATICO":
         if valor not in ("sim", "nao"):
             return t('Avaliação automática precisa ser "sim" ou "nao".')
+    elif chave == "GRAVACAO":
+        if valor not in ("sim", "nao"):
+            return t('Modo gravação precisa ser "sim" ou "nao".')
     elif chave == "BATTLETAG":
         from heroi import conta_da_battletag  # aqui: só a aba do herói precisa
         from blizzard import ErroBlizzard
