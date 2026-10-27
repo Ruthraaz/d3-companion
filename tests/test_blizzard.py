@@ -15,6 +15,7 @@ import sys
 import tempfile
 import unittest
 import urllib.error
+import urllib.parse
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -86,11 +87,39 @@ class TestBlizzard(unittest.TestCase):
         self.falsa = FalsaBlizzard()
         self.api = Blizzard("id", "segredo", Path(self.pasta.name), abrir=self.falsa)
 
-    def test_sem_chaves_explica_o_que_fazer(self):
-        api = Blizzard("", "", Path(self.pasta.name), abrir=self.falsa)
+    def test_sem_chaves_e_sem_ponte_explica_o_que_fazer(self):
+        api = Blizzard("", "", Path(self.pasta.name), abrir=self.falsa, ponte="")
         with self.assertRaisesRegex(ErroBlizzard, "BLIZZARD_CLIENT_ID"):
             api.pegar("/d3/data/hero/demon-hunter")
         self.assertEqual(self.falsa.pedidos, [])  # nem tentou
+
+    def test_sem_chaves_pede_pela_ponte(self):
+        pedidos = []
+
+        def ponte(pedido, timeout=None):
+            pedidos.append(pedido)
+            return io.BytesIO(json.dumps(CLASSE_PT).encode())
+        api = Blizzard("", "", Path(self.pasta.name), abrir=ponte, ponte="https://ponte.exemplo/blizzard")
+        self.assertEqual(api.pegar("/d3/profile/Jo%C3%A3o-1234/", "pt_BR", guardar=False), CLASSE_PT)
+        self.assertEqual(pedidos[0].full_url, "https://ponte.exemplo/blizzard"
+                         "?caminho=%2Fd3%2Fprofile%2FJo%25C3%25A3o-1234%2F&locale=pt_BR")
+        self.assertIsNone(pedidos[0].get_header("Authorization"))  # a chave fica na ponte
+        self.assertEqual(len(pedidos), 1)  # nada de token
+
+    def test_erros_da_ponte(self):
+        for codigo, mensagem in ((429, "um minuto"), (404, "não conhece"), (502, "erro 502")):
+            def ponte(pedido, timeout=None):
+                raise urllib.error.HTTPError(pedido.full_url, codigo, "x", {}, None)
+            api = Blizzard("", "", Path(self.pasta.name), abrir=ponte, ponte="https://ponte.exemplo/blizzard")
+            with self.assertRaisesRegex(ErroBlizzard, mensagem):
+                api.pegar("/d3/data/hero/monk", guardar=False)
+
+    def test_indice_pela_ponte_nao_pede_token(self):
+        def ponte(pedido, timeout=None):
+            caminho = urllib.parse.parse_qs(urllib.parse.urlsplit(pedido.full_url).query)["caminho"][0]
+            return io.BytesIO(json.dumps(RESPOSTAS[caminho + "?locale=en_US"]).encode())
+        api = Blizzard("", "", Path(self.pasta.name), abrir=ponte, ponte="https://ponte.exemplo/blizzard")
+        self.assertIn("litany of the undaunted", api.indice_de_itens())
 
     def test_chaves_recusadas(self):
         api = Blizzard("id", "errado", Path(self.pasta.name), abrir=FalsaBlizzard(recusar_chaves=True))

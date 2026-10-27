@@ -168,5 +168,22 @@ class TestInstalador(unittest.TestCase):
         self.assertIn(r"/-Setup-[\d.]+\.exe$/i", site)
 
 
+class TestPonte(unittest.TestCase):
+    """A ponte da Blizzard (Supabase Edge Function) pega as chaves só dos
+    secrets e só repassa os caminhos do Diablo 3 que o app usa."""
+
+    def setUp(self):
+        self.ts = (RAIZ / "supabase" / "functions" / "blizzard" / "index.ts").read_text(encoding="utf-8")
+
+    def test_chave_so_dos_secrets(self):
+        self.assertIn('Deno.env.get("BLIZZARD_CLIENT_SECRET")', self.ts)
+        self.assertNotIn("sb_secret", self.ts)
+
+    def test_so_caminhos_do_d3_e_so_get(self):
+        self.assertIn("caminho não permitido", self.ts)
+        self.assertIn('pedido.method !== "GET"', self.ts)
+        self.assertNotIn("Access-Control-Allow-Origin", self.ts)  # outros sites não leem pelo navegador
+
+
 if __name__ == "__main__":
     unittest.main()

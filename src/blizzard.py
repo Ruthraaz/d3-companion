@@ -1,9 +1,12 @@
 """
 Dados oficiais do Diablo 3 pela API da Blizzard: habilidades, itens e ícones.
 
-Chaves: BLIZZARD_CLIENT_ID e BLIZZARD_CLIENT_SECRET no .env (criadas em
-https://develop.battle.net → API Access → Create Client). Elas nunca saem
-do .env e nunca vão pro Git.
+Chaves: não precisa. Sem chave, o app pede pela PONTE (uma Supabase Edge
+Function, supabase/functions/blizzard), que guarda as chaves do dono do
+projeto nos secrets do Supabase. Quem quiser usar as próprias pode pôr
+BLIZZARD_CLIENT_ID e BLIZZARD_CLIENT_SECRET no .env (criadas em
+https://develop.battle.net → API Access → Create Client); aí o app fala
+direto com a Blizzard. As chaves nunca saem do .env e nunca vão pro Git.
 
 Como funciona:
   - pede um "token" à Blizzard com as chaves (vale 24 h, guardado na memória);
@@ -22,6 +25,7 @@ Uso:
 
 import base64
 import json
+import os
 import re
 import shutil
 import sys
@@ -44,6 +48,8 @@ PASTA_CACHE = PASTA_DADOS / "blizzard"
 URL_TOKEN = "https://oauth.battle.net/token"
 URL_API = "https://us.api.blizzard.com"  # Américas (o Brasil joga nesta região)
 URL_ICONES = "https://blzmedia-a.akamaihd.net/d3/icons"
+# A ponte pública (sem chave). D3C_PONTE no ambiente troca (vazio = desliga).
+PONTE = os.environ.get("D3C_PONTE", "https://vemcxjgyedafqsgwbuep.supabase.co/functions/v1/blizzard")
 
 # Nome da classe nas builds -> slug da API
 CLASSES = {
@@ -82,7 +88,7 @@ def chave_do_nome(nome: str) -> str:
 
 class Blizzard:
     def __init__(self, client_id: str | None = None, client_secret: str | None = None,
-                 pasta_cache: Path = PASTA_CACHE, abrir=urllib.request.urlopen):
+                 pasta_cache: Path = PASTA_CACHE, abrir=urllib.request.urlopen, ponte: str = PONTE):
         if client_id is None or client_secret is None:
             env = dotenv_values(ARQUIVO_ENV) if ARQUIVO_ENV.exists() else {}
             client_id = client_id or env.get("BLIZZARD_CLIENT_ID")
@@ -91,10 +97,14 @@ class Blizzard:
         self._segredo = (client_secret or "").strip()
         self.pasta_cache = pasta_cache
         self._abrir = abrir  # trocado nos testes, pra não usar a internet
+        self.ponte = ponte
         self._token = None
         self._token_vence = 0.0
 
     # ------------------------------------------------------------ conexão
+
+    def tem_chaves(self) -> bool:
+        return bool(self._id and self._segredo)
 
     def _token_valido(self) -> str:
         if self._token and time.time() < self._token_vence:
@@ -140,13 +150,24 @@ class Blizzard:
         arquivo = self._arquivo_do_cache(caminho, locale)
         if guardar and arquivo.exists():
             return json.loads(arquivo.read_text(encoding="utf-8"))
-        url = f"{URL_API}{caminho}?{urllib.parse.urlencode({'locale': locale})}"
-        pedido = urllib.request.Request(url, headers={"Authorization": "Bearer " + self._token_valido()})
+        pela_ponte = not self.tem_chaves() and bool(self.ponte)
+        if pela_ponte:  # sem Authorization: quem tem a chave é a ponte
+            url = f"{self.ponte}?{urllib.parse.urlencode({'caminho': caminho, 'locale': locale})}"
+            pedido = urllib.request.Request(url)
+        else:
+            url = f"{URL_API}{caminho}?{urllib.parse.urlencode({'locale': locale})}"
+            pedido = urllib.request.Request(url, headers={"Authorization": "Bearer " + self._token_valido()})
         try:
             dados = self._ler(pedido)
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 raise ErroBlizzard(t("A Blizzard não conhece {caminho}.", caminho=repr(caminho))) from e
+            if pela_ponte and e.code == 429:
+                raise ErroBlizzard(t("O servidor do D3 Companion recebeu pedidos demais. "
+                                     "Tente de novo em um minuto.")) from e
+            if pela_ponte:
+                raise ErroBlizzard(t("O servidor do D3 Companion respondeu com erro {codigo}.",
+                                     codigo=e.code)) from e
             raise ErroBlizzard(t("A Blizzard respondeu com erro {codigo} em {caminho}.",
                                  codigo=e.code, caminho=repr(caminho))) from e
         if not guardar:
@@ -224,7 +245,8 @@ class Blizzard:
         if arquivo.exists():
             return json.loads(arquivo.read_text(encoding="utf-8"))
         tipos = [t["path"] for t in self.pegar("/d3/data/item-type")]
-        self._token_valido()  # um token só, antes de abrir as threads
+        if self.tem_chaves():
+            self._token_valido()  # um token só, antes de abrir as threads
         with ThreadPoolExecutor(max_workers=8) as grupo:
             listas = list(grupo.map(lambda t: (t, self.pegar("/d3/data/" + t)), tipos))
         indice = {}

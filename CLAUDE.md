@@ -152,6 +152,12 @@ trabalho extra agora, não feche essa porta:
 - `chave_do_nome`: troca apóstrofo curvo ANTES de tirar acento (senão o ’ some e "Zei’s" não acha).
 - `python src/blizzard.py` confere os itens/gemas das builds contra o índice (com sugestão).
 - Testes com uma Blizzard falsa (`FalsaBlizzard`), sem internet nem chaves.
+- **Ponte (27/10/2026):** sem chave no .env, `pegar()` chama `PONTE` (Supabase Edge Function
+  `supabase/functions/blizzard/index.ts`, `?caminho=&locale=`, sem Authorization). A função guarda as chaves
+  do Arthur nos secrets do Supabase, aceita só os caminhos D3 do app (regex), cache em memória (dados 24 h,
+  perfil 5 min), 240 pedidos/min por IP (o índice faz ~135), Verify JWT desligado. 429 e outros erros da
+  ponte têm mensagem própria. `D3C_PONTE` no ambiente troca o endereço (vazio = volta a exigir chave).
+  Com chave no .env o app fala direto com a Blizzard, como antes. Mudou a função? Arthur cola de novo no painel.
 
 ### .exe (26/10/2026) — notas
 - `ferramentas/empacotar.py` (PyInstaller 6.22.3, onedir, windowed). Entrada `src/d3companion.py`

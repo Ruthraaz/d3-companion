@@ -23,8 +23,9 @@ ONDE FICAM SEUS DADOS
 
 Pra atualizar, rode o instalador da versão nova (ou, no zip, troque a pasta do app): seus dados ficam.
 
-ÍCONES, NOMES EM PORTUGUÊS E "MEU HERÓI" (opcional)
-Precisam de uma chave gratuita da Blizzard:
+ÍCONES, NOMES EM PORTUGUÊS E "MEU HERÓI"
+Funcionam sem configurar nada: o app pede os dados oficiais da Blizzard pelo
+servidor do D3 Companion. Se quiser usar uma chave sua (opcional):
   1. Entre em https://develop.battle.net/access/clients e crie um "client".
   2. No arquivo %APPDATA%\D3 Companion\.env, coloque:
        BLIZZARD_CLIENT_ID=...

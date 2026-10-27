@@ -261,7 +261,17 @@ O que a conferência **não** pega: um `modelo` escrito certo no formato mas que
 
 O app busca na API oficial da Blizzard as habilidades (com runas), os itens e os ícones do jogo, com nome e descrição em português. É a base pra mostrar o boneco e a barra de habilidades de cada build.
 
-**Pegar as chaves (uma vez só):**
+**Não precisa de chave.** Sem chave no `.env`, o app pede pela **ponte**: uma Supabase Edge Function
+(`supabase/functions/blizzard/index.ts`) que guarda as chaves do dono do projeto nos *secrets* do Supabase e
+repassa só os caminhos do Diablo 3 que o app usa (com cache e limite de pedidos por IP). O app manda
+`?caminho=/d3/...&locale=...`, sem chave nenhuma. Pra trocar o endereço (ex.: testes): `D3C_PONTE=...` no ambiente;
+`D3C_PONTE=` vazio desliga a ponte.
+
+**Publicar a ponte (só o dono do projeto, uma vez):** no painel do Supabase, Edge Functions → Deploy a new
+function → Via Editor, nome `blizzard`, cole o `index.ts`, desligue **Verify JWT**; em Edge Functions → Secrets,
+crie `BLIZZARD_CLIENT_ID` e `BLIZZARD_CLIENT_SECRET`.
+
+**Usar as próprias chaves (opcional; o app fala direto com a Blizzard):**
 1. Entre em https://develop.battle.net com a sua conta Battle.net. Pode pedir o autenticador.
 2. **API Access → Create Client**. Nome: `D3 Companion`. Redirect URL: `http://localhost`. Marque que não tem Service URL.
 3. Copie o **Client ID** e o **Client Secret** para o `.env`:
