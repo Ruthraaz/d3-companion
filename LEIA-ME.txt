@@ -21,7 +21,9 @@ ONDE FICAM SEUS DADOS
   - capturas\   os últimos 200 recortes de tela (ficam só no seu PC)
   - .env        suas configurações
 
-Pra atualizar, rode o instalador da versão nova (ou, no zip, troque a pasta do app): seus dados ficam.
+Pra atualizar: quando sai versão nova, aparece uma faixa no topo do app. Clique em
+"Atualizar agora": ele baixa, confere, instala e abre de novo. No zip, o botão
+abre a página da versão nova (troque a pasta do app). Seus dados ficam.
 
 ÍCONES, NOMES EM PORTUGUÊS E "MEU HERÓI"
 Funcionam sem configurar nada: o app pede os dados oficiais da Blizzard pelo

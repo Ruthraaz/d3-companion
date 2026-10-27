@@ -1201,9 +1201,36 @@ async function iniciar(api) {
     abertura(100, t("Não deu pra abrir: {erro}", { erro: erro && erro.message ? erro.message : erro }), true);
     return;
   }
+  conferirAtualizacao();  // sem await: o GitHub pode demorar, o app já está pronto
   // O overlay é outro processo: de tempos em tempos, vê se chegou item novo.
   setInterval(atualizarHistorico, 1500);
   setInterval(atualizarEstado, 3000);
+}
+
+// Versão nova no GitHub: mostra a faixa. "Atualizar agora" baixa e instala (o app
+// fecha e abre de novo); no zip ou do código, abre a página da versão.
+async function conferirAtualizacao() {
+  const nova = await estado.api.atualizacao();
+  if (!nova || !nova.versao) return;
+  const faixa = document.getElementById("atualizacao");
+  const texto = document.getElementById("atualizacao-texto");
+  const botao = document.getElementById("atualizar-agora");
+  texto.textContent = t("Versão {nova} disponível (você tem a {atual}).", { nova: nova.versao, atual: nova.atual });
+  if (!nova.sozinho) botao.textContent = t("Baixar");
+  document.getElementById("ver-novidades").onclick = () => estado.api.ver_novidades();
+  botao.onclick = async () => {
+    botao.disabled = true;
+    const vigia = nova.sozinho && setInterval(async () => {
+      const p = await estado.api.progresso_da_atualizacao();
+      texto.textContent = t("Baixando a versão {nova}… {pct}%", { nova: nova.versao, pct: Math.floor(p * 100) });
+    }, 500);
+    const r = await estado.api.atualizar();
+    clearInterval(vigia);
+    if (r.erro) { texto.textContent = r.erro; botao.disabled = false; return; }
+    if (r.instalando) texto.textContent = t("Instalando… o app fecha e abre de novo sozinho.");
+    else botao.disabled = false;
+  };
+  faixa.hidden = false;
 }
 
 // No app o idioma fica no .env; o navegador guarda também, só pro modo de exemplo.
@@ -1364,6 +1391,7 @@ function apiDeExemplo() {
     },
     estado: async () => ({ rodando: true, config, log: ["(modo de exemplo: aberto fora do app)"] }),
     reiniciar_overlay: async () => ({}),
+    atualizacao: async () => ({}),  // o site de exemplo não se atualiza
     capturas: async () => ({ imagens: 36, bytes: 5.4 * 1024 * 1024 }),
     apagar_capturas: async () => ({ imagens: 0, bytes: 0 }),
     remover_build: async id => {

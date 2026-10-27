@@ -92,6 +92,17 @@ main::-webkit-scrollbar-thumb { background: var(--borda-forte); border-radius: 1
   flex-shrink: 0;
 }
 .marca { display: flex; align-items: center; gap: 10px; }
+
+/* ------------------------------------------------------------ versão nova */
+.faixa-atualizacao {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px;
+  padding: 8px 24px;
+  background: linear-gradient(90deg, rgba(211, 58, 44, .16), rgba(224, 164, 88, .16));
+  border-bottom: 1px solid var(--borda-forte);
+  flex-shrink: 0;
+}
+.faixa-atualizacao[hidden] { display: none; }
+.faixa-atualizacao .botao { padding: 5px 14px; }
 .marca-runa {
   width: 15px; height: 15px;
   border: 2px solid var(--acento);

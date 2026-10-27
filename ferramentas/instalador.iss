@@ -54,6 +54,8 @@ Name: "{userdesktop}\{#Nome}"; Filename: "{app}\{#Nome}.exe"; Tasks: atalho
 
 [Run]
 Filename: "{app}\{#Nome}.exe"; Description: "{cm:LaunchProgram,{#Nome}}"; Flags: nowait postinstall skipifsilent
+; Atualizando pelo botão do app (/SILENT): abre o app de novo no fim.
+Filename: "{app}\{#Nome}.exe"; Flags: nowait; Check: WizardSilent
 
 [InstallDelete]
 ; Atualizando: tira o _internal da versão velha antes (o PyInstaller muda nomes de arquivos).

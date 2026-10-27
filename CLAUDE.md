@@ -158,6 +158,13 @@ trabalho extra agora, não feche essa porta:
   perfil 5 min), 240 pedidos/min por IP (o índice faz ~135), Verify JWT desligado. 429 e outros erros da
   ponte têm mensagem própria. `D3C_PONTE` no ambiente troca o endereço (vazio = volta a exigir chave).
   Com chave no .env o app fala direto com a Blizzard, como antes. Mudou a função? Arthur cola de novo no painel.
+- **Atualização pelo app (27/10/2026, a partir da 1.0.3):** `src/atualizar.py`. `versao_nova()` lê
+  `api.github.com/repos/Ruthraaz/d3-companion/releases/latest` (erro = None, faixa não aparece); o instalador só vale
+  com nome `D3-Companion-Setup-X.Y.Z.exe`, URL exata `releases/download/vX.Y.Z/...`, `digest` sha256 e tamanho <= 400 MB.
+  `baixar()` confere tamanho + SHA-256. `instalar()` roda `cmd /c ping -n 4 127.0.0.1 >nul & "<setup>" /SILENT ...`
+  (o `timeout` do Windows falha sem console) e a janela fecha (overlay.desligar + destroy). O .iss tem um 2º [Run]
+  com `Check: WizardSilent` que reabre o app. Só instala sozinho com `unins000.exe` ao lado do .exe (instalado);
+  zip/código = abre a página. Release sem o Setup no nome certo quebra o botão: sempre publicar os dois arquivos.
 - **Regiões (27/10/2026):** `REGIOES = us, eu, kr, tw`; `pegar(..., regiao=)` troca o host
   (`{regiao}.api.blizzard.com`, mesmo token; dados do jogo sempre de us). Na ponte vai `&regiao=` só fora de us
   (a 1.0.2 sem o parâmetro continua funcionando). `heroi.herois` pergunta as 4 em paralelo; 404 =

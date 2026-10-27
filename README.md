@@ -519,6 +519,10 @@ Site do app: **https://ruthraaz.github.io/d3-companion/** (botão de download di
 
 Quem só quer usar: baixe o **`D3-Companion-Setup-<versão>.exe`** na página de [Releases](https://github.com/Ruthraaz/d3-companion/releases/latest) e instale (Avançar, Instalar; não pede administrador). O app vai pro Menu Iniciar (e pra Área de Trabalho, se marcar) e sai em Configurações do Windows → Apps. Quem prefere sem instalar: o `D3-Companion-<versão>-windows.zip` tem a mesma pasta; descompacte e abra **`D3 Companion.exe`**. O Tesseract já vem junto. O app começa sem builds: cole o link de um guia do Maxroll na aba Builds. Seus dados (builds, prints, `.env`) ficam em `%APPDATA%\D3 Companion`, então trocar de versão não apaga nada. O `LEIA-ME.txt` na pasta do app explica o resto (inclusive o aviso do SmartScreen, porque o .exe não tem assinatura digital).
 
+### Atualizar (botão no app)
+
+Ao abrir, o app pergunta à API de Releases do GitHub qual é a última versão (`src/atualizar.py`). Se for mais nova que `src/versao.py`, aparece uma faixa no topo: **Atualizar agora** baixa o `D3-Companion-Setup-<versão>.exe` da Release, confere o tamanho e o **SHA-256** que o GitHub publica de cada arquivo (diferente = apaga e não instala), fecha o app e roda o instalador com `/SILENT` (só a barra de progresso); no fim o instalador abre o app de novo. Só baixa de `github.com/Ruthraaz/d3-companion/releases/download/`. Sem internet a faixa simplesmente não aparece. No zip ou rodando do código, o botão abre a página da Release. Por isso **toda Release precisa do instalador com o nome `D3-Companion-Setup-X.Y.Z.exe` e a tag `vX.Y.Z`** (o `empacotar.py` já gera assim). Quem está na 1.0.2 ou antes precisa baixar uma vez à mão; da 1.0.3 em diante é pelo botão.
+
 ### Gerar o .exe
 
 ```

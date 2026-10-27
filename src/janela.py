@@ -43,6 +43,7 @@ except ImportError:
              "    pip install -r requirements.txt")
 from PIL import Image
 
+import atualizar
 import historico
 from avaliador import ficha_da_build, ler_builds, problemas_da_build
 from blizzard import Blizzard, ErroBlizzard, visual_da_build
@@ -56,6 +57,7 @@ from link_do_site import ErroLinkDoSite, build_do_link, build_montada, e_link_do
 from nucleo import PASTA_CAPTURAS, dica_do_mistico, espaco_das_capturas, limpar_capturas
 from pastas import NO_EXE, WEB
 from rede import link_seguro
+from versao import VERSAO
 
 PASTA_SRC = Path(__file__).resolve().parent
 PAGINA = WEB / "index.html"
@@ -114,6 +116,8 @@ class Api:
         self._overlay = overlay  # com "_" o pywebview não expõe pro JavaScript
         self._blizzard = Blizzard()  # um só: o token vale 24 h
         self._planners = {}  # número -> planner do Maxroll já baixado (entre buscar e importar)
+        self._nova = None  # versão nova achada no GitHub (atualizar.versao_nova)
+        self._progresso = 0.0  # do download da atualização, 0 a 1
 
     def builds(self) -> list[dict]:
         return [ficha_da_build(b) for b in ler_builds()[0]]
@@ -361,6 +365,42 @@ class Api:
     def reiniciar_overlay(self) -> dict:
         self._overlay.ligar()
         return self._overlay.estado()
+
+    # ------------------------------------------------------------ atualização
+
+    def atualizacao(self) -> dict:
+        """Versão nova no GitHub? {"versao", "atual", "sozinho"} (sozinho = dá pra
+        instalar daqui) ou {} se está em dia ou sem internet."""
+        nova = atualizar.versao_nova()
+        if not nova:
+            return {}
+        self._nova = nova
+        return {"versao": nova["versao"], "atual": VERSAO,
+                "sozinho": bool(nova["instalador"]) and atualizar.instalado()}
+
+    def atualizar(self) -> dict:
+        """Baixa, confere e instala a versão nova; o app fecha e o instalador abre
+        de novo. Do zip ou do código: abre a página da Release."""
+        nova = self._nova
+        if not nova or not nova["instalador"] or not atualizar.instalado():
+            webbrowser.open(atualizar.PAGINA_DA_ULTIMA)
+            return {"pagina": True}
+        self._progresso = 0.0
+        try:
+            arquivo = atualizar.baixar(nova["instalador"],
+                                       progresso=lambda f: setattr(self, "_progresso", f))
+        except atualizar.ErroAtualizacao as e:
+            return {"erro": str(e)}
+        atualizar.instalar(arquivo)
+        self._overlay.desligar()
+        threading.Timer(0.5, lambda: [j.destroy() for j in webview.windows]).start()
+        return {"instalando": True}
+
+    def progresso_da_atualizacao(self) -> float:
+        return self._progresso
+
+    def ver_novidades(self) -> None:
+        webbrowser.open(atualizar.PAGINA_DA_ULTIMA)  # endereço fixo
 
 
 def fechar_abertura():

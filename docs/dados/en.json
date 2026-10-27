@@ -471,5 +471,13 @@
   "Américas": "Americas",
   "Europa": "Europe",
   "Coreia": "Korea",
-  "Taiwan": "Taiwan"
+  "Taiwan": "Taiwan",
+  "Ver novidades": "What's new",
+  "Baixar": "Download",
+  "Versão {nova} disponível (você tem a {atual}).": "Version {nova} is available (you have {atual}).",
+  "Baixando a versão {nova}… {pct}%": "Downloading version {nova}… {pct}%",
+  "Instalando… o app fecha e abre de novo sozinho.": "Installing… the app will close and reopen by itself.",
+  "Endereço da atualização estranho; não baixei.": "Unexpected update address; nothing was downloaded.",
+  "Não consegui baixar a atualização. Está sem internet?": "Could not download the update. Are you offline?",
+  "O arquivo baixado veio diferente do publicado; não instalei. Tente de novo.": "The downloaded file does not match the published one; nothing was installed. Try again."
 }
