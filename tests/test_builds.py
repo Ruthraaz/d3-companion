@@ -7,6 +7,7 @@ Rodar:
 """
 
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -14,6 +15,7 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
+os.environ["D3C_IDIOMA"] = "pt"  # as mensagens conferidas são as em português
 
 from avaliador import avaliar, ler_builds, problemas_da_build  # noqa: E402
 from builds_dos_testes import PASTA_DOS_TESTES  # noqa: E402

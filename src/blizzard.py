@@ -35,6 +35,7 @@ from pathlib import Path
 
 from dotenv import dotenv_values
 
+from idioma import t
 from pastas import ARQUIVO_ENV, PASTA_DADOS
 from rede import RespostaGrande, ler
 
@@ -99,8 +100,8 @@ class Blizzard:
         if self._token and time.time() < self._token_vence:
             return self._token
         if not self._id or not self._segredo:
-            raise ErroBlizzard("Faltam as chaves da Blizzard. Coloque BLIZZARD_CLIENT_ID e "
-                               "BLIZZARD_CLIENT_SECRET no .env (veja o README).")
+            raise ErroBlizzard(t("Faltam as chaves da Blizzard. Coloque BLIZZARD_CLIENT_ID e "
+                                 "BLIZZARD_CLIENT_SECRET no .env (veja o README)."))
         cred = base64.b64encode(f"{self._id}:{self._segredo}".encode()).decode()
         pedido = urllib.request.Request(
             URL_TOKEN, data=b"grant_type=client_credentials",
@@ -110,9 +111,9 @@ class Blizzard:
             resposta = self._ler(pedido)
         except urllib.error.HTTPError as e:
             if e.code in (400, 401):
-                raise ErroBlizzard("A Blizzard recusou as chaves. Confira BLIZZARD_CLIENT_ID e "
-                                   "BLIZZARD_CLIENT_SECRET no .env (sem aspas nem espaços).") from e
-            raise ErroBlizzard(f"A Blizzard respondeu com erro {e.code} ao pedir o token.") from e
+                raise ErroBlizzard(t("A Blizzard recusou as chaves. Confira BLIZZARD_CLIENT_ID e "
+                                     "BLIZZARD_CLIENT_SECRET no .env (sem aspas nem espaços).")) from e
+            raise ErroBlizzard(t("A Blizzard respondeu com erro {codigo} ao pedir o token.", codigo=e.code)) from e
         self._token = resposta["access_token"]
         self._token_vence = time.time() + resposta.get("expires_in", 3600) - 60
         return self._token
@@ -124,9 +125,9 @@ class Blizzard:
         except urllib.error.HTTPError:
             raise
         except RespostaGrande as e:
-            raise ErroBlizzard("A Blizzard mandou uma resposta grande demais; o app não abriu.") from e
+            raise ErroBlizzard(t("A Blizzard mandou uma resposta grande demais; o app não abriu.")) from e
         except (urllib.error.URLError, TimeoutError, OSError) as e:
-            raise ErroBlizzard("Não consegui falar com a Blizzard. Está sem internet?") from e
+            raise ErroBlizzard(t("Não consegui falar com a Blizzard. Está sem internet?")) from e
 
     def _arquivo_do_cache(self, caminho: str, locale: str) -> Path:
         nome = re.sub(r"[^A-Za-z0-9_.-]+", "_", caminho.strip("/"))
@@ -144,8 +145,9 @@ class Blizzard:
             dados = self._ler(pedido)
         except urllib.error.HTTPError as e:
             if e.code == 404:
-                raise ErroBlizzard(f"A Blizzard não conhece {caminho!r}.") from e
-            raise ErroBlizzard(f"A Blizzard respondeu com erro {e.code} em {caminho!r}.") from e
+                raise ErroBlizzard(t("A Blizzard não conhece {caminho}.", caminho=repr(caminho))) from e
+            raise ErroBlizzard(t("A Blizzard respondeu com erro {codigo} em {caminho}.",
+                                 codigo=e.code, caminho=repr(caminho))) from e
         if not guardar:
             return dados
         arquivo.parent.mkdir(parents=True, exist_ok=True)

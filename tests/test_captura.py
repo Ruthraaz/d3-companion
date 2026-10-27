@@ -11,6 +11,7 @@ Rodar:
     python -m unittest discover tests
 """
 
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -20,6 +21,7 @@ import numpy as np
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
+os.environ["D3C_IDIOMA"] = "pt"  # as mensagens conferidas são as em português
 
 from captura import achar_dica, grupo_de_dicas  # noqa: E402
 from parser import interpretar  # noqa: E402

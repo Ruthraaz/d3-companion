@@ -10,6 +10,7 @@ Rodar:
 
 import io
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -18,6 +19,7 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
+os.environ["D3C_IDIOMA"] = "pt"  # as mensagens conferidas são as em português
 
 from avaliador import problemas_da_build  # noqa: E402
 from maxroll import (ErroMaxroll, baixar_planner, builds_do_heroi, catalogo, classe_do_planner, converter,  # noqa: E402

@@ -17,6 +17,7 @@ from PIL import Image
 
 from avaliador import avaliar_todas
 from captura import AMPLIAR, FOLGA_TOPO, grupo_de_dicas, localizar_dica
+from idioma import t
 from ocr import ler_texto
 from parser import interpretar
 
@@ -78,7 +79,7 @@ def avaliar_print(imagem: Image.Image, cursor: tuple[int, int] | None,
 
     av.caixa = localizar_dica(imagem, cursor)
     if av.caixa is None:
-        av.erro = "Não achei a dica perto do mouse."
+        av.erro = t("Não achei a dica perto do mouse.")
         if salvar and salvar_sem_dica:
             av.arquivo = PASTA_CAPTURAS / f"{carimbo}_sem_dica.png"
             imagem.save(av.arquivo)
@@ -95,7 +96,7 @@ def avaliar_print(imagem: Image.Image, cursor: tuple[int, int] | None,
             av.item = interpretar(ler_texto(recorte, ampliar=AMPLIAR))
             av.resultados = avaliar_todas(av.item, builds)
         except ValueError:
-            av.erro = "Li a dica, mas não entendi o item."
+            av.erro = t("Li a dica, mas não entendi o item.")
 
     av.segundos = time.perf_counter() - inicio
     return av
@@ -118,7 +119,7 @@ def _lista(rotulo: str, afixos: list[dict], marca: str, estilo: str) -> list[tup
     linha = [(rotulo, "normal")]
     for i, a in enumerate(afixos):
         linha += [("  ", "normal")] if i else []
-        linha.append((f"{a['rotulo']} {marca}", estilo))
+        linha.append((f"{t(a['rotulo'])} {marca}", estilo))
     return linha
 
 
@@ -128,9 +129,9 @@ def _detalhe(r: dict) -> list[list[tuple[str, str]]]:
     falta = [a for a in r["afixos"] if not a["ok"]]
     linhas = []
     if tem:
-        linhas.append(_lista("Tem: ", tem, "✓", "ok"))
+        linhas.append(_lista(t("Tem:") + " ", tem, "✓", "ok"))
     if falta:
-        linhas.append(_lista("Falta: ", falta, "✗", "falta"))
+        linhas.append(_lista(t("Falta:") + " ", falta, "✗", "falta"))
         dica = dica_do_mistico(r)
         if dica:
             linhas.append([(dica, "motivo")])
@@ -142,9 +143,9 @@ def dica_do_mistico(r: dict) -> str | None:
     falta = [a["rotulo"] for a in r["afixos"] if not a["ok"]]
     if not falta or not r.get("sobrando"):
         return None
-    trocaveis = [f for f in falta if f != "Encaixe"] or falta[:1]
-    alvo = trocaveis[0] + (f" (ou {trocaveis[1]})" if len(trocaveis) > 1 else "")
-    return f"Dica: no Místico, troque \"{r['sobrando'][0]}\" por {alvo}."
+    trocaveis = [t(f) for f in falta if f != "Encaixe"] or [t(falta[0])]
+    alvo = trocaveis[0] + (" " + t("(ou {afixo})", afixo=trocaveis[1]) if len(trocaveis) > 1 else "")
+    return t('Dica: no Místico, troque "{afixo}" por {alvo}.', afixo=r["sobrando"][0], alvo=alvo)
 
 
 def _resumo(r: dict) -> str:
@@ -152,7 +153,7 @@ def _resumo(r: dict) -> str:
     if not r["afixos"]:
         return r["motivo"]
     ok = sum(a["ok"] for a in r["afixos"])
-    return f"{ok} de {len(r['afixos'])} afixos"
+    return t("{ok} de {n} afixos", ok=ok, n=len(r["afixos"]))
 
 
 def montar_selo(av: Avaliacao) -> Selo:
@@ -168,28 +169,28 @@ def montar_selo(av: Avaliacao) -> Selo:
     item = av.item or {}
     titulo = item.get("nome") or f"{item.get('qualidade', '')} {item.get('tipo') or ''}".strip()
     if not av.resultados:
-        return Selo(False, titulo, [[("Nenhuma build ainda: cole um link do Maxroll na janela do app", "motivo")]])
+        return Selo(False, titulo, [[(t("Nenhuma build ainda: cole um link do Maxroll na janela do app"), "motivo")]])
 
     batem = [r for r in av.resultados if r["bate"]]
     por_enquanto = [r for r in av.resultados if r["por_enquanto"]]
     if not batem and not por_enquanto:
         r = av.resultados[0]  # a que chegou mais perto
-        return Selo(False, titulo, [[("❌ Não serve", "build")],
+        return Selo(False, titulo, [[(t("❌ Não serve"), "build")],
                                     [(f"{r['apelido']}: {r['motivo']}", "motivo")]])
 
     if batem:
         primeira, outras, marca = batem[0], batem[1:], "✅ "
         if not primeira["afixos"]:  # gema, cubo
             o_que = primeira["motivo"]
-        elif primeira["motivo"].startswith("Item da build"):
-            o_que = "item da build"
+        elif primeira.get("item_da_build"):
+            o_que = t("item da build")
         else:
-            o_que = "serve neste espaço"
+            o_que = t("serve neste espaço")
         if primeira["afixos"] and all(a["ok"] for a in primeira["afixos"]):
-            o_que += " · tudo certo"
+            o_que += " · " + t("tudo certo")
     else:
         # Pra upar: não é o item da build, mas serve até achar.
-        primeira, outras, marca = por_enquanto[0], por_enquanto[1:], "🟡 Por enquanto · "
+        primeira, outras, marca = por_enquanto[0], por_enquanto[1:], t("🟡 Por enquanto") + " · "
         o_que = primeira["motivo"]
 
     linhas = [[(marca, "normal"), (primeira["apelido"], "build"), (f" · {o_que}", "normal")]]

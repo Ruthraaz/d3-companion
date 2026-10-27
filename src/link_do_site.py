@@ -16,6 +16,8 @@ import re
 import urllib.parse
 import zlib
 
+from idioma import t
+
 HOST = "ruthraaz.github.io"
 CAMINHOS = {"/d3-companion/montar.html", "/d3-companion/montar"}
 MAXIMO_DO_LINK = 20_000      # caracteres depois de "#b="
@@ -38,24 +40,24 @@ def build_do_link(texto: str) -> dict:
     """O link do site -> build no formato do app (sem gravar). ErroLinkDoSite se não der."""
     texto = (texto or "").strip()
     if len(texto) > MAXIMO_DO_LINK + 200 or any(c.isspace() for c in texto):
-        raise ErroLinkDoSite("Esse link está estranho (grande demais ou com espaço no meio). Copie de novo no site.")
+        raise ErroLinkDoSite(t("Esse link está estranho (grande demais ou com espaço no meio). Copie de novo no site."))
     partes = urllib.parse.urlsplit(texto)
     if partes.scheme != "https" or partes.netloc.lower() != HOST or partes.path not in CAMINHOS:
-        raise ErroLinkDoSite("Esse link não é do site do D3 Companion.")
+        raise ErroLinkDoSite(t("Esse link não é do site do D3 Companion."))
     m = re.fullmatch(r"b=([A-Za-z0-9_-]{1,%d})" % MAXIMO_DO_LINK, partes.fragment)
     if not m:
-        raise ErroLinkDoSite("O link não tem a build. No site, use \"Copiar link da build\".")
+        raise ErroLinkDoSite(t("O link não tem a build. No site, use \"Copiar link da build\"."))
     try:
         cru = base64.urlsafe_b64decode(m.group(1) + "=" * (-len(m.group(1)) % 4))
         abrir = zlib.decompressobj(-15)  # deflate "cru", como o CompressionStream("deflate-raw") do site
         aberto = abrir.decompress(cru, MAXIMO_ABERTO)
         if abrir.unconsumed_tail or not abrir.eof:
-            raise ErroLinkDoSite("A build desse link é grande demais ou veio cortada.")
+            raise ErroLinkDoSite(t("A build desse link é grande demais ou veio cortada."))
         build = json.loads(aberto.decode("utf-8"))
     except (binascii.Error, zlib.error, UnicodeDecodeError, json.JSONDecodeError) as e:
-        raise ErroLinkDoSite("Não consegui abrir a build desse link (ele pode ter sido cortado ao copiar).") from e
+        raise ErroLinkDoSite(t("Não consegui abrir a build desse link (ele pode ter sido cortado ao copiar).")) from e
     if not isinstance(build, dict):
-        raise ErroLinkDoSite("Não consegui abrir a build desse link.")
+        raise ErroLinkDoSite(t("Não consegui abrir a build desse link."))
     return build_montada(build, "A build do link tem problema: ")
 
 
@@ -65,7 +67,7 @@ def build_montada(build, aviso: str = "A build tem problema: ") -> dict:
     from avaliador import problemas_da_build
 
     if not isinstance(build, dict):
-        raise ErroLinkDoSite("Isso não é uma build.")
+        raise ErroLinkDoSite(t("Isso não é uma build."))
     build = dict(build)
     build["fonte"] = {"site": "montar"}  # quem manda não escolhe a fonte
     for chave in [k for k in build if k == "id" or k.startswith("_")]:

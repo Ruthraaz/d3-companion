@@ -10,6 +10,7 @@ Rodar:
     python -m unittest discover tests
 """
 
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -19,6 +20,7 @@ from PIL import Image
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
+os.environ["D3C_IDIOMA"] = "pt"  # as mensagens conferidas são as em português
 
 import vigia as vigia_mod  # noqa: E402
 from captura import achar_dica, olhada_rapida  # noqa: E402

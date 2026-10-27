@@ -21,6 +21,7 @@ import urllib.parse
 
 from avaliador import avaliar, carregar_builds
 from blizzard import CLASSES, Blizzard, ErroBlizzard
+from idioma import t
 from parser import estruturar_afixo
 
 # Lugar do item na API -> espaço nas builds. Os dois anéis usam o mesmo "Finger".
@@ -42,8 +43,8 @@ def conta_da_battletag(texto: str) -> str:
     "." ou "?" nunca entram no endereço da API (não dá pra cair em outra página dela)."""
     m = re.fullmatch(r"\s*([^\W_]{2,12})\s*[#-]\s*(\d{3,6})\s*", texto or "")
     if not m:
-        raise ErroBlizzard("Escreva a BattleTag com o número, ex.: Jogador#1234 "
-                           "(aparece no canto do app da Battle.net).")
+        raise ErroBlizzard(t("Escreva a BattleTag com o número, ex.: Jogador#1234 "
+                             "(aparece no canto do app da Battle.net)."))
     return f"{m.group(1)}-{m.group(2)}"
 
 
@@ -52,8 +53,8 @@ def _pegar(api: Blizzard, caminho: str) -> dict:
         return api.pegar(caminho, guardar=False)  # perfil muda: nunca do cache
     except ErroBlizzard as e:
         if "não conhece" in str(e):
-            raise ErroBlizzard("A Blizzard não achou essa BattleTag na região Américas. "
-                               "Confira o número depois do #.") from e
+            raise ErroBlizzard(t("A Blizzard não achou essa BattleTag na região Américas. "
+                                 "Confira o número depois do #.")) from e
         raise
 
 

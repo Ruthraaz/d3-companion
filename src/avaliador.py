@@ -25,6 +25,7 @@ import sys
 from difflib import get_close_matches
 from pathlib import Path
 
+from idioma import t
 from pastas import PASTA_BUILDS  # builds/ do projeto (ou do usuário, no .exe)
 
 # O parser devolve o encaixe da arma ("1-Hand", "2-Hand"); a build usa "Weapon".
@@ -108,7 +109,7 @@ def avaliar(item: dict, build: dict) -> dict:
         vazio = {"ok": [], "faltando": [], "lista": []}
         return resultado | {
             "bate": bate,
-            "motivo": "Gema da build" if bate else "Gema fora da build",
+            "motivo": t("Gema da build") if bate else t("Gema fora da build"),
             "obrigatorios": vazio,
             "desejaveis": vazio,
             "afixos": [],
@@ -125,7 +126,7 @@ def avaliar(item: dict, build: dict) -> dict:
         vazio = {"ok": [], "faltando": [], "lista": []}
         return resultado | {
             "bate": True,
-            "motivo": f"Vai no cubo de Kanai ({cubo[nome.lower()]})",
+            "motivo": t("Vai no cubo de Kanai ({parte})", parte=t(cubo[nome.lower()].capitalize()).lower()),
             "obrigatorios": vazio,
             "desejaveis": vazio,
             "afixos": [],
@@ -160,23 +161,24 @@ def avaliar(item: dict, build: dict) -> dict:
     sem_ancient = exige_ancient and "Ancient" not in item.get("qualidade", "")
     por_enquanto = False
     if item.get("classe") and item["classe"] != build.get("classe"):
-        bate, motivo = False, f"Item de {item['classe']}"
+        bate, motivo = False, t("Item de {classe}", classe=item["classe"])
     elif item_errado:
-        bate, motivo = False, "A build pede: " + " ou ".join(itens)
+        bate, motivo = False, t("A build pede: {itens}", itens=t(" ou ").join(itens))
         # Pra upar: no espaço certo e com os afixos da build, dá pra usar até achar o item.
         por_enquanto = not obrigatorios["faltando"] and nota >= NOTA_POR_ENQUANTO
     elif sem_ancient:
-        bate, motivo = False, "Precisa ser Ancient"
+        bate, motivo = False, t("Precisa ser Ancient")
         por_enquanto = not obrigatorios["faltando"]  # serve até cair um Ancient
     elif obrigatorios["faltando"]:
-        bate, motivo = False, "Falta: " + ", ".join(obrigatorios["faltando"])
+        bate, motivo = False, t("Falta: {afixos}", afixos=", ".join(t(f) for f in obrigatorios["faltando"]))
     else:
         bate = True
-        motivo = f"Item da build: {nome}" if itens else "Afixos obrigatórios ok"
+        motivo = t("Item da build: {nome}", nome=nome) if itens else t("Afixos obrigatórios ok")
 
     return resultado | {
         "bate": bate,
         "motivo": motivo,
+        "item_da_build": bate and bool(itens),
         "obrigatorios": obrigatorios,
         "desejaveis": desejaveis,
         "afixos": obrigatorios["lista"] + desejaveis["lista"],

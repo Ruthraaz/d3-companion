@@ -9,12 +9,14 @@ Rodar:
     python -m unittest discover tests
 """
 
+import os
 import sys
 import unittest
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
+os.environ["D3C_IDIOMA"] = "pt"  # as mensagens conferidas são as em português
 
 from parser import interpretar, limpar_linha  # noqa: E402
 

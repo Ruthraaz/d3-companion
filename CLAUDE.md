@@ -256,6 +256,11 @@ trabalho extra agora, não feche essa porta:
   (aceita jogo, dicas, dicas.en, en), `Idioma.trocar` grava no .env e recarrega. index.html com `data-t`
   (aplicar() junta espaços/quebras da chave). blizzard.py manda `descricao` (en) junto de `descricao_pt`;
   app.js usa `nomeDe/descricaoDe`. Teste lê o HTML com HTMLParser (o mesmo que aplicar() traduz).
+- Python (fase 3): `src/idioma.py` `t(frase, **vars)` com o mesmo en.json; idioma = IDIOMA da config (relê
+  quando o .env muda). `D3C_IDIOMA=pt|en` no ambiente manda mais (todo test_*.py põe "pt" depois do sys.path).
+  Selo (nucleo), motivos (avaliador) e erros de blizzard/heroi/maxroll/janela/link_do_site/config passam por t().
+  Frases com variável viram modelo (`"Build {id} não encontrada."`, `!r` → `repr()`). O avaliador agora manda
+  `item_da_build` (o selo não depende mais do texto do motivo). Teste: o `ast` acha todo `t("...")` do src/*.py.
 - Cache do navegador segura o site.css velho no teste local: recarregar o próprio .css com Ctrl+Shift+R.
 
 ### Segurança (26/10/2026) — notas

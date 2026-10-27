@@ -13,6 +13,7 @@ from pathlib import Path
 from dotenv import dotenv_values
 
 from atalho import ler_atalho
+from idioma import t
 from pastas import ARQUIVO_ENV  # o .env do projeto (ou do usuário, no .exe)
 
 # chave -> valor padrão (o mesmo que o app usa quando a chave não existe)
@@ -50,20 +51,20 @@ def validar(chave: str, valor: str) -> str | None:
         try:
             ler_atalho(valor)
         except ValueError:
-            return f"Atalho inválido: {valor!r}. Exemplos: F8, Ctrl+F8, Alt+Q."
+            return t("Atalho inválido: {valor}. Exemplos: F8, Ctrl+F8, Alt+Q.", valor=repr(valor))
     elif chave == "SELO_SEGUNDOS":
         try:
             segundos = float(valor.replace(",", "."))
         except ValueError:
-            return "Tempo do selo precisa ser um número (ex.: 6)."
+            return t("Tempo do selo precisa ser um número (ex.: 6).")
         if not 1 <= segundos <= 60:
-            return "Tempo do selo precisa ficar entre 1 e 60 segundos."
+            return t("Tempo do selo precisa ficar entre 1 e 60 segundos.")
     elif chave == "IDIOMA":
         if valor not in IDIOMAS:
-            return 'Idioma precisa ser "en" ou "pt".'
+            return t('Idioma precisa ser "en" ou "pt".')
     elif chave == "AUTOMATICO":
         if valor not in ("sim", "nao"):
-            return 'Avaliação automática precisa ser "sim" ou "nao".'
+            return t('Avaliação automática precisa ser "sim" ou "nao".')
     elif chave == "BATTLETAG":
         from heroi import conta_da_battletag  # aqui: só a aba do herói precisa
         from blizzard import ErroBlizzard
@@ -75,9 +76,9 @@ def validar(chave: str, valor: str) -> str | None:
     elif chave == "BUILD_ATIVA":
         from avaliador import carregar_builds  # aqui: config não precisa das builds pro resto
         if valor and valor not in {b["id"] for b in carregar_builds()}:
-            return f"Não existe build {valor!r} em builds/."
+            return t("Não existe build {valor} em builds/.", valor=repr(valor))
     else:
-        return f"Configuração desconhecida: {chave}."
+        return t("Configuração desconhecida: {chave}.", chave=chave)
     return None
 
 

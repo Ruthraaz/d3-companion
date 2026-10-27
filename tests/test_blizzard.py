@@ -10,6 +10,7 @@ Rodar:
 
 import io
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -18,6 +19,7 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
+os.environ["D3C_IDIOMA"] = "pt"  # as mensagens conferidas são as em português
 
 from blizzard import (Blizzard, ErroBlizzard, chave_do_nome, itens_desconhecidos,  # noqa: E402
                       visual_da_build)

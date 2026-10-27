@@ -12,10 +12,12 @@ Rodar:
     python -m unittest discover tests
 """
 
+import ast
 import base64
 import datetime
 import functools
 import json
+import os
 import re
 import sys
 import tempfile
@@ -27,6 +29,7 @@ from unittest import mock
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
+os.environ["D3C_IDIOMA"] = "pt"  # as mensagens conferidas são as em português
 sys.path.insert(0, str(RAIZ / "ferramentas"))
 
 import dados_do_site  # noqa: E402
@@ -369,6 +372,36 @@ class TestIdioma(unittest.TestCase):
             with self.subTest(js.name):
                 faltam = sorted(self.frases_do_js(js) - set(self.en))
                 self.assertEqual(faltam, [], "ponha em src/web/dados/en.json")
+
+    @staticmethod
+    def frases_do_python(caminho):
+        """Os t("...") do Python (o ast junta as frases quebradas em várias linhas)."""
+        arvore = ast.parse(caminho.read_text(encoding="utf-8"))
+        return {no.args[0].value for no in ast.walk(arvore)
+                if isinstance(no, ast.Call) and isinstance(no.func, ast.Name) and no.func.id == "t"
+                and no.args and isinstance(no.args[0], ast.Constant) and isinstance(no.args[0].value, str)}
+
+    def test_toda_frase_do_python_tem_traducao(self):
+        arquivos = [p for p in sorted((RAIZ / "src").glob("*.py")) if "from idioma import t" in p.read_text(encoding="utf-8")]
+        self.assertGreaterEqual(len(arquivos), 8)
+        for py in arquivos:
+            with self.subTest(py.name):
+                faltam = sorted(self.frases_do_python(py) - set(self.en))
+                self.assertEqual(faltam, [], "ponha em src/web/dados/en.json")
+
+    def test_selo_em_ingles(self):
+        from nucleo import Avaliacao, montar_selo, texto_do_selo
+        av = Avaliacao(item={"nome": "Fiendish Grips"}, resultados=[{
+            "apelido": "Unhallowed", "bate": True, "por_enquanto": False, "item_da_build": True,
+            "motivo": "Item da build: Fiendish Grips", "sobrando": ["+12% Life"],
+            "afixos": [{"rotulo": "Destreza", "ok": True}, {"rotulo": "Dano crítico", "ok": False}]}])
+        with mock.patch.dict("os.environ", {"D3C_IDIOMA": "en"}):
+            texto = texto_do_selo(montar_selo(av))
+        self.assertIn("✅ Unhallowed · build item", texto)
+        self.assertIn("Has: " + self.en["Destreza"] + " ✓", texto)
+        self.assertIn("Missing: " + self.en["Dano crítico"] + " ✗", texto)
+        self.assertIn('Tip: at the Mystic, reroll "+12% Life" into ' + self.en["Dano crítico"] + ".", texto)
+        self.assertIn("Tem: Destreza ✓", texto_do_selo(montar_selo(av)))  # e de volta em português
 
     def test_toda_frase_marcada_no_html_tem_traducao(self):
         for pagina in (RAIZ / "docs" / "montar.html", RAIZ / "src" / "web" / "index.html"):

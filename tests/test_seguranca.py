@@ -7,6 +7,7 @@ Rodar:
 """
 
 import io
+import os
 import sys
 import tempfile
 import unittest
@@ -14,6 +15,7 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
+os.environ["D3C_IDIOMA"] = "pt"  # as mensagens conferidas são as em português
 
 from blizzard import Blizzard, ErroBlizzard  # noqa: E402
 from config import ler_config, salvar_config  # noqa: E402

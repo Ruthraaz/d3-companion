@@ -48,6 +48,7 @@ from avaliador import ficha_da_build, ler_builds, problemas_da_build
 from blizzard import Blizzard, ErroBlizzard, visual_da_build
 from config import ler_config, salvar_config
 from heroi import comparar, herois, heroi
+from idioma import t
 from maxroll import (ErroMaxroll, baixar_planner, builds_do_heroi, catalogo, classe_do_planner,
                      link_de_guia, montar, nomes_dos_perfis, planners_do_link, regravar_build,
                      remover_build, salvar_build)
@@ -120,7 +121,7 @@ class Api:
         {"erro": mensagem} se faltar chave ou internet: a tela mostra sem ícones."""
         build = next((b for b in ler_builds()[0] if b["id"] == id_build), None)
         if build is None:
-            return {"erro": f"Build {id_build!r} não encontrada."}
+            return {"erro": t("Build {id} não encontrada.", id=repr(id_build))}
         try:
             return visual_da_build(build, self._blizzard)
         except ErroBlizzard as e:
@@ -152,7 +153,7 @@ class Api:
         for p in herois:
             p["_guia"] = link_de_guia(texto)  # a janela marca o guia como "já importado"
         if not herois:
-            return {"erro": "Esse link não tem build de herói que o app conheça."}
+            return {"erro": t("Esse link não tem build de herói que o app conheça.")}
         self._planners.update({p["_numero"]: p for p in herois})
         return {"builds": [{
             "numero": p["_numero"],
@@ -166,14 +167,14 @@ class Api:
         """Grava a build escolhida em builds/ (nunca sobrescreve). {"id"} ou {"erro"}."""
         planner = self._planners.get(int(numero))
         if planner is None:
-            return {"erro": "Busque o link de novo antes de importar."}
+            return {"erro": t("Busque o link de novo antes de importar.")}
         try:
             build = montar(planner, int(perfil), apelido, self._blizzard)
         except ErroMaxroll as e:
             return {"erro": str(e)}
         problemas = problemas_da_build(build)
         if problemas:  # não devia acontecer; se acontecer, não grava build quebrada
-            return {"erro": "A build veio com problema: " + " ".join(problemas)}
+            return {"erro": t("A build veio com problema:") + " " + " ".join(problemas)}
         return {"id": salvar_build(build).stem}
 
     def importar_do_site(self, texto: str, apelido: str = "") -> dict:
@@ -193,25 +194,25 @@ class Api:
         dicas.en.json (o que cada item faz) ou dados/en.json (as frases da janela em
         inglês). Vêm junto com o app, gerados por ferramentas/dados_do_site.py."""
         if qual not in ("jogo", "dicas", "dicas.en", "en"):
-            return {"erro": "Não sei que dados são esses."}
+            return {"erro": t("Não sei que dados são esses.")}
         try:
             return json.loads((WEB / "dados" / f"{qual}.json").read_text(encoding="utf-8"))
         except (OSError, ValueError):
-            return {"erro": f"Falta o arquivo dados/{qual}.json do app."}
+            return {"erro": t("Falta o arquivo dados/{qual}.json do app.", qual=qual)}
 
     def salvar_montada(self, build: dict, id_build: str = "") -> dict:
         """Grava a build da aba Montar. Sem id cria uma nova (nunca sobrescreve);
         com id altera essa, se ela também foi feita no montador. {"id"} ou {"erro"}."""
         try:
             if len(json.dumps(build, ensure_ascii=False)) > MAXIMO_DA_BUILD:
-                return {"erro": "Essa build está grande demais."}
+                return {"erro": t("Essa build está grande demais.")}
             build = build_montada(build)
         except (ErroLinkDoSite, TypeError, ValueError) as e:
             return {"erro": str(e)}
         if id_build:
             arquivo = regravar_build(id_build, build)
             if arquivo is None:
-                return {"erro": "Não achei essa build pra alterar (só as feitas no montador podem ser alteradas)."}
+                return {"erro": t("Não achei essa build pra alterar (só as feitas no montador podem ser alteradas).")}
             return {"id": arquivo.stem}
         return {"id": salvar_build(build).stem}
 
@@ -220,7 +221,7 @@ class Api:
         mudanças" grava em cima dela (só as feitas no montador)."""
         build = next((b for b in ler_builds()[0] if b["id"] == id_build), None)
         if build is None:
-            return {"erro": f"Build {id_build!r} não encontrada."}
+            return {"erro": t("Build {id} não encontrada.", id=repr(id_build))}
         return {"build": {k: v for k, v in build.items() if k != "id"},
                 "pode_alterar": (build.get("fonte") or {}).get("site") == "montar"}
 
@@ -228,7 +229,7 @@ class Api:
         """Tira a build do app (apaga o arquivo dela em builds/). Se era a do
         atalho, o atalho volta a usar todas. {"ok"} ou {"erro"}."""
         if not remover_build(str(id_build)):
-            return {"erro": "Essa build não está mais na pasta."}
+            return {"erro": t("Essa build não está mais na pasta.")}
         if ler_config().get("BUILD_ATIVA") == id_build:
             salvar_config({"BUILD_ATIVA": ""})
         self._overlay.ligar()  # o overlay só lê builds/ ao abrir
@@ -260,7 +261,7 @@ class Api:
         as habilidades, já com os nomes em português."""
         build = next((b for b in ler_builds()[0] if b["id"] == id_build), None)
         if build is None:
-            return {"erro": f"Build {id_build!r} não encontrada."}
+            return {"erro": t("Build {id} não encontrada.", id=repr(id_build))}
         try:
             h = heroi(self._blizzard, battletag, int(id_heroi))
             r = comparar(h, build)

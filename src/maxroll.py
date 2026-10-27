@@ -34,6 +34,7 @@ from pathlib import Path
 
 from rede import RespostaGrande, ler
 
+from idioma import t
 from pastas import PASTA_BUILDS, PASTA_DADOS
 
 PASTA_CACHE = PASTA_DADOS / "maxroll"
@@ -97,8 +98,8 @@ def id_do_link(texto: str) -> int:
     "https://maxroll.gg/d3/planner/345357607#2" -> 345357607."""
     m = re.search(r"planner/(\d+)", texto) or re.fullmatch(r"\s*(\d{6,})\s*", texto)
     if not m:
-        raise ErroMaxroll("Não achei a build no link. Cole o link de um guia de D3 do Maxroll "
-                          "(maxroll.gg/d3/guides/...) ou do planejador (maxroll.gg/d3/planner/...).")
+        raise ErroMaxroll(t("Não achei a build no link. Cole o link de um guia de D3 do Maxroll "
+                            "(maxroll.gg/d3/guides/...) ou do planejador (maxroll.gg/d3/planner/...)."))
     return int(m.group(1))
 
 
@@ -118,16 +119,16 @@ def planners_do_link(texto: str, abrir=urllib.request.urlopen) -> list[int]:
         with abrir(urllib.request.Request(guia, headers=CABECALHO), timeout=30) as r:
             html = ler(r).decode("utf-8", "replace")
     except RespostaGrande as e:
-        raise ErroMaxroll("O Maxroll mandou uma resposta grande demais; o app não abriu.") from e
+        raise ErroMaxroll(t("O Maxroll mandou uma resposta grande demais; o app não abriu.")) from e
     except urllib.error.HTTPError as e:
         if e.code == 404:
-            raise ErroMaxroll("Esse guia não existe no Maxroll. O link está certo?") from e
-        raise ErroMaxroll(f"O Maxroll respondeu com erro {e.code}.") from e
+            raise ErroMaxroll(t("Esse guia não existe no Maxroll. O link está certo?")) from e
+        raise ErroMaxroll(t("O Maxroll respondeu com erro {codigo}.", codigo=e.code)) from e
     except (urllib.error.URLError, TimeoutError, OSError) as e:
-        raise ErroMaxroll("Não consegui falar com o Maxroll. Está sem internet?") from e
+        raise ErroMaxroll(t("Não consegui falar com o Maxroll. Está sem internet?")) from e
     numeros = list(dict.fromkeys(int(n) for n in re.findall(r'data-d3planner-id="(\d+)"', html)))
     if not numeros:
-        raise ErroMaxroll("Não achei nenhuma build nesse guia (o site pode ter mudado).")
+        raise ErroMaxroll(t("Não achei nenhuma build nesse guia (o site pode ter mudado)."))
     return numeros
 
 
@@ -175,13 +176,13 @@ def catalogo(pasta: Path = PASTA_CACHE, abrir=urllib.request.urlopen, atualizar:
     except (urllib.error.URLError, TimeoutError, OSError, RespostaGrande) as e:
         if guardado:
             return guardado["guias"]
-        raise ErroMaxroll("Não consegui falar com o Maxroll. Está sem internet?") from e
+        raise ErroMaxroll(t("Não consegui falar com o Maxroll. Está sem internet?")) from e
     links = dict.fromkeys(re.findall(r"<loc>(https://maxroll\.gg/d3/guides/[a-z0-9-]+)</loc>", mapa))
     guias = sorted((g for g in map(guia_do_link, links) if g), key=lambda g: (g["classe"], g["titulo"]))
     if not guias:
         if guardado:
             return guardado["guias"]
-        raise ErroMaxroll("Não achei a lista de guias no Maxroll (o site pode ter mudado).")
+        raise ErroMaxroll(t("Não achei a lista de guias no Maxroll (o site pode ter mudado)."))
     pasta.mkdir(parents=True, exist_ok=True)
     arquivo.write_text(json.dumps({"dia": hoje, "guias": guias}, ensure_ascii=False), encoding="utf-8")
     return guias
@@ -211,16 +212,16 @@ def _baixar(url: str, abrir=urllib.request.urlopen):
         with abrir(urllib.request.Request(url, headers=CABECALHO), timeout=30) as r:
             return json.loads(ler(r))
     except RespostaGrande as e:
-        raise ErroMaxroll("O Maxroll mandou uma resposta grande demais; o app não abriu.") from e
+        raise ErroMaxroll(t("O Maxroll mandou uma resposta grande demais; o app não abriu.")) from e
     except urllib.error.HTTPError as e:
         if e.code == 404:
-            raise ErroMaxroll("O Maxroll não achou essa build. O link está certo e a build é pública?") from e
-        raise ErroMaxroll(f"O Maxroll respondeu com erro {e.code}.") from e
+            raise ErroMaxroll(t("O Maxroll não achou essa build. O link está certo e a build é pública?")) from e
+        raise ErroMaxroll(t("O Maxroll respondeu com erro {codigo}.", codigo=e.code)) from e
     except (urllib.error.URLError, TimeoutError, OSError) as e:
-        raise ErroMaxroll("Não consegui falar com o Maxroll. Está sem internet?") from e
+        raise ErroMaxroll(t("Não consegui falar com o Maxroll. Está sem internet?")) from e
     except json.JSONDecodeError as e:
-        raise ErroMaxroll("O Maxroll respondeu num formato que o app não conhece "
-                          "(o site pode ter mudado).") from e
+        raise ErroMaxroll(t("O Maxroll respondeu num formato que o app não conhece "
+                            "(o site pode ter mudado).")) from e
 
 
 def baixar_planner(numero: int, abrir=urllib.request.urlopen) -> dict:
@@ -233,8 +234,8 @@ def baixar_planner(numero: int, abrir=urllib.request.urlopen) -> dict:
             dados = {"profiles": [dados], "activeProfile": 0, "class": dados.get("class")}
         dados["profiles"]  # noqa: B018 — só confere que existe
     except (KeyError, TypeError, json.JSONDecodeError) as e:
-        raise ErroMaxroll("O Maxroll respondeu num formato que o app não conhece "
-                          "(o site pode ter mudado).") from e
+        raise ErroMaxroll(t("O Maxroll respondeu num formato que o app não conhece "
+                            "(o site pode ter mudado).")) from e
     dados["_nome"] = bruto.get("name") or dados.get("name") or f"Maxroll {numero}"
     dados["_numero"] = numero
     return dados
@@ -350,12 +351,11 @@ def converter(planner: dict, dados: dict, habilidades_da_classe: dict | None = N
     if perfil is None:
         perfil = planner.get("activeProfile") or 0
     if not 0 <= perfil < len(planner["profiles"]):
-        raise ErroMaxroll(f"Essa build tem {len(planner['profiles'])} perfis; "
-                          f"escolha de 1 a {len(planner['profiles'])}.")
+        raise ErroMaxroll(t("Essa build tem {n} perfis; escolha de 1 a {n}.", n=len(planner["profiles"])))
     p = planner["profiles"][perfil]
     classe_mx = p.get("class") or planner.get("class")
     if classe_mx not in CLASSES:
-        raise ErroMaxroll(f"Classe {classe_mx!r} do Maxroll não é conhecida pelo app.")
+        raise ErroMaxroll(t("Classe {classe} do Maxroll não é conhecida pelo app.", classe=repr(classe_mx)))
     classe, atributo, rotulo, chave_do_atributo = CLASSES[classe_mx]
 
     # código sem hífen ("smokescreen") -> habilidade da Blizzard (slug, nome, nome_pt)
@@ -511,7 +511,7 @@ def montar(planner: dict, perfil: int | None = None, apelido: str | None = None,
     from blizzard import Blizzard, ErroBlizzard
     classe = classe_do_planner(planner)
     if classe is None:
-        raise ErroMaxroll("Essa build é de uma classe que o app não conhece.")
+        raise ErroMaxroll(t("Essa build é de uma classe que o app não conhece."))
     try:
         habilidades = (blizzard or Blizzard()).habilidades(classe)
     except ErroBlizzard:

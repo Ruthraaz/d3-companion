@@ -8,12 +8,14 @@ Rodar:
     python -m unittest discover tests
 """
 
+import os
 import sys
 import unittest
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
+os.environ["D3C_IDIOMA"] = "pt"  # as mensagens conferidas são as em português
 
 from avaliador import avaliar, carregar_builds  # noqa: E402
 from blizzard import ErroBlizzard  # noqa: E402

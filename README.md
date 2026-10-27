@@ -395,7 +395,9 @@ O site abre **em inglês** e vai sozinho pra **português** quando o navegador e
 
 **No app**, o idioma fica em **Configurações → Idioma** (`IDIOMA=en` ou `pt` no `.env`); sem escolha, vale o idioma do Windows. Em inglês, as habilidades, runas e o seguidor aparecem com o nome e a descrição do jogo em inglês (a API da Blizzard manda os dois).
 
-Como funciona: o texto no código continua em português e `src/web/dados/en.json` diz como cada frase fica em inglês (`src/web/idioma.js`: `Idioma.t("Salvar no app")`). Em inglês, os nomes do jogo (classes, habilidades, runas) e as dicas dos itens (`dados/dicas.en.json`) vêm do próprio jogo em inglês. Um teste avisa quando falta tradução de alguma frase.
+O selo do F8 e as mensagens de erro (Blizzard, Maxroll, configurações) seguem o mesmo idioma.
+
+Como funciona: o texto no código continua em português e `src/web/dados/en.json` diz como cada frase fica em inglês (`src/web/idioma.js`: `Idioma.t("Salvar no app")`; no Python, `src/idioma.py`: `t("Precisa ser Ancient")`). Em inglês, os nomes do jogo (classes, habilidades, runas) e as dicas dos itens (`dados/dicas.en.json`) vêm do próprio jogo em inglês. Um teste avisa quando falta tradução de alguma frase.
 
 ## Avaliação automática (passar o mouse)
 
