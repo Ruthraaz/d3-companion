@@ -387,7 +387,13 @@ Na tela da build, no montador e no site, **passe o mouse num item ou numa gema**
 python ferramentas/dados_do_site.py              # dados do jogo e dicas + copia pro site
 python ferramentas/dados_do_site.py --so-copiar  # só copia pro site (docs/)
 ```
-O site usa os mesmos arquivos do app: `docs/app.css` (= `src/web/estilo.css`), `montar.css`, `montar.js`, `dica.js` e `dados/` são cópias. Um teste confere que estão em dia.
+O site usa os mesmos arquivos do app: `docs/app.css` (= `src/web/estilo.css`), `montar.css`, `montar.js`, `dica.js`, `idioma.js` e `dados/` são cópias. Um teste confere que estão em dia.
+
+## Inglês e português
+
+O site abre **em inglês** e vai sozinho pra **português** quando o navegador está em português (`docs/pt/` é a página inicial em português; o link **English / Português** no topo troca e a escolha fica guardada no navegador). No montador, o botão do topo faz o mesmo.
+
+Como funciona: o texto no código continua em português e `src/web/dados/en.json` diz como cada frase fica em inglês (`src/web/idioma.js`: `Idioma.t("Salvar no app")`). Em inglês, os nomes do jogo (classes, habilidades, runas) e as dicas dos itens (`dados/dicas.en.json`) vêm do próprio jogo em inglês. Um teste avisa quando falta tradução de alguma frase.
 
 ## Avaliação automática (passar o mouse)
 

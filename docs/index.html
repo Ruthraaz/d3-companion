@@ -1,28 +1,33 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://api.github.com; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
-  <title>D3 Companion — saiba na hora se o item serve na sua build</title>
-  <meta name="description" content="Ajudante grátis para Diablo III: passe o mouse no item, aperte F8 e veja se ele serve na build do Maxroll que você escolheu, o que tem e o que falta.">
+  <title>D3 Companion — know right away if an item fits your build</title>
+  <meta name="description" content="Free Diablo III helper: hover an item, press F8 and see if it fits the Maxroll build you picked, what it has and what it's missing.">
   <link rel="canonical" href="https://ruthraaz.github.io/d3-companion/">
+  <!-- Página em português: pt/index.html (mesmo conteúdo). -->
+  <link rel="alternate" hreflang="en" href="https://ruthraaz.github.io/d3-companion/">
+  <link rel="alternate" hreflang="pt-BR" href="https://ruthraaz.github.io/d3-companion/pt/">
+  <link rel="alternate" hreflang="x-default" href="https://ruthraaz.github.io/d3-companion/">
   <!-- Prévia do link (WhatsApp, Discord, redes): imagem própria, sem arte do jogo. -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="D3 Companion">
-  <meta property="og:locale" content="pt_BR">
-  <meta property="og:title" content="D3 Companion — saiba na hora se o item serve na sua build">
-  <meta property="og:description" content="Ajudante grátis para Diablo III: aperte F8 no item e veja se serve na sua build. Monte builds com os dados do jogo, no app ou no site.">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:title" content="D3 Companion — know right away if an item fits your build">
+  <meta property="og:description" content="Free Diablo III helper: press F8 on an item and see if it fits your build. Plan builds with the game's data, in the app or on the site.">
   <meta property="og:url" content="https://ruthraaz.github.io/d3-companion/">
   <meta property="og:image" content="https://ruthraaz.github.io/d3-companion/img/compartilhar.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="D3 Companion: saiba na hora se o item serve na sua build">
+  <meta property="og:image:alt" content="D3 Companion: know right away if an item fits your build">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="D3 Companion — saiba na hora se o item serve na sua build">
-  <meta name="twitter:description" content="Ajudante grátis para Diablo III: aperte F8 no item e veja se serve na sua build. Monte builds com os dados do jogo, no app ou no site.">
+  <meta name="twitter:title" content="D3 Companion — know right away if an item fits your build">
+  <meta name="twitter:description" content="Free Diablo III helper: press F8 on an item and see if it fits your build. Plan builds with the game's data, in the app or on the site.">
   <meta name="twitter:image" content="https://ruthraaz.github.io/d3-companion/img/compartilhar.png">
   <meta name="theme-color" content="#111215">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -31,36 +36,39 @@
 <body>
   <header class="topo">
     <a class="marca" href="#inicio"><span class="runa" aria-hidden="true"></span>D3 Companion</a>
-    <nav class="menu" aria-label="Seções">
-      <a href="montar.html">Montar build</a>
-      <a href="#recursos">Recursos</a>
-      <a href="#como">Como funciona</a>
-      <a href="#seguranca">Segurança</a>
-      <a href="#perguntas">Perguntas</a>
+    <nav class="menu" aria-label="Sections">
+      <a href="montar.html">Build planner</a>
+      <a href="#recursos">Features</a>
+      <a href="#como">How it works</a>
+      <a href="#seguranca">Security</a>
+      <a href="#perguntas">FAQ</a>
     </nav>
-    <a class="botao botao-pequeno" href="#baixar">Baixar</a>
+    <div class="topo-acoes">
+      <a class="idioma js-idioma" href="pt/" data-idioma="pt" hreflang="pt-BR" lang="pt-BR">Português</a>
+      <a class="botao botao-pequeno" href="#baixar">Download</a>
+    </div>
   </header>
 
   <main id="inicio">
     <!-- HERÓI -->
     <section class="heroi">
       <div class="heroi-texto">
-        <p class="selo-topo">Grátis · Windows 10 e 11 · Código aberto</p>
-        <h1>Saiba na hora se o item <span>serve na sua build.</span></h1>
-        <p class="sub">Passe o mouse no item e aperte <kbd>F8</kbd>. O D3 Companion compara com a build do Maxroll que você escolheu
-          e diz o que o item tem, o que falta e o que trocar no Místico.</p>
+        <p class="selo-topo">Free · Windows 10 and 11 · Open source</p>
+        <h1>Know right away if an item <span>fits your build.</span></h1>
+        <p class="sub">Hover the item and press <kbd>F8</kbd>. D3 Companion compares it with the Maxroll build you picked
+          and tells you what the item has, what it's missing and what to reroll at the Mystic.</p>
         <div class="acoes">
           <a class="botao botao-grande js-baixar" href="https://github.com/Ruthraaz/d3-companion/releases/latest">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
-            <span class="js-rotulo">Baixar para Windows</span>
+            <span class="js-rotulo">Download for Windows</span>
           </a>
-          <a class="botao botao-leve botao-grande" href="montar.html">Montar uma build</a>
+          <a class="botao botao-leve botao-grande" href="montar.html">Plan a build</a>
         </div>
-        <p class="detalhe-baixar js-detalhe">Carregando a versão…</p>
+        <p class="detalhe-baixar js-detalhe">Loading the version…</p>
       </div>
 
       <!-- Desenho do selo (só CSS, sem arte do jogo). -->
-      <div class="demo" aria-label="Exemplo do selo ao lado da dica do item">
+      <div class="demo" aria-label="Example of the badge next to the item tooltip">
         <div class="dica">
           <p class="dica-nome">Fiendish Grips</p>
           <p class="dica-tipo">Ancient Set Gloves</p>
@@ -73,10 +81,10 @@
         </div>
         <div class="selo">
           <p class="selo-titulo">Fiendish Grips</p>
-          <p class="selo-linha"><b class="ok">✅ Unhallowed</b> · item da build</p>
-          <p class="selo-linha">Tem: <span class="ok">Destreza ✓ Vitalidade ✓ Crítico ✓</span></p>
-          <p class="selo-linha">Falta: <span class="falta">Dano crítico ✗</span></p>
-          <p class="selo-linha dica-mistico">Dica: no Místico, troque "Attack Speed" por Dano crítico.</p>
+          <p class="selo-linha"><b class="ok">✅ Unhallowed</b> · build item</p>
+          <p class="selo-linha">Has: <span class="ok">Dexterity ✓ Vitality ✓ Crit chance ✓</span></p>
+          <p class="selo-linha">Missing: <span class="falta">Crit damage ✗</span></p>
+          <p class="selo-linha dica-mistico">Tip: at the Mystic, reroll "Attack Speed" into Crit damage.</p>
         </div>
       </div>
     </section>
@@ -85,66 +93,66 @@
     <section class="vitrine">
       <figure>
         <img src="img/janela.png" width="1280" height="800" loading="lazy"
-             alt="Janela do D3 Companion na aba Montar: os espaços do boneco, a roda de gemas e a dica de um item de conjunto aberta">
-        <figcaption>A janela do app: monte a build e passe o mouse no item pra ver o que ele faz.</figcaption>
+             alt="D3 Companion window on the planner tab: the character slots, the gem wheel and the tooltip of a set item">
+        <figcaption>The app window: plan the build and hover an item to see what it does.</figcaption>
       </figure>
     </section>
 
     <!-- RECURSOS -->
     <section class="secao" id="recursos">
-      <h2>O que ele faz</h2>
+      <h2>What it does</h2>
       <div class="cartoes">
         <article class="cartao">
           <span class="cartao-icone"><svg viewBox="0 0 24 24"><path d="M4 7h16v10H4zM8 11h3M8 14h6"/></svg></span>
-          <h3>Selo no jogo</h3>
-          <p>Ao lado da dica do item aparece um selo: <b class="ok">serve</b>, <b class="parcial">serve por enquanto</b>
-            (pra upar) ou <b class="falta">não serve</b>, com os afixos que tem e os que faltam.</p>
+          <h3>In-game badge</h3>
+          <p>A badge shows up next to the item tooltip: <b class="ok">fits</b>, <b class="parcial">fits for now</b>
+            (for leveling) or <b class="falta">doesn't fit</b>, with the affixes it has and the ones it's missing.</p>
         </article>
         <article class="cartao">
           <span class="cartao-icone"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>
-          <h3>Builds do Maxroll</h3>
-          <p>Escolha a classe e o guia, ou cole o link de qualquer build do Maxroll. O app traz itens, habilidades,
-            runas e paragon, e já passa a usar a build no atalho.</p>
+          <h3>Maxroll builds</h3>
+          <p>Pick the class and the guide, or paste the link of any Maxroll build. The app brings the items, skills,
+            runes and paragon, and the hotkey starts using the build right away.</p>
         </article>
         <article class="cartao">
           <span class="cartao-icone"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16zM14 7l3 3"/></svg></span>
-          <h3>Monte sua build</h3>
-          <p>No app (aba Montar) ou aqui no site, sem instalar nada: itens, gemas, cubo de Kanai, habilidades com runas
-            e paragon, com os dados do jogo. Passe o mouse num item pra ver o que ele faz.
-            <a href="montar.html">Abrir o montador</a>.</p>
+          <h3>Plan your build</h3>
+          <p>In the app (Planner tab) or right here on the site, nothing to install: items, gems, Kanai's Cube, skills with runes
+            and paragon, with the game's data. Hover an item to see what it does.
+            <a href="montar.html">Open the planner</a>.</p>
         </article>
         <article class="cartao">
           <span class="cartao-icone"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/></svg></span>
-          <h3>Meu herói</h3>
-          <p>Digite sua BattleTag: o app pega o equipamento do seu herói na API oficial da Blizzard e mostra,
-            peça por peça, o que já bate com a build.</p>
+          <h3>My hero</h3>
+          <p>Type your BattleTag: the app gets your hero's gear from Blizzard's official API and shows,
+            piece by piece, what already matches the build.</p>
         </article>
         <article class="cartao">
           <span class="cartao-icone"><svg viewBox="0 0 24 24"><path d="M4 20h16M7 16V10M12 16V6M17 16v-4"/></svg></span>
-          <h3>Ao upar e paragon</h3>
-          <p>Em que nível libera cada habilidade e runa da build, e onde pôr os pontos de paragon, na ordem do jogo.</p>
+          <h3>Leveling and paragon</h3>
+          <p>At which level each skill and rune of the build unlocks, and where to put your paragon points, in the game's order.</p>
         </article>
         <article class="cartao">
           <span class="cartao-icone"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></span>
-          <h3>Dica do Místico</h3>
-          <p>Diz qual afixo vale trocar no Místico pra completar o item. Se você já trocou um, ele sabe que só esse
-            pode ser trocado de novo.</p>
+          <h3>Mystic tip</h3>
+          <p>Tells you which affix is worth rerolling at the Mystic to complete the item. If you already rerolled one, it knows
+            only that one can be rerolled again.</p>
         </article>
         <article class="cartao">
           <span class="cartao-icone"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></span>
-          <h3>Só olha a tela</h3>
-          <p>Lê a dica do item como você lê: pela tela. Não mexe na memória nem nos arquivos do jogo.</p>
+          <h3>Only looks at the screen</h3>
+          <p>It reads the item tooltip the way you do: from the screen. It doesn't touch the game's memory or files.</p>
         </article>
       </div>
     </section>
 
     <!-- COMO FUNCIONA -->
     <section class="secao" id="como">
-      <h2>Como funciona</h2>
+      <h2>How it works</h2>
       <ol class="passos">
-        <li><span class="passo-num">1</span><div><h3>Baixe e abra</h3><p>Descompacte o zip e abra o <code>D3 Companion.exe</code>. O leitor de texto (OCR) já vem junto.</p></div></li>
-        <li><span class="passo-num">2</span><div><h3>Monte suas builds</h3><p>Cole o link de um guia do Maxroll (ou escolha um na aba Guias). A build é importada e fica salva no app, só as que você usa.</p></div></li>
-        <li><span class="passo-num">3</span><div><h3>Jogue e aperte F8</h3><p>Com o jogo em <b>tela cheia em janela</b>, passe o mouse no item e aperte F8. O selo aparece ao lado da dica.</p></div></li>
+        <li><span class="passo-num">1</span><div><h3>Download and open</h3><p>Unzip it and open <code>D3 Companion.exe</code>. The text reader (OCR) is included.</p></div></li>
+        <li><span class="passo-num">2</span><div><h3>Set up your builds</h3><p>Paste the link of a Maxroll guide (or pick one in the Guides tab). The build is imported and saved in the app, only the ones you use.</p></div></li>
+        <li><span class="passo-num">3</span><div><h3>Play and press F8</h3><p>With the game in <b>windowed fullscreen</b>, hover the item and press F8. The badge shows up next to the tooltip.</p></div></li>
       </ol>
     </section>
 
@@ -152,72 +160,72 @@
     <section class="secao" id="baixar">
       <div class="baixar">
         <div>
-          <h2>Baixar o D3 Companion</h2>
-          <p class="mudo">Grátis, sem cadastro e sem propaganda.</p>
+          <h2>Download D3 Companion</h2>
+          <p class="mudo">Free, no sign-up and no ads.</p>
           <dl class="ficha">
-            <div><dt>Versão</dt><dd class="js-versao">—</dd></div>
-            <div><dt>Tamanho</dt><dd class="js-tamanho">—</dd></div>
-            <div><dt>Publicada em</dt><dd class="js-data">—</dd></div>
-            <div><dt>Sistema</dt><dd>Windows 10 ou 11 (64 bits)</dd></div>
+            <div><dt>Version</dt><dd class="js-versao">—</dd></div>
+            <div><dt>Size</dt><dd class="js-tamanho">—</dd></div>
+            <div><dt>Released</dt><dd class="js-data">—</dd></div>
+            <div><dt>System</dt><dd>Windows 10 or 11 (64-bit)</dd></div>
           </dl>
           <a class="botao botao-grande js-baixar" href="https://github.com/Ruthraaz/d3-companion/releases/latest">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
-            <span class="js-rotulo">Baixar para Windows</span>
+            <span class="js-rotulo">Download for Windows</span>
           </a>
-          <p class="nota js-soma">A soma SHA-256 de cada versão fica na página da versão no GitHub.</p>
+          <p class="nota js-soma">The SHA-256 checksum of each version is on its release page on GitHub.</p>
         </div>
         <div class="aviso-windows">
-          <h3>O Windows vai avisar. É normal.</h3>
-          <p>O app não tem assinatura digital (ela é paga). Na primeira vez aparece <i>"O Windows protegeu o computador"</i>:
-            clique em <b>Mais informações</b> e em <b>Executar assim mesmo</b>.</p>
-          <p>Quer conferir antes? O código inteiro está no GitHub, e o zip é gerado por um script que está lá
+          <h3>Windows will warn you. That's normal.</h3>
+          <p>The app has no digital signature (those cost money). The first time, you'll see <i>"Windows protected your PC"</i>:
+            click <b>More info</b> and then <b>Run anyway</b>.</p>
+          <p>Want to check first? All the code is on GitHub, and the zip is made by a script that's there too
             (<code>ferramentas/empacotar.py</code>).</p>
-          <h3>Ícones e nomes em português (opcional)</h3>
-          <p>Os ícones, os nomes em português e a aba "Meu herói" usam a API oficial da Blizzard, que pede uma chave
-            gratuita sua. O <code>LEIA-ME.txt</code> dentro do zip mostra como criar. Sem a chave, o selo e as builds funcionam do mesmo jeito.</p>
+          <h3>Icons and hero lookup (optional)</h3>
+          <p>The icons, the Portuguese names and the "My hero" tab use Blizzard's official API, which needs a free key
+            of your own. The <code>LEIA-ME.txt</code> inside the zip shows how to create one. Without the key, the badge and the builds work just the same.</p>
         </div>
       </div>
     </section>
 
     <!-- SEGURANÇA -->
     <section class="secao" id="seguranca">
-      <h2>Segurança e privacidade</h2>
+      <h2>Security and privacy</h2>
       <ul class="lista-seguranca">
-        <li><b>Não lê o jogo por dentro.</b> Nada de memória, DLL ou DirectX: só um print da área da dica quando você aperta o atalho.</li>
-        <li><b>Seus prints ficam no seu PC</b> e o app guarda só os 200 mais novos. Nada é enviado pra lugar nenhum.</li>
-        <li><b>Só fala com o Maxroll e com a Blizzard</b>, sempre por HTTPS. Sem conta, sem coleta de dados, sem análise de uso.</li>
-        <li><b>Sua chave da Blizzard é sua:</b> fica num arquivo no seu PC (<code>%APPDATA%\D3 Companion\.env</code>), e a janela do app nem consegue lê-la.</li>
-        <li><b>Revisado:</b> limite de tamanho no que vem da internet, links só do Maxroll, bibliotecas conferidas na base de falhas conhecidas (OSV).</li>
+        <li><b>It doesn't read the game from the inside.</b> No memory, DLL or DirectX: just a screenshot of the tooltip area when you press the hotkey.</li>
+        <li><b>Your screenshots stay on your PC</b> and the app keeps only the 200 newest. Nothing is sent anywhere.</li>
+        <li><b>It only talks to Maxroll and Blizzard</b>, always over HTTPS. No account, no data collection, no usage analytics.</li>
+        <li><b>Your Blizzard key is yours:</b> it stays in a file on your PC (<code>%APPDATA%\D3 Companion\.env</code>), and the app window can't even read it.</li>
+        <li><b>Reviewed:</b> size limits on everything that comes from the internet, links only from Maxroll, libraries checked against the known vulnerabilities database (OSV).</li>
       </ul>
     </section>
 
     <!-- PERGUNTAS -->
     <section class="secao" id="perguntas">
-      <h2>Perguntas</h2>
+      <h2>FAQ</h2>
       <div class="perguntas">
-        <details><summary>Isso dá ban?</summary>
-          <p>O app só olha a tela, como uma gravação de vídeo, e não toca no jogo. Mesmo assim, ele não é da Blizzard:
-            use por sua conta.</p></details>
-        <details><summary>Funciona com o jogo em tela cheia?</summary>
-          <p>Use <b>tela cheia em janela</b> (Windowed Fullscreen) nas opções de vídeo do Diablo III. Em tela cheia exclusiva
-            o Windows não deixa outro programa desenhar por cima.</p></details>
-        <details><summary>Qual idioma o jogo precisa estar?</summary>
-          <p>Inglês: as builds do Maxroll e a leitura da dica usam os nomes em inglês. A janela do app é em português.</p></details>
-        <details><summary>Preciso instalar alguma coisa?</summary>
-          <p>Não. Descompacte e abra. Seus dados ficam em <code>%APPDATA%\D3 Companion</code>, então trocar de versão não apaga nada.</p></details>
-        <details><summary>Posso usar outra tecla no lugar do F8?</summary>
-          <p>Pode: em Configurações, ex.: <code>Ctrl+F8</code> ou <code>Alt+Q</code>. Se outro programa já usa a tecla, o app avisa quais estão livres.</p></details>
+        <details><summary>Can I get banned for this?</summary>
+          <p>The app only looks at the screen, like a video recording, and doesn't touch the game. Still, it's not made by Blizzard:
+            use it at your own risk.</p></details>
+        <details><summary>Does it work with the game in fullscreen?</summary>
+          <p>Use <b>Windowed Fullscreen</b> in Diablo III's video options. In exclusive fullscreen,
+            Windows doesn't let other programs draw on top.</p></details>
+        <details><summary>Which language does the game need to be in?</summary>
+          <p>English: the Maxroll builds and the tooltip reader use the English names. The app window can be in English or Portuguese (in Settings).</p></details>
+        <details><summary>Do I need to install anything?</summary>
+          <p>No. Unzip and open. Your data stays in <code>%APPDATA%\D3 Companion</code>, so switching versions doesn't erase anything.</p></details>
+        <details><summary>Can I use another key instead of F8?</summary>
+          <p>Yes: in Settings, e.g. <code>Ctrl+F8</code> or <code>Alt+Q</code>. If another program already uses the key, the app tells you which ones are free.</p></details>
       </div>
     </section>
   </main>
 
   <footer class="rodape">
-    <p>D3 Companion é um projeto independente e de código aberto. Não é da Blizzard Entertainment nem do Maxroll.
-      Diablo é marca registrada da Blizzard Entertainment, Inc.</p>
-    <p><button type="button" class="botao botao-leve botao-pequeno js-compartilhar">Mandar o site pra um amigo</button></p>
-    <p><a href="https://github.com/Ruthraaz/d3-companion">GitHub</a> · <a href="https://github.com/Ruthraaz/d3-companion/releases">Todas as versões</a>
-      · <a href="https://github.com/Ruthraaz/d3-companion/issues">Ideias e problemas</a>
-      · <a href="https://github.com/Ruthraaz/d3-companion/security/policy">Segurança</a></p>
+    <p>D3 Companion is an independent, open-source project. It is not made by Blizzard Entertainment or Maxroll.
+      Diablo is a registered trademark of Blizzard Entertainment, Inc.</p>
+    <p><button type="button" class="botao botao-leve botao-pequeno js-compartilhar">Send the site to a friend</button></p>
+    <p><a href="https://github.com/Ruthraaz/d3-companion">GitHub</a> · <a href="https://github.com/Ruthraaz/d3-companion/releases">All versions</a>
+      · <a href="https://github.com/Ruthraaz/d3-companion/issues">Ideas and issues</a>
+      · <a href="https://github.com/Ruthraaz/d3-companion/security/policy">Security</a></p>
   </footer>
 
   <script src="site.js"></script>

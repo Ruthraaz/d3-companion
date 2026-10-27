@@ -130,7 +130,7 @@ class TestSegurancaDoSite(unittest.TestCase):
     """O site é público: cada página com CSP, nada de script inline, nenhuma
     imagem do jogo e a prévia de link apontando pra imagem própria."""
 
-    PAGINAS = sorted((RAIZ / "docs").glob("*.html"))
+    PAGINAS = sorted((RAIZ / "docs").rglob("*.html"))
     IMAGENS_PERMITIDAS = {"img/janela.png", "img/compartilhar.png", "favicon.svg"}
 
     def test_toda_pagina_tem_csp_rigida(self):
@@ -175,8 +175,8 @@ class TestSegurancaDoSite(unittest.TestCase):
                          "imagem nova no site: confira se não é print ou arte do jogo e libere aqui")
 
     def test_previa_do_link_com_imagem_propria(self):
-        for pagina in (RAIZ / "docs" / "index.html", RAIZ / "docs" / "montar.html"):
-            with self.subTest(pagina.name):
+        for pagina in (RAIZ / "docs" / "index.html", RAIZ / "docs" / "pt" / "index.html", RAIZ / "docs" / "montar.html"):
+            with self.subTest(str(pagina.relative_to(RAIZ))):
                 html = pagina.read_text(encoding="utf-8")
                 imagem = re.search(r'property="og:image" content="([^"]+)"', html).group(1)
                 self.assertTrue(imagem.startswith("https://ruthraaz.github.io/d3-companion/"))
@@ -313,6 +313,95 @@ class TestMontarNoApp(unittest.TestCase):
         self.assertIn("classes", self.api.dados_do_jogo("jogo"))
         self.assertIn("itens", self.api.dados_do_jogo("dicas"))
         self.assertIn("erro", self.api.dados_do_jogo("../../.env"))
+
+
+class TestIdioma(unittest.TestCase):
+    """Inglês e português: o texto do código é em português e dados/en.json diz
+    como fica em inglês. Frase nova sem tradução aparece em português, então
+    o teste pega antes."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.en = ler_json(DADOS / "en.json")
+
+    @staticmethod
+    def frases_do_js(caminho):
+        texto = caminho.read_text(encoding="utf-8")
+        return {json.loads(f'"{m}"') for m in re.findall(r'\bt\("((?:[^"\\]|\\.)*)"', texto)}
+
+    @staticmethod
+    def frases_do_html(caminho):
+        html = caminho.read_text(encoding="utf-8")
+        frases = set()
+        for tag, dentro in re.findall(r"<([a-z0-9]+)\b([^>]*\sdata-t\b[^>]*)>", html):
+            for atributo in ("placeholder", "title", "aria-label", "alt", "content"):
+                valor = re.search(rf'\s{atributo}="([^"]*)"', dentro)
+                if valor:
+                    frases.add(valor.group(1))
+        for corpo in re.findall(r"<[a-z0-9]+\b[^>]*\sdata-t\b[^>]*>(.*?)<", html, re.S):
+            if corpo.strip() and "data-trocar-idioma" not in corpo:
+                frases.add(corpo.strip())
+        return frases
+
+    def test_toda_frase_do_js_tem_traducao(self):
+        for js in (RAIZ / "src" / "web" / "montar.js",):
+            with self.subTest(js.name):
+                faltam = sorted(self.frases_do_js(js) - set(self.en))
+                self.assertEqual(faltam, [], "ponha em src/web/dados/en.json")
+
+    def test_toda_frase_marcada_no_html_tem_traducao(self):
+        for pagina in (RAIZ / "docs" / "montar.html",):
+            with self.subTest(pagina.name):
+                frases = self.frases_do_html(pagina)
+                self.assertGreater(len(frases), 10)
+                faltam = sorted(f for f in frases if f not in self.en and f != "English")
+                self.assertEqual(faltam, [], "ponha em src/web/dados/en.json")
+
+    def test_nomes_do_montador_tem_traducao(self):
+        texto = (RAIZ / "src" / "web" / "montar.js").read_text(encoding="utf-8")
+        for bloco in ("NOMES", "PARTES_DO_CUBO", "LUGARES_DAS_HABILIDADES", "PARAGON"):
+            corpo = re.search(rf"^const {bloco} = (.*?);$", texto, re.M | re.S).group(1)
+            for frase in re.findall(r'"([^"]+)"', corpo):
+                if frase in {"Off-Hand", "1", "2", "3", "4"} or not re.search(r"[a-zà-ú]", frase):
+                    continue
+                if bloco == "NOMES" and not re.search(r":\s*$", corpo.split(f'"{frase}"')[0]):
+                    continue  # é a chave (Head, Shoulders...), não o nome mostrado
+                with self.subTest(frase):
+                    self.assertIn(frase, self.en)
+        jogo = ler_json(DADOS / "jogo.json")
+        for a in jogo["afixos"] + [c["atributo"] for c in jogo["classes"].values()]:
+            with self.subTest(a["rotulo"]):
+                self.assertIn(a["rotulo"], self.en)
+
+    def test_traducao_mantem_as_variaveis(self):
+        for pt, en in self.en.items():
+            with self.subTest(pt):
+                self.assertIsInstance(en, str)
+                self.assertTrue(en.strip())
+                self.assertEqual(sorted(re.findall(r"\{\w+\}", pt)), sorted(re.findall(r"\{\w+\}", en)))
+                self.assertNotIn("<", en)
+
+    def test_dicas_em_ingles(self):
+        dicas = ler_json(DADOS / "dicas.en.json")
+        mascara = dicas["itens"]["The Shadow's Mask"]
+        self.assertEqual(mascara["n"], "The Shadow's Mask")
+        self.assertTrue(all(b.startswith("(") and "Set" in b for b in dicas["sets"][mascara["s"]]))
+        self.assertNotIn("<", json.dumps(dicas, ensure_ascii=False))
+
+    def test_pagina_inicial_nos_dois_idiomas(self):
+        en = (RAIZ / "docs" / "index.html").read_text(encoding="utf-8")
+        pt = (RAIZ / "docs" / "pt" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('<html lang="en">', en)
+        self.assertIn('<html lang="pt-BR">', pt)
+        for html in (en, pt):
+            self.assertIn('hreflang="en" href="https://ruthraaz.github.io/d3-companion/"', html)
+            self.assertIn('hreflang="pt-BR" href="https://ruthraaz.github.io/d3-companion/pt/"', html)
+        # A cópia em pt/ usa os arquivos da raiz.
+        for caminho in re.findall(r'(?:src|href)="([^"#:]+)"', pt):
+            with self.subTest(caminho):
+                self.assertTrue((RAIZ / "docs" / "pt" / caminho).resolve().exists(), caminho)
+        self.assertIn("https://ruthraaz.github.io/d3-companion/pt/",
+                      (RAIZ / "docs" / "sitemap.xml").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

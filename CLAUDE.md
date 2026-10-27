@@ -237,6 +237,22 @@ trabalho extra agora, não feche essa porta:
   security.txt válido e sem e-mail). Exemplos de BattleTag viraram "Jogador#1234" (nada do nome do Arthur no código).
 - Varredura (valores do .env + e-mail + pasta do usuário) no histórico inteiro do Git: nada encontrado.
 
+### Inglês + português (26/10/2026) — notas
+- Pedido: "transforma o app e o site em ingles para atender um publico geral". Arthur escolheu **inglês +
+  português**: inglês por padrão; português quando o navegador/Windows está em português; botão pra trocar.
+- `src/web/idioma.js` (cópia em docs/): chave = frase em português; `src/web/dados/en.json` = pt → en.
+  `Idioma.t(frase, {vars})`, `Idioma.aplicar()` traduz `[data-t]` (textos + placeholder/title/aria-label/alt/
+  content), `[data-trocar-idioma]` vira o botão. Site: escolha em localStorage `d3c-idioma`, senão navigator.languages.
+- montar.js: `t()`, `nomeDaClasse/nomeDaHab/nomeDaRuna` (em inglês usa h.n e runa[3]; runas agora
+  `[letra, nome_pt, nivel, nome_en]`). Rótulo do afixo de habilidade sai no idioma da hora ("{hab} damage").
+- Dicas: `dados_do_site.py` gera também `dicas.en.json` (locale en_US); o site carrega um ou outro.
+- Página inicial: `docs/index.html` em inglês, `docs/pt/index.html` em português (caminhos `../`), hreflang +
+  x-default, sitemap com pt/. `site.js`: sem escolha guardada e navegador pt → `pt/`; o link de idioma guarda a
+  escolha (sem laço de redirecionamento). 404 em inglês com linha em português.
+- Testes `TestIdioma`: toda frase `t("...")` do JS e todo `[data-t]` do montar.html têm tradução, variáveis
+  `{x}` iguais nos dois idiomas, nomes do montador/afixos/atributos traduzidos, dicas.en, páginas pt/en.
+- Cache do navegador segura o site.css velho no teste local: recarregar o próprio .css com Ctrl+Shift+R.
+
 ### Segurança (26/10/2026) — notas
 - Pente fino pedido pelo Arthur. Tudo em `tests/test_seguranca.py`; resumo no README ("Segurança e privacidade").
 - `src/rede.py`: `ler()` (limite de 20 MB em toda resposta) e `link_seguro()` (abrir_link só https://maxroll.gg).

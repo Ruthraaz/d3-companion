@@ -12,11 +12,34 @@ if (window.top !== window.self) {
   try { window.top.location.href = window.self.location.href; } catch { /* o outro site bloqueou: fica escondida */ }
 }
 
+// Idioma: a página em inglês é a raiz e a em português fica em pt/. A escolha
+// (link "English"/"Português" daqui ou o botão do montador) fica guardada no
+// navegador; sem escolha, quem tem o navegador em português vai pra pt/.
+const EM_PT = document.documentElement.lang.startsWith("pt");
+const GUARDADO = "d3c-idioma";
+const guardado = () => { try { return localStorage.getItem(GUARDADO); } catch { return null; } };
+const quer = guardado() || ((navigator.languages || [navigator.language || ""]).some(l => /^pt(-|$)/i.test(l)) ? "pt" : "en");
+if (quer === "pt" && !EM_PT) location.replace(`pt/${location.hash}`);
+else if (quer === "en" && EM_PT && guardado()) location.replace(`../${location.hash}`);
+document.querySelectorAll(".js-idioma").forEach(a => a.addEventListener("click", () => {
+  try { localStorage.setItem(GUARDADO, a.dataset.idioma === "pt" ? "pt" : "en"); } catch { /* sem: vale o link */ }
+}));
+
+const TEXTOS = EM_PT ? {
+  baixar: v => `Baixar para Windows · v${v}`, detalhe: (v, t) => `Versão ${v} · ${t} · zip, sem instalação`,
+  semVersao: "Windows 10 e 11 · zip, sem instalação", baixando: "Baixando… veja a barra do navegador",
+  partilhar: "Ajudante grátis pra Diablo III: diz se o item serve na sua build.", copiado: "Link copiado!", data: "pt-BR",
+} : {
+  baixar: v => `Download for Windows · v${v}`, detalhe: (v, t) => `Version ${v} · ${t} · zip, no install`,
+  semVersao: "Windows 10 and 11 · zip, no install", baixando: "Downloading… check your browser's bar",
+  partilhar: "Free Diablo III helper: tells you if an item fits your build.", copiado: "Link copied!", data: "en-US",
+};
+
 const API = "https://api.github.com/repos/Ruthraaz/d3-companion/releases/latest";
 const DOWNLOAD_OK = /^https:\/\/github\.com\/Ruthraaz\/d3-companion\/releases\/download\//;
 
 const mb = bytes => `${Math.round(bytes / 1024 / 1024)} MB`;
-const dia = iso => new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
+const dia = iso => new Date(iso).toLocaleDateString(TEXTOS.data, { day: "numeric", month: "long", year: "numeric" });
 
 function escrever(seletor, texto) {
   document.querySelectorAll(seletor).forEach(el => { el.textContent = texto; });
@@ -33,13 +56,13 @@ async function carregarVersao() {
 
     const nome = versao.tag_name.replace(/^v/, "");
     document.querySelectorAll(".js-baixar").forEach(a => { a.href = zip.browser_download_url; });
-    escrever(".js-rotulo", `Baixar para Windows · v${nome}`);
-    escrever(".js-detalhe", `Versão ${nome} · ${mb(zip.size)} · zip, sem instalação`);
+    escrever(".js-rotulo", TEXTOS.baixar(nome));
+    escrever(".js-detalhe", TEXTOS.detalhe(nome, mb(zip.size)));
     escrever(".js-versao", nome);
     escrever(".js-tamanho", mb(zip.size));
     escrever(".js-data", dia(versao.published_at));
   } catch {
-    escrever(".js-detalhe", "Windows 10 e 11 · zip, sem instalação");
+    escrever(".js-detalhe", TEXTOS.semVersao);
   }
 }
 
@@ -49,22 +72,22 @@ document.querySelectorAll(".js-baixar").forEach(a => a.addEventListener("click",
   a.classList.add("baixando");
   const rotulo = a.querySelector(".js-rotulo");
   const antes = rotulo.textContent;
-  rotulo.textContent = "Baixando… veja a barra do navegador";
+  rotulo.textContent = TEXTOS.baixando;
   setTimeout(() => { a.classList.remove("baixando"); rotulo.textContent = antes; }, 6000);
 }));
 
 // "Mandar o site pra um amigo": a folha de compartilhar do celular/Windows ou,
 // sem ela, copia o endereço. O endereço é fixo (nada do que está na página).
-const ENDERECO = "https://ruthraaz.github.io/d3-companion/";
+const ENDERECO = EM_PT ? "https://ruthraaz.github.io/d3-companion/pt/" : "https://ruthraaz.github.io/d3-companion/";
 document.querySelectorAll(".js-compartilhar").forEach(botao => botao.addEventListener("click", async () => {
   const antes = botao.textContent;
   try {
     if (navigator.share) {
-      await navigator.share({ title: "D3 Companion", text: "Ajudante grátis pra Diablo III: diz se o item serve na sua build.", url: ENDERECO });
+      await navigator.share({ title: "D3 Companion", text: TEXTOS.partilhar, url: ENDERECO });
       return;
     }
     await navigator.clipboard.writeText(ENDERECO);
-    botao.textContent = "Link copiado!";
+    botao.textContent = TEXTOS.copiado;
   } catch (erro) {
     if (erro && erro.name === "AbortError") return;  // fechou a folha de compartilhar
     botao.textContent = ENDERECO;

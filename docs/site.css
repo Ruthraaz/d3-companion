@@ -80,6 +80,9 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .menu { display: flex; gap: 4px; margin-left: auto; }
 .menu a { color: var(--mudo); text-decoration: none; padding: 8px 12px; border-radius: 6px; font-size: 15px; }
 .menu a:hover { color: var(--texto); background: var(--painel); }
+.topo-acoes { display: flex; align-items: center; gap: 10px; }
+.idioma { color: var(--mudo); font-size: 14px; text-decoration: none; padding: 6px 10px; border: 1px solid var(--borda); border-radius: 999px; }
+.idioma:hover { color: var(--texto); border-color: var(--mudo); }
 
 /* ------------------------------------------------------------ botões */
 .botao {

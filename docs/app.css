@@ -134,6 +134,21 @@ main::-webkit-scrollbar-thumb { background: var(--borda-forte); border-radius: 1
 .estado.ligado .estado-texto { color: var(--texto); }
 .estado.parado .estado-ponto { background: var(--falta); }
 
+/* Ao lado do estado: o botão de trocar o idioma (English / Português). */
+.topo-direita { justify-self: end; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.trocar-idioma {
+  padding: 5px 11px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  background: none;
+  color: var(--mudo);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.trocar-idioma:hover, .trocar-idioma:focus-visible { color: var(--texto); border-color: var(--mudo); }
+
 /* ------------------------------------------------------------ painéis */
 main { flex: 1; overflow: auto; }
 .painel { display: none; padding: 24px; max-width: 1240px; margin: 0 auto; }
@@ -935,7 +950,7 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
   .estado { max-width: 220px; }
 }
 @media (max-width: 960px) {
-  .topo { grid-template-columns: auto 1fr; }
+  .topo { grid-template-columns: auto 1fr auto; }
   .estado { display: none; }
   .aba svg { display: none; }
   .layout-lado { grid-template-columns: 1fr; }

@@ -51,6 +51,9 @@ COPIAS = {
     RAIZ / "src" / "web" / "dica.js": RAIZ / "docs" / "dica.js",
     DADOS / "jogo.json": RAIZ / "docs" / "dados" / "jogo.json",
     DADOS / "dicas.json": RAIZ / "docs" / "dados" / "dicas.json",
+    DADOS / "dicas.en.json": RAIZ / "docs" / "dados" / "dicas.en.json",
+    DADOS / "en.json": RAIZ / "docs" / "dados" / "en.json",
+    RAIZ / "src" / "web" / "idioma.js": RAIZ / "docs" / "idioma.js",
 }
 
 # Tipo de item da Blizzard (id em minúsculas) -> espaço da build.
@@ -136,7 +139,7 @@ def classes(api: Blizzard, dados: dict) -> dict:
         for h in hab["ativas"]:
             runas = api.runas(classe, h["slug"])
             ativas.append({"s": h["slug"], "n": h["nome"], "p": h["nome_pt"], "i": h["icone"].rsplit("/", 1)[-1][:-4],
-                           "l": h["nivel"], "r": [[r["letra"], r["nome_pt"], r["nivel"]] for r in runas]})
+                           "l": h["nivel"], "r": [[r["letra"], r["nome_pt"], r["nivel"], r["nome"]] for r in runas]})
         passivas = [{"s": h["slug"], "n": h["nome"], "p": h["nome_pt"], "i": h["icone"].rsplit("/", 1)[-1][:-4],
                      "l": h["nivel"]} for h in hab["passivas"]]
         da_classe = regras_do_item({f"damage_{classe_mx}": {}}, dados, "", {})
@@ -193,7 +196,7 @@ def trechos(texto_html: str) -> list[tuple[str, str]]:
     return [(cor, re.sub(r"[ \t]+", " ", t).strip()) for cor, t in leitor.trechos if t.strip()]
 
 
-def poderes(item: dict, e_gema: bool) -> list[str]:
+def poderes(item: dict, e_gema: bool, no_jogo: str = "no jogo") -> list[str]:
     """As linhas laranja (poder lendário). No item, a faixa do valor (cinza) vai
     junto; na gema o cinza só repete o valor e fica de fora."""
     linhas = []
@@ -204,11 +207,11 @@ def poderes(item: dict, e_gema: bool) -> list[str]:
             continue
         faixa = next((t for c, t in partes if c == CINZA), "")
         so = next((t.strip("()") for c, t in partes if c == VERMELHO), "")
-        linhas.append(poder + (f" (no jogo: {faixa})" if faixa and not e_gema else "") + (f" · {so}" if so else ""))
+        linhas.append(poder + (f" ({no_jogo}: {faixa})" if faixa and not e_gema else "") + (f" · {so}" if so else ""))
     if not linhas:  # alguns poderes vêm em azul, como afixo fixo (ex.: Ring of Royal Grandeur)
         for linha in ((item.get("attributes") or {}).get("secondary") or []):
             texto = " ".join(t for c, t in trechos(linha.get("textHtml", "")) if c == AZUL)
-            if texto and not texto.startswith("Engaste"):
+            if texto and not re.match(r"(Engaste|Socket)", texto):
                 linhas.append(texto)
     return linhas
 
@@ -218,14 +221,14 @@ def bonus_do_set(item: dict) -> list[str]:
     return [re.sub(r"\s*\n\s*", " ", t) for c, t in trechos(item.get("setDescriptionHtml") or "") if c == VERDE]
 
 
-def dica(api: Blizzard, nome: str, e_gema: bool):
+def dica(api: Blizzard, nome: str, e_gema: bool, locale: str = "pt_BR"):
     """(nome, dica, (set, bônus) ou None), ou None se a Blizzard não conhece o item."""
     achado = api.item(nome)
     if not achado:
         return None
-    item = api.pegar("/d3/data/" + achado["caminho"], locale="pt_BR")
+    item = api.pegar("/d3/data/" + achado["caminho"], locale=locale)
     d = {"n": item.get("name") or nome, "t": item.get("typeName") or ""}
-    poder = poderes(item, e_gema)
+    poder = poderes(item, e_gema, "no jogo" if locale == "pt_BR" else "in game")
     if poder:
         d["p"] = poder
     elif not item.get("setName") and item.get("flavorText"):
@@ -237,12 +240,12 @@ def dica(api: Blizzard, nome: str, e_gema: bool):
     return nome, d, conjunto
 
 
-def dicas(api: Blizzard, por_espaco: dict, gemas: list) -> dict:
+def dicas(api: Blizzard, por_espaco: dict, gemas: list, locale: str = "pt_BR") -> dict:
     nomes = sorted({i["n"] for lista in por_espaco.values() for i in lista})
     pedidos = [(n, False) for n in nomes] + [(g["n"], True) for g in gemas]
     api._token_valido()  # um token só, antes das threads
     with ThreadPoolExecutor(max_workers=8) as grupo:
-        achados = [r for r in grupo.map(lambda p: dica(api, *p), pedidos) if r]
+        achados = [r for r in grupo.map(lambda p: dica(api, *p, locale), pedidos) if r]
     resultado = {"itens": {}, "sets": {}}
     for nome, d, conjunto in achados:
         resultado["itens"][nome] = d
@@ -291,10 +294,12 @@ def main():
     total = sum(len(v) for v in por_espaco.values())
     print(f"Pronto: {arquivo.relative_to(RAIZ)} ({arquivo.stat().st_size // 1024} KB, "
           f"{total} itens, {len(gemas)} gemas, {len(jogo['afixos'])} afixos)")
-    print("Dicas (o que cada item faz; na 1ª vez são ~840 pedidos)…")
-    arquivo = gravar("dicas.json", {"versao": 1, "gerado": jogo["gerado"], "fonte": jogo["fonte"]}
-                     | dicas(api, por_espaco, gemas))
-    print(f"Pronto: {arquivo.relative_to(RAIZ)} ({arquivo.stat().st_size // 1024} KB)")
+    # Dicas em português (dicas.json) e em inglês (dicas.en.json).
+    for locale, nome in (("pt_BR", "dicas.json"), ("en_US", "dicas.en.json")):
+        print(f"Dicas {locale} (o que cada item faz; na 1ª vez são ~840 pedidos)…")
+        arquivo = gravar(nome, {"versao": 1, "gerado": jogo["gerado"], "fonte": jogo["fonte"]}
+                         | dicas(api, por_espaco, gemas, locale))
+        print(f"Pronto: {arquivo.relative_to(RAIZ)} ({arquivo.stat().st_size // 1024} KB)")
     copiar()
 
 
