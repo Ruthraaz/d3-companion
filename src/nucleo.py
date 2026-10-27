@@ -25,16 +25,34 @@ from pastas import PASTA_CAPTURAS  # capturas/ do projeto (ou do usuário, no .e
 # Imagens guardadas em capturas/ (as mais novas). O print "sem dica" é a tela
 # inteira e pode pegar outras janelas: não fica pra sempre no PC.
 MAXIMO_DE_CAPTURAS = 200
+# A tela inteira pesa até uns 4 MB (o recorte da dica, ~150 KB): só as últimas,
+# pra conferir quando o F8 não achou a dica.
+MAXIMO_SEM_DICA = 20
 
 
-def limpar_capturas(pasta: Path = PASTA_CAPTURAS, maximo: int = MAXIMO_DE_CAPTURAS) -> int:
-    """Apaga as imagens mais antigas de capturas/ além das `maximo` mais novas.
-    Só .png com nome de data (as do app); o histórico e o resto ficam. Devolve quantas apagou."""
-    imagens = sorted(p for p in pasta.glob("[0-9]*_[0-9]*.png") if p.is_file())
-    velhas = imagens[:-maximo] if maximo > 0 else imagens
+def imagens_do_app(pasta: Path = PASTA_CAPTURAS) -> list[Path]:
+    """Só .png com nome de data (as que o app salvou), da mais velha pra mais nova."""
+    return sorted(p for p in pasta.glob("[0-9]*_[0-9]*.png") if p.is_file())
+
+
+def limpar_capturas(pasta: Path = PASTA_CAPTURAS, maximo: int = MAXIMO_DE_CAPTURAS,
+                    maximo_sem_dica: int = MAXIMO_SEM_DICA) -> int:
+    """Apaga as imagens mais antigas de capturas/ além das `maximo` mais novas
+    (e as telas inteiras além das `maximo_sem_dica`). O histórico e o resto
+    ficam. Devolve quantas apagou."""
+    imagens = imagens_do_app(pasta)
+    telas = [p for p in imagens if p.stem.endswith("_sem_dica")]
+    velhas = set(imagens[:-maximo] if maximo > 0 else imagens)
+    velhas |= set(telas[:-maximo_sem_dica] if maximo_sem_dica > 0 else telas)
     for p in velhas:
         p.unlink(missing_ok=True)
     return len(velhas)
+
+
+def espaco_das_capturas(pasta: Path = PASTA_CAPTURAS) -> dict:
+    """Quantas imagens o app guardou e quanto ocupam (pra mostrar nas Configurações)."""
+    imagens = imagens_do_app(pasta) if pasta.is_dir() else []
+    return {"imagens": len(imagens), "bytes": sum(p.stat().st_size for p in imagens)}
 
 
 def processo_vivo(pid: int) -> bool:

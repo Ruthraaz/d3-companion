@@ -12,7 +12,7 @@
   "Buscar item pelo nome": "Search item by name",
   "Buscar item pelo nome (em inglês, como no jogo)": "Search item by name",
   "Buscar passiva": "Search passive",
-  "Clique de novo pra apagar": "Click again to clear",
+  "Clique de novo pra apagar": "Click again to delete",
   "Clique nas casas da roda.": "Click the sockets on the wheel.",
   "Começar de novo": "Start over",
   "Compartilhar": "Share",
@@ -455,5 +455,12 @@
   "Conectado. Agora \"Salvar na nuvem\" guarda a build de agora na sua conta.": "Signed in. Now \"Save to cloud\" keeps the current build in your account.",
   "Não consegui falar com a nuvem agora. O montador segue funcionando sem ela.": "Couldn't reach the cloud right now. The planner keeps working without it.",
   "salva na nuvem": "saved to the cloud",
-  "Build aberta da nuvem: {nome}. \"Salvar na nuvem\" grava em cima dela.": "Build opened from the cloud: {nome}. \"Save to cloud\" saves over it."
+  "Build aberta da nuvem: {nome}. \"Salvar na nuvem\" grava em cima dela.": "Build opened from the cloud: {nome}. \"Save to cloud\" saves over it.",
+  "Prints guardados": "Saved screenshots",
+  "A cada F8 o app guarda o recorte da dica (a miniatura do Histórico): no máximo 200. Quando não acha a dica, guarda a tela inteira pra conferir: só as 20 últimas.": "On each F8 the app keeps the tooltip crop (the History thumbnail): 200 at most. When it can't find the tooltip, it keeps the full screen for checking: only the last 20.",
+  "Apagar prints": "Delete screenshots",
+  "{n} prints, {tamanho} no total.": "{n} screenshots, {tamanho} in total.",
+  "Nenhum print guardado.": "No screenshots saved.",
+  "O histórico fica, só sem as miniaturas.": "History stays, just without the thumbnails.",
+  "Prints apagados.": "Screenshots deleted."
 }

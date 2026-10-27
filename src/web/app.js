@@ -117,10 +117,41 @@ function hora(iso) {
 
 // ------------------------------------------------------------ abas
 
+// Prints guardados (Configurações): quanto ocupam e o botão de apagar.
+const tamanho = bytes => bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+  : `${(bytes / 1024 / 1024).toFixed(1).replace(".0", "")} MB`;
+
+async function mostrarPrints(info) {
+  info ||= await estado.api.capturas();
+  const botao = document.getElementById("apagar-prints");
+  document.getElementById("espaco-prints").textContent = info.imagens
+    ? t("{n} prints, {tamanho} no total.", { n: info.imagens, tamanho: tamanho(info.bytes) })
+    : t("Nenhum print guardado.");
+  botao.disabled = !info.imagens;
+  botao.textContent = t("Apagar prints");
+  delete botao.dataset.confirmar;
+}
+
+async function apagarPrints() {
+  const botao = document.getElementById("apagar-prints");
+  const aviso = document.getElementById("aviso-prints");
+  if (!botao.dataset.confirmar) {  // primeiro clique só pergunta
+    botao.dataset.confirmar = "1";
+    botao.textContent = t("Clique de novo pra apagar");
+    aviso.textContent = t("O histórico fica, só sem as miniaturas.");
+    return;
+  }
+  await mostrarPrints(await estado.api.apagar_capturas());
+  aviso.textContent = t("Prints apagados.");
+  estado.miniaturas = {};
+  estado.ultimoVisto = null;  // redesenha o histórico sem as miniaturas
+  atualizarHistorico();
+}
+
 function abrirAba(nome) {
   document.querySelectorAll(".aba").forEach(a => a.classList.toggle("ativa", a.dataset.aba === nome));
   document.querySelectorAll(".painel").forEach(p => p.classList.toggle("ativo", p.id === `painel-${nome}`));
-  if (nome === "config") carregarConfig();
+  if (nome === "config") { carregarConfig(); mostrarPrints(); }
   if (nome === "guias") estado.guias ? desenharGuias() : carregarGuias();
   if (nome === "builds" && estado.api) desenharBuilds();  // a classe pode ter mudado na aba Guias
   if (nome === "montar" && estado.api) ligarMontador();
@@ -1132,6 +1163,7 @@ async function iniciar(api) {
     await estado.api.reiniciar_overlay();
     setTimeout(atualizarEstado, 1500);
   });
+  document.getElementById("apagar-prints").addEventListener("click", apagarPrints);
   document.getElementById("abrir-site").addEventListener("click", () => estado.api.abrir_site());
   document.getElementById("copiar-site").addEventListener("click", async () => {
     const aviso = document.getElementById("aviso-indicar");
@@ -1326,6 +1358,8 @@ function apiDeExemplo() {
     },
     estado: async () => ({ rodando: true, config, log: ["(modo de exemplo: aberto fora do app)"] }),
     reiniciar_overlay: async () => ({}),
+    capturas: async () => ({ imagens: 36, bytes: 5.4 * 1024 * 1024 }),
+    apagar_capturas: async () => ({ imagens: 0, bytes: 0 }),
     remover_build: async id => {
       const i = builds.findIndex(b => b.id === id);
       if (i < 0) return { erro: "Essa build não está mais na pasta." };

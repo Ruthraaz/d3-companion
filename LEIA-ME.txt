@@ -5,7 +5,7 @@ Ajudante do Diablo III: compara o item embaixo do mouse com a build que você
 escolheu (do Maxroll) e diz se serve, o que tem e o que falta.
 
 COMO USAR
-1. Abra "D3 Companion.exe". Na primeira vez o Windows pode mostrar
+1. Abra o D3 Companion (Menu Iniciar, ou "D3 Companion.exe" se usar o zip). Na primeira vez o Windows pode mostrar
    "O Windows protegeu o computador": clique em "Mais informações" e
    "Executar assim mesmo" (o app não tem assinatura digital paga).
 2. Na aba Guias, escolha a classe e traga uma build (ou cole o link de uma

@@ -1,5 +1,5 @@
 // Site do D3 Companion: pega no GitHub a última versão publicada e aponta os
-// botões de download direto pro zip dela. Sem internet ou sem versão ainda,
+// botões de download direto pro instalador dela. Sem internet ou sem versão ainda,
 // os botões continuam levando pra página de versões do GitHub.
 
 "use strict";
@@ -26,12 +26,12 @@ document.querySelectorAll(".js-idioma").forEach(a => a.addEventListener("click",
 }));
 
 const TEXTOS = EM_PT ? {
-  baixar: v => `Baixar para Windows · v${v}`, detalhe: (v, t) => `Versão ${v} · ${t} · zip, sem instalação`,
-  semVersao: "Windows 10 e 11 · zip, sem instalação", baixando: "Baixando… veja a barra do navegador",
+  baixar: v => `Baixar para Windows · v${v}`, detalhe: (v, t) => `Versão ${v} · ${t} · instalador, sem administrador`,
+  semVersao: "Windows 10 e 11 · instalador", baixando: "Baixando… veja a barra do navegador",
   partilhar: "Ajudante grátis pra Diablo III: diz se o item serve na sua build.", copiado: "Link copiado!", data: "pt-BR",
 } : {
-  baixar: v => `Download for Windows · v${v}`, detalhe: (v, t) => `Version ${v} · ${t} · zip, no install`,
-  semVersao: "Windows 10 and 11 · zip, no install", baixando: "Downloading… check your browser's bar",
+  baixar: v => `Download for Windows · v${v}`, detalhe: (v, t) => `Version ${v} · ${t} · installer, no admin needed`,
+  semVersao: "Windows 10 and 11 · installer", baixando: "Downloading… check your browser's bar",
   partilhar: "Free Diablo III helper: tells you if an item fits your build.", copiado: "Link copied!", data: "en-US",
 };
 
@@ -50,7 +50,9 @@ async function carregarVersao() {
     const r = await fetch(API, { headers: { Accept: "application/vnd.github+json" } });
     if (!r.ok) throw new Error(`GitHub respondeu ${r.status}`);
     const versao = await r.json();
-    const zip = (versao.assets || []).find(a => /windows\.zip$/i.test(a.name));
+    // O instalador; versão antiga, sem ele, ainda baixa o zip.
+    const assets = versao.assets || [];
+    const zip = assets.find(a => /-Setup-[\d.]+\.exe$/i.test(a.name)) || assets.find(a => /windows\.zip$/i.test(a.name));
     // Só aceita link de download deste repositório (nada de endereço de fora).
     if (!zip || !DOWNLOAD_OK.test(zip.browser_download_url)) throw new Error("sem zip na versão");
 

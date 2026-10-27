@@ -1,5 +1,8 @@
 """
-Gera o D3 Companion pra quem não tem Python: dist/D3-Companion-<versão>-windows.zip.
+Gera o D3 Companion pra quem não tem Python, em dist/:
+  - D3-Companion-Setup-<versão>.exe, o instalador (Inno Setup, ferramentas/instalador.iss);
+  - D3-Companion-<versão>-windows.zip, a mesma pasta pra usar sem instalar.
+O .exe mostra uma imagem de abertura na hora do clique (splash do PyInstaller).
 
     .venv\\Scripts\\activate
     pip install -r requirements-dev.txt
@@ -23,7 +26,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
@@ -33,6 +36,9 @@ NOME = "D3 Companion"
 OBRA = RAIZ / "build"           # arquivos temporários do PyInstaller
 SAIDA = RAIZ / "dist"
 TESSERACT = Path(os.environ.get("TESSERACT_DIR", r"C:\Program Files\Tesseract-OCR"))
+# Inno Setup 6 (winget install JRSoftware.InnoSetup): onde o instalador dele costuma pôr.
+ISCCS = [Path(os.environ.get(v, "")) / sub / "ISCC.exe" for v, sub in (
+    ("LOCALAPPDATA", r"Programs\Inno Setup 6"), ("ProgramFiles(x86)", "Inno Setup 6"), ("ProgramFiles", "Inno Setup 6"))]
 
 
 # ------------------------------------------------------------ ícone (desenho próprio)
@@ -50,6 +56,37 @@ def gerar_icone(destino: Path) -> Path:
     d.polygon([(128, 98), (158, 128), (128, 158), (98, 128)], outline=(242, 196, 131, 255), width=8)
     destino.parent.mkdir(parents=True, exist_ok=True)
     img.save(destino, sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+    return destino
+
+
+def gerar_abertura(destino: Path) -> Path:
+    """A imagem que o .exe mostra na hora do clique, enquanto o Python carrega
+    (splash do PyInstaller; a janela fecha ela quando aparece). Desenho próprio."""
+    largura, altura = 480, 280
+    img = Image.new("RGB", (largura, altura), (17, 18, 21))
+    brilho = Image.new("RGB", img.size, (0, 0, 0))
+    cx, cy = largura // 2, 112
+    ImageDraw.Draw(brilho).polygon([(cx, cy - 50), (cx + 50, cy), (cx, cy + 50), (cx - 50, cy)], outline=(211, 58, 44), width=14)
+    img = Image.blend(img, brilho.filter(ImageFilter.GaussianBlur(12)), 0.45)
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, largura - 1, altura - 1), outline=(59, 62, 72), width=2)
+    d.polygon([(cx, cy - 44), (cx + 44, cy), (cx, cy + 44), (cx - 44, cy)], outline=(226, 72, 56), width=8)
+    d.polygon([(cx, cy - 16), (cx + 16, cy), (cx, cy + 16), (cx - 16, cy)], outline=(242, 196, 131), width=4)
+
+    def fonte(nomes, tamanho):
+        for nome in nomes:
+            try:
+                return ImageFont.truetype(nome, tamanho)
+            except OSError:
+                continue
+        return ImageFont.load_default()
+
+    for texto, y, f, cor in (("D3 COMPANION", 196, fonte(["segoeuib.ttf", "arialbd.ttf"], 24), (230, 230, 234)),
+                             (f"v{VERSAO}", 234, fonte(["segoeui.ttf", "arial.ttf"], 14), (146, 149, 161))):
+        x0, _, x1, _ = d.textbbox((0, 0), texto, font=f)
+        d.text(((largura - (x1 - x0)) // 2, y), texto, font=f, fill=cor)
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    img.save(destino)
     return destino
 
 
@@ -111,12 +148,13 @@ def copiar_tesseract(destino: Path) -> None:
 
 def empacotar() -> Path:
     icone = gerar_icone(OBRA / "icone.ico")
+    abertura = gerar_abertura(OBRA / "abertura.png")
     tesseract = OBRA / "tesseract"
     copiar_tesseract(tesseract)
     sep = os.pathsep
     subprocess.run([
         sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--log-level", "WARN",
-        "--name", NOME, "--windowed", "--onedir", "--icon", str(icone),
+        "--name", NOME, "--windowed", "--onedir", "--icon", str(icone), "--splash", str(abertura),
         "--paths", str(RAIZ / "src"),
         "--workpath", str(OBRA / "pyinstaller"), "--distpath", str(SAIDA), "--specpath", str(OBRA),
         "--add-data", f"{RAIZ / 'src' / 'web'}{sep}web",
@@ -137,10 +175,24 @@ def empacotar() -> Path:
     with zipfile.ZipFile(arquivo, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
         for p in sorted(pasta.rglob("*")):
             z.write(p, Path(NOME) / p.relative_to(pasta))
-    soma = hashlib.sha256(arquivo.read_bytes()).hexdigest()
-    (SAIDA / f"{arquivo.name}.sha256").write_text(f"{soma}  {arquivo.name}\n", encoding="utf-8")
-    print(f"\nPronto: {arquivo} ({arquivo.stat().st_size / 2**20:.0f} MB)\nSHA-256: {soma}")
+    print()
+    for pronto in (arquivo, gerar_instalador(pasta, icone)):
+        if pronto:
+            soma = hashlib.sha256(pronto.read_bytes()).hexdigest()
+            (SAIDA / f"{pronto.name}.sha256").write_text(f"{soma}  {pronto.name}\n", encoding="utf-8")
+            print(f"Pronto: {pronto} ({pronto.stat().st_size / 2**20:.0f} MB)\nSHA-256: {soma}")
     return arquivo
+
+
+def gerar_instalador(pasta: Path, icone: Path) -> Path | None:
+    """O instalador (ferramentas/instalador.iss). Sem o Inno Setup, fica só o zip."""
+    iscc = Path(os.environ["ISCC"]) if os.environ.get("ISCC") else next((p for p in ISCCS if p.is_file()), None)
+    if iscc is None or not iscc.is_file():
+        print("Sem o Inno Setup (ISCC.exe): só o zip. Instale com: winget install JRSoftware.InnoSetup")
+        return None
+    subprocess.run([str(iscc), "/Q", f"/DVersao={VERSAO}", f"/DPasta={pasta}", f"/DSaida={SAIDA}",
+                    f"/DIcone={icone}", str(RAIZ / "ferramentas" / "instalador.iss")], check=True)
+    return SAIDA / f"D3-Companion-Setup-{VERSAO}.exe"
 
 
 if __name__ == "__main__":

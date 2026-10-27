@@ -20,7 +20,7 @@ os.environ["D3C_IDIOMA"] = "pt"  # as mensagens conferidas são as em português
 from blizzard import Blizzard, ErroBlizzard  # noqa: E402
 from config import ler_config, salvar_config  # noqa: E402
 from heroi import conta_da_battletag  # noqa: E402
-from nucleo import limpar_capturas  # noqa: E402
+from nucleo import espaco_das_capturas, limpar_capturas  # noqa: E402
 from maxroll import ErroMaxroll, baixar_planner, planners_do_link  # noqa: E402
 from rede import RespostaGrande, ler, link_seguro  # noqa: E402
 
@@ -132,6 +132,40 @@ class TestCapturas(unittest.TestCase):
             self.assertEqual(limpar_capturas(pasta, maximo=2), 1)
             self.assertEqual(sorted(p.name for p in pasta.iterdir()),
                              ["20261024_110000_sem_dica.png", "20261025_090000.png", "historico.jsonl", "minha_foto.png"])
+
+    def test_tela_inteira_tem_limite_proprio(self):
+        with tempfile.TemporaryDirectory() as pasta:
+            pasta = Path(pasta)
+            for h in range(5):
+                (pasta / f"20261024_10000{h}_sem_dica.png").write_bytes(b"xx")
+                (pasta / f"20261024_11000{h}.png").write_bytes(b"x")
+            self.assertEqual(limpar_capturas(pasta, maximo=200, maximo_sem_dica=2), 3)
+            self.assertEqual(sorted(p.name for p in pasta.glob("*sem_dica*")),
+                             ["20261024_100003_sem_dica.png", "20261024_100004_sem_dica.png"])
+            self.assertEqual(espaco_das_capturas(pasta), {"imagens": 7, "bytes": 9})
+            self.assertEqual(limpar_capturas(pasta, maximo=0), 7)  # o botão "Apagar prints"
+            self.assertEqual(espaco_das_capturas(pasta / "nao_existe"), {"imagens": 0, "bytes": 0})
+
+
+class TestInstalador(unittest.TestCase):
+    """O instalador não pede administrador, não troca de AppId (senão a versão
+    nova não atualiza a velha) e não apaga os dados da pessoa ao desinstalar."""
+
+    def setUp(self):
+        self.iss = (RAIZ / "ferramentas" / "instalador.iss").read_text(encoding="utf-8")
+
+    def test_por_usuario_e_appid_fixo(self):
+        self.assertIn("PrivilegesRequired=lowest", self.iss)
+        self.assertIn("AppId={{33F05C11-9D31-4E25-873E-D13D13F57021}", self.iss)
+
+    def test_desinstalar_nao_mexe_nos_dados(self):
+        apaga = self.iss.split("[UninstallDelete]")[1]
+        self.assertNotIn("appdata", apaga.lower())  # só restos da pasta do app ({app})
+        self.assertIn('Name: "{app}\\_internal"', apaga)
+
+    def test_site_baixa_o_instalador(self):
+        site = (RAIZ / "docs" / "site.js").read_text(encoding="utf-8")
+        self.assertIn(r"/-Setup-[\d.]+\.exe$/i", site)
 
 
 if __name__ == "__main__":

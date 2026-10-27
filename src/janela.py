@@ -53,7 +53,7 @@ from maxroll import (ErroMaxroll, baixar_planner, builds_do_heroi, catalogo, cla
                      link_de_guia, montar, nomes_dos_perfis, planners_do_link, regravar_build,
                      remover_build, salvar_build)
 from link_do_site import ErroLinkDoSite, build_do_link, build_montada, e_link_do_site
-from nucleo import PASTA_CAPTURAS, dica_do_mistico
+from nucleo import PASTA_CAPTURAS, dica_do_mistico, espaco_das_capturas, limpar_capturas
 from pastas import NO_EXE, WEB
 from rede import link_seguro
 
@@ -82,7 +82,9 @@ class Overlay:
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, encoding="utf-8", errors="replace",
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-            env=os.environ | {"D3_JANELA_PID": str(os.getpid())},  # o overlay fecha se a janela sumir
+            # D3_JANELA_PID: o overlay fecha se a janela sumir. Sem a imagem de
+            # abertura do .exe por cima do jogo (ela é só pra quem abre a janela).
+            env=os.environ | {"D3_JANELA_PID": str(os.getpid()), "PYINSTALLER_SUPPRESS_SPLASH_SCREEN": "1"},
         )
         threading.Thread(target=self._ler_saida, args=(self._processo,), daemon=True).start()
 
@@ -329,6 +331,16 @@ class Api:
         img.save(buffer, "JPEG", quality=80)
         return "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode()
 
+    def capturas(self) -> dict:
+        """Quantos prints o app guardou e quanto ocupam."""
+        return espaco_das_capturas()
+
+    def apagar_capturas(self) -> dict:
+        """Botão das Configurações: apaga os prints do app (só os dele; o
+        histórico fica, sem a miniatura)."""
+        limpar_capturas(maximo=0)
+        return espaco_das_capturas()
+
     def config(self) -> dict:
         return ler_config()
 
@@ -351,6 +363,16 @@ class Api:
         return self._overlay.estado()
 
 
+def fechar_abertura():
+    """No .exe: fecha a imagem que aparece na hora do clique (splash do
+    PyInstaller) quando a janela já está na tela. Do código, não tem."""
+    try:
+        import pyi_splash
+    except ImportError:
+        return
+    pyi_splash.close()
+
+
 def main():
     overlay = Overlay()
     overlay.ligar()
@@ -358,6 +380,7 @@ def main():
         "D3 Companion", str(PAGINA), js_api=Api(overlay),
         width=1180, height=780, min_size=(900, 600), background_color="#111215",
     )
+    janela.events.shown += fechar_abertura
     janela.events.closed += overlay.desligar
     webview.start()
     overlay.desligar()

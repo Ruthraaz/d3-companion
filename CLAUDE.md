@@ -293,6 +293,19 @@ trabalho extra agora, não feche essa porta:
   `/rest/v1/builds` com a chave pública + token) e gravar cada uma com `link_do_site.build_montada` +
   `salvar_build`. Precisa pôr `http://127.0.0.1/**` nas Redirect URLs do Supabase.
 
+### Instalador, abertura e prints (27/10/2026)
+- Arthur: abrir pelo abrir.bat deixava cmd + Python na barra. abrir.bat agora usa `start "" pythonw` (sem console).
+- `.exe`: `--splash` (imagem `gerar_abertura` no empacotar.py) aparece no clique; `janela.fechar_abertura` fecha no
+  `events.shown`. O overlay (mesmo .exe, `--overlay`) sobe com `PYINSTALLER_SUPPRESS_SPLASH_SCREEN=1`. Tk vai junto
+  (`_tcl_data`/`_tk_data`) mesmo com `--exclude-module tkinter`.
+- Instalador: Inno Setup 6 (instalado por winget, com o OK do Arthur), `ferramentas/instalador.iss`, chamado pelo
+  empacotar.py (acha o ISCC.exe em %LOCALAPPDATA%\Programs\Inno Setup 6 ou Program Files, ou env ISCC). Por usuário,
+  sem admin; AppId fixo (não trocar); InstallDelete do `_internal` velho; desinstalar não mexe em %APPDATA%.
+  Testado: instalar silencioso em pasta temporária, abrir, desinstalar. O site baixa o `-Setup-<v>.exe` (cai no zip).
+- Prints: `MAXIMO_SEM_DICA = 20` (tela inteira, até ~4 MB cada) além do limite de 200; Configurações mostra
+  quantos/quanto ocupam (`Api.capturas`) e "Apagar prints" (dois cliques; `limpar_capturas(maximo=0)`, só os do app).
+  A mecânica não muda: recorte continua PNG, o histórico fica (sem miniatura).
+
 ### Licença (26/10/2026)
 - MIT, em `LICENSE` (titular: Ruthraaz), com aviso de que nomes/ícones do jogo são da Blizzard e o Tesseract tem a
   licença dele. Vai no zip como `LICENSE.txt`; link no rodapé do site (en e pt) e no topo do README.

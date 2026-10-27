@@ -507,7 +507,7 @@ O app não lida com senha nem dado de pagamento, mas mexe com chave da Blizzard,
 
 Site do app: **https://ruthraaz.github.io/d3-companion/** (botão de download direto pra última versão).
 
-Quem só quer usar: baixe o `D3-Companion-<versão>-windows.zip` na página de [Releases](https://github.com/Ruthraaz/d3-companion/releases/latest), descompacte e abra **`D3 Companion.exe`**. O Tesseract já vem junto. O app começa sem builds: cole o link de um guia do Maxroll na aba Builds. Seus dados (builds, prints, `.env`) ficam em `%APPDATA%\D3 Companion`, então trocar de versão não apaga nada. O `LEIA-ME.txt` dentro do zip explica o resto (inclusive o aviso do SmartScreen, porque o .exe não tem assinatura digital).
+Quem só quer usar: baixe o **`D3-Companion-Setup-<versão>.exe`** na página de [Releases](https://github.com/Ruthraaz/d3-companion/releases/latest) e instale (Avançar, Instalar; não pede administrador). O app vai pro Menu Iniciar (e pra Área de Trabalho, se marcar) e sai em Configurações do Windows → Apps. Quem prefere sem instalar: o `D3-Companion-<versão>-windows.zip` tem a mesma pasta; descompacte e abra **`D3 Companion.exe`**. O Tesseract já vem junto. O app começa sem builds: cole o link de um guia do Maxroll na aba Builds. Seus dados (builds, prints, `.env`) ficam em `%APPDATA%\D3 Companion`, então trocar de versão não apaga nada. O `LEIA-ME.txt` na pasta do app explica o resto (inclusive o aviso do SmartScreen, porque o .exe não tem assinatura digital).
 
 ### Gerar o .exe
 
@@ -516,7 +516,7 @@ pip install -r requirements-dev.txt
 python ferramentas/empacotar.py
 ```
 
-Sai em `dist/` (fora do Git): a pasta `D3 Companion/`, o zip e o `.sha256` do zip. O script desenha o ícone, copia do Tesseract instalado **só** o `tesseract.exe`, as DLLs que ele usa de verdade (lidas da tabela de imports: 26 de 51), o inglês e a licença, e roda o PyInstaller (modo pasta, sem console). O mesmo `.exe` faz os dois papéis: sem argumento abre a janela, com `--overlay` é o overlay (`src/d3companion.py`). Onde cada coisa fica, no código e no .exe: `src/pastas.py`. A versão: `src/versao.py`.
+Sai em `dist/` (fora do Git): a pasta `D3 Companion/`, o zip, o instalador `D3-Companion-Setup-<versão>.exe` e o `.sha256` de cada um. O instalador é do [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`; sem ele, sai só o zip), pelo `ferramentas/instalador.iss`: instala só pro usuário em `%LOCALAPPDATA%\Programs\D3 Companion`, em inglês ou português, e desinstalar não apaga os dados em `%APPDATA%`. O `.exe` mostra uma imagem de abertura na hora do clique (splash do PyInstaller, desenhada pelo script), que a janela fecha quando aparece; o overlay abre sem ela. O script desenha o ícone, copia do Tesseract instalado **só** o `tesseract.exe`, as DLLs que ele usa de verdade (lidas da tabela de imports: 26 de 51), o inglês e a licença, e roda o PyInstaller (modo pasta, sem console). O mesmo `.exe` faz os dois papéis: sem argumento abre a janela, com `--overlay` é o overlay (`src/d3companion.py`). Onde cada coisa fica, no código e no .exe: `src/pastas.py`. A versão: `src/versao.py`.
 
 ## Como rodar (Windows)
 
@@ -541,7 +541,7 @@ O projeto usa **Python 3.12**. Versões mais novas (ex.: 3.15) não têm pacotes
    python src/avaliador.py samples/set_fiendish_grips.png    # recorte + OCR + parser + avaliador
    python src/app.py --testar samples/set_fiendish_grips.png # mostra o selo desse print no meio da tela
    ```
-5. **No jogo:** deixe o Diablo 3 em **Tela cheia em janela** (Windowed Fullscreen), dê **dois cliques em `abrir.bat`** (ou rode `python src/janela.py`; funciona mesmo sem ativar a `.venv`) pra abrir janela + overlay ou só `python src/app.py` (só o overlay), passe o mouse num item e aperte **F8**. O selo aparece ao lado da dica (e o resumo no terminal).
+5. **No jogo:** deixe o Diablo 3 em **Tela cheia em janela** (Windowed Fullscreen), dê **dois cliques em `abrir.bat`** (abre sem console: usa o `pythonw`; pra ver os erros no terminal, rode `python src/janela.py`, que funciona mesmo sem ativar a `.venv`) pra abrir janela + overlay ou só `python src/app.py` (só o overlay), passe o mouse num item e aperte **F8**. O selo aparece ao lado da dica (e o resumo no terminal).
    Se outro programa já usar o F8, o app avisa quais teclas estão livres; troque com `ATALHO=` no `.env` (ex.: `ATALHO=Ctrl+F8`).
 6. Testes (não precisam do Tesseract, usam os textos salvos em `tests/ocr/` e `tests/ocr_recorte/`):
    ```
