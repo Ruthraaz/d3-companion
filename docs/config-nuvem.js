@@ -7,4 +7,4 @@
 // Só a chave PÚBLICA: "anon" (começa com eyJ...) ou "publishable" (sb_publishable_...).
 // Ela é feita pra ficar no site; quem protege os dados é o RLS (ferramentas/supabase.sql).
 // A "service_role" ou "secret" (sb_secret_...) NUNCA vai aqui nem em lugar nenhum do repositório.
-window.D3C_NUVEM = { url: "", chave: "" };
+window.D3C_NUVEM = { url: "https://vemcxjgyedafqsgwbuep.supabase.co", chave: "sb_publishable_9ldsT_VI45qV9E7OKFZMDw_2CkzaeP2" };
