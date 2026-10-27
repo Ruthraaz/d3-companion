@@ -420,5 +420,6 @@
   "Vai no cubo de Kanai ({parte})": "Goes in Kanai's Cube ({parte})",
   "serve neste espaço": "fits this slot",
   "tudo certo": "all good",
-  "{ok} de {n} afixos": "{ok} of {n} affixes"
+  "{ok} de {n} afixos": "{ok} of {n} affixes",
+  "no atalho": "on hotkey"
 }

@@ -225,7 +225,7 @@ trabalho extra agora, não feche essa porta:
   que é ignorada). `img/janela.webp` antigo (builds que vinham junto) → `img/janela.png` novo. Rascunho do montador
   agora é `d3c-montar-v2` (apaga o v1) e só guarda classe com conteúdo (`temConteudo`).
 - Imagens: `ferramentas/vitrine.py` (Edge headless numa CÓPIA de src/web com vitrine.css que esconde `img` e
-  vitrine.js que abre Montar e a dica; sem CSP só na cópia) → `docs/img/janela.png` e `compartilhar.png` (1200x630, PIL).
+  vitrine.js que abre Montar e a dica; sem CSP só na cópia) → `docs/img/janela.png` (en), `janela.pt.png` (pt, `--lang=pt-BR`) e `compartilhar.png` (1200x630, PIL, en).
   Nunca usar CopyFromScreen.
 - Divulgar: Open Graph/Twitter com URL absoluta + canonical (index e montar), robots.txt, sitemap.xml, 404.html,
   `.well-known/security.txt` (Expires daqui a 1 ano: renovar!), botão "Mandar o site pra um amigo" (site.js,
@@ -261,6 +261,8 @@ trabalho extra agora, não feche essa porta:
   Selo (nucleo), motivos (avaliador) e erros de blizzard/heroi/maxroll/janela/link_do_site/config passam por t().
   Frases com variável viram modelo (`"Build {id} não encontrada."`, `!r` → `repr()`). O avaliador agora manda
   `item_da_build` (o selo não depende mais do texto do motivo). Teste: o `ast` acha todo `t("...")` do src/*.py.
+- Texto em CSS (`content:`) não passa por t(): usar `attr(data-...)` com o texto do JS (ex.: "no atalho" do chip).
+  O histórico de exemplo (apiDeExemplo) é montado na hora com t(); o de verdade fica no idioma em que foi gravado.
 - Cache do navegador segura o site.css velho no teste local: recarregar o próprio .css com Ctrl+Shift+R.
 
 ### Licença (26/10/2026)

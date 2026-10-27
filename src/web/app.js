@@ -347,7 +347,7 @@ function desenharBuilds() {
       title: t("O atalho avalia o item com todas as builds"),
       onclick: () => escolherBuild(""),
     },
-      el("span", { class: "chip-apelido" }, t("Todas")),
+      el("span", { class: "chip-apelido", "data-marca": t("no atalho") }, t("Todas")),
       el("span", { class: "chip-nome" }, t("{n} builds, de todas as classes", { n: estado.builds.length })),
     ),
     daClasse.map(([b, i]) =>
@@ -356,7 +356,7 @@ function desenharBuilds() {
         title: t("O atalho avalia o item só com {nome}", { nome: b.apelido }),
         onclick: () => { estado.build = i; escolherBuild(b.id); },
       },
-        el("span", { class: "chip-apelido" }, b.apelido),
+        el("span", { class: "chip-apelido", "data-marca": t("no atalho") }, b.apelido),
         el("span", { class: "chip-nome" }, b.nome),
       )),
   );
@@ -1261,19 +1261,25 @@ function apiDeExemplo() {
   ];
   const agora = Date.now();
   const quando = min => new Date(agora - min * 60000).toISOString().slice(0, 19);
-  const historico = [
-    { quando: quando(1), com: "Dreadlands", titulo: "Antique Vintage Boots", qualidade: "Set", tipo: "Boots", serve: true,
-      linhas: [[["✅ ", "normal"], ["Dreadlands", "build"], [" · ", "normal"], ["Destreza ✓", "ok"], ["  ", "normal"], ["Vitalidade ✓", "ok"]]] },
-    { quando: quando(2), com: "Dreadlands", titulo: "Rare Gloves", qualidade: "Rare", tipo: "Gloves", serve: false, parcial: true,
-      linhas: [[["🟡 Por enquanto · ", "normal"], ["Dreadlands", "build"], [" · ", "normal"], ["Destreza ✓", "ok"], ["  ", "normal"],
-                ["Vitalidade ✓", "ok"], ["  ", "normal"], ["Crítico ✓", "ok"], ["  ", "normal"], ["Dano crítico ✗", "falta"]],
-               [["A build pede: Gas Powered Automail Forearm", "motivo"]]] },
-    { quando: quando(3), titulo: "Cain's Scrivener", qualidade: "Set", tipo: "Gloves", serve: false,
-      linhas: [[["❌ Não serve", "build"]], [["Dreadlands: A build pede: Gas Powered Automail Forearm", "motivo"]]] },
-    { quando: quando(6), titulo: "Zei's Stone of Vengeance", qualidade: "Legendary", tipo: "Gem", serve: true,
-      linhas: [[["✅ ", "normal"], ["Dreadlands", "build"], [" · Gema da build", "normal"]],
-               [["✅ ", "normal"], ["LoN", "build"], [" · Gema da build", "normal"]]] },
-  ];
+  // O app grava o selo já no idioma da hora; o exemplo monta na hora de mostrar.
+  const historico = () => {
+    const pede = t("A build pede: {itens}", { itens: "Gas Powered Automail Forearm" });
+    const gema = [" · " + t("Gema da build"), "normal"];
+    return [
+      { quando: quando(1), com: "Dreadlands", titulo: "Antique Vintage Boots", qualidade: "Set", tipo: "Boots", serve: true,
+        linhas: [[["✅ ", "normal"], ["Dreadlands", "build"], [" · ", "normal"], [t("Destreza") + " ✓", "ok"], ["  ", "normal"],
+                  [t("Vitalidade") + " ✓", "ok"]]] },
+      { quando: quando(2), com: "Dreadlands", titulo: "Rare Gloves", qualidade: "Rare", tipo: "Gloves", serve: false, parcial: true,
+        linhas: [[[t("🟡 Por enquanto") + " · ", "normal"], ["Dreadlands", "build"], [" · ", "normal"], [t("Destreza") + " ✓", "ok"],
+                  ["  ", "normal"], [t("Vitalidade") + " ✓", "ok"], ["  ", "normal"], [t("Crítico") + " ✓", "ok"], ["  ", "normal"],
+                  [t("Dano crítico") + " ✗", "falta"]],
+                 [[pede, "motivo"]]] },
+      { quando: quando(3), titulo: "Cain's Scrivener", qualidade: "Set", tipo: "Gloves", serve: false,
+        linhas: [[[t("❌ Não serve"), "build"]], [["Dreadlands: " + pede, "motivo"]]] },
+      { quando: quando(6), titulo: "Zei's Stone of Vengeance", qualidade: "Legendary", tipo: "Gem", serve: true,
+        linhas: [[["✅ ", "normal"], ["Dreadlands", "build"], gema], [["✅ ", "normal"], ["LoN", "build"], gema]] },
+    ];
+  };
   let config = { ATALHO: "F8", SELO_SEGUNDOS: "6", BUILD_ATIVA: "", AUTOMATICO: "sim", BATTLETAG: "", IDIOMA: "" };
   const fichaDe = (build, id) => ({
     ...build, id,
@@ -1305,7 +1311,7 @@ function apiDeExemplo() {
     problemas_das_builds: async () => location.search.includes("problema")
       ? { "minha_build.json": ["Espaço 'Hand' não existe. Quis dizer 'Hands'? Opções: Head, Shoulders, …"] }
       : {},
-    historico: async () => historico,
+    historico: async () => historico(),
     miniatura: async () => null,
     config: async () => config,
     salvar_config: async m => {

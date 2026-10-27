@@ -135,7 +135,7 @@ class TestSegurancaDoSite(unittest.TestCase):
     imagem do jogo e a prévia de link apontando pra imagem própria."""
 
     PAGINAS = sorted((RAIZ / "docs").rglob("*.html"))
-    IMAGENS_PERMITIDAS = {"img/janela.png", "img/compartilhar.png", "favicon.svg"}
+    IMAGENS_PERMITIDAS = {"img/janela.png", "img/janela.pt.png", "img/compartilhar.png", "favicon.svg"}
 
     def test_toda_pagina_tem_csp_rigida(self):
         self.assertGreaterEqual(len(self.PAGINAS), 3)

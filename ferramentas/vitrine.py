@@ -1,8 +1,9 @@
 """
 Gera as imagens de divulgação do site (docs/img/):
 
-    janela.png        a janela do app (aba Montar, com a dica de um item aberta)
-    compartilhar.png  a imagem que aparece quando o link é compartilhado (1200x630)
+    janela.png        a janela do app em inglês (aba Montar, com a dica de um item aberta)
+    janela.pt.png     a mesma, em português (página docs/pt/)
+    compartilhar.png  a imagem que aparece quando o link é compartilhado (1200x630, em inglês)
 
     python ferramentas/vitrine.py
 
@@ -40,12 +41,13 @@ VITRINE_JS = """
 (async () => {
   const esperar = ms => new Promise(r => setTimeout(r, ms));
   for (let i = 0; i < 50 && !(window.estado && estado.builds.length); i++) await esperar(100);
-  const botao = [...document.querySelectorAll("#cabeca-build button")].find(b => b.textContent === "Copiar pro montador");
+  const t = s => window.Idioma.t(s);
+  const botao = [...document.querySelectorAll("#cabeca-build button")].find(b => b.textContent === t("Copiar pro montador"));
   if (botao) botao.click();
   await esperar(800);
   const m = document.getElementById("painel-montar");
   const nome = m.querySelector(".nome-da-build");
-  if (nome) { nome.value = "Minha build de Caçador"; nome.dispatchEvent(new Event("input")); }
+  if (nome) { nome.value = window.Idioma.atual === "en" ? "My Demon Hunter build" : "Minha build de Caçador"; nome.dispatchEvent(new Event("input")); }
   const peito = [...m.querySelectorAll(".espaco[data-dica]")][2];
   if (peito) { peito.click(); await esperar(300); }
   const dica = () => document.querySelector(".dica-item");
@@ -67,7 +69,8 @@ def edge() -> Path:
     sys.exit("Não achei o Microsoft Edge (msedge.exe).")
 
 
-def print_da_janela(arquivo: Path, largura=1280, altura=800):
+def print_da_janela(arquivo: Path, idioma: str, largura=1280, altura=800):
+    """idioma: "en" ou "pt" (o app escolhe pelo idioma do navegador, que o --lang troca)."""
     with tempfile.TemporaryDirectory() as pasta:
         copia = Path(pasta) / "web"
         shutil.copytree(WEB, copia)
@@ -82,7 +85,7 @@ def print_da_janela(arquivo: Path, largura=1280, altura=800):
         (copia / "vitrine.js").write_text(VITRINE_JS, encoding="utf-8")
         subprocess.run([str(edge()), "--headless=new", "--disable-gpu", "--hide-scrollbars",
                         "--allow-file-access-from-files", f"--user-data-dir={Path(pasta) / 'perfil'}",
-                        "--no-first-run", "--disable-extensions", "--virtual-time-budget=20000",
+                        "--no-first-run", "--disable-extensions", f"--lang={'pt-BR' if idioma == 'pt' else 'en-US'}", "--virtual-time-budget=20000",
                         f"--window-size={largura},{altura}", f"--screenshot={arquivo}", pagina.as_uri()],
                        check=True, capture_output=True, timeout=120)
 
@@ -116,25 +119,26 @@ def imagem_de_compartilhar(janela: Path, arquivo: Path):
     serifa = ["pala.ttf", "palab.ttf", "georgia.ttf"]
     sans = ["segoeui.ttf", "arial.ttf"]
     d.text((116, 92), "D3 COMPANION", font=fonte(["segoeuib.ttf", "arialbd.ttf"], 30), fill="#e6e6ea")
-    d.text((56, 180), "Saiba na hora se o item", font=fonte(serifa, 46), fill="#f2c483")
-    d.text((56, 236), "serve na sua build.", font=fonte(serifa, 46), fill="#f2c483")
-    linhas = ["Aperte F8 no Diablo III e veja o que o", "item tem e o que falta. Monte builds",
-              "com os dados do jogo, no app ou no site."]
+    d.text((56, 180), "Know right away if an", font=fonte(serifa, 46), fill="#f2c483")
+    d.text((56, 236), "item fits your build.", font=fonte(serifa, 46), fill="#f2c483")
+    linhas = ["Press F8 in Diablo III and see what", "the item has and what it's missing.",
+              "Plan builds in the app or online."]
     for i, linha in enumerate(linhas):
         d.text((56, 320 + i * 36), linha, font=fonte(sans, 26), fill="#c9cad1")
     d.rounded_rectangle([56, 470, 470, 524], radius=8, fill="#d33a2c")
-    d.text((76, 480), "Grátis · Windows · Código aberto", font=fonte(["segoeuib.ttf", "arialbd.ttf"], 24), fill="#ffffff")
+    d.text((76, 480), "Free · Windows · Open source", font=fonte(["segoeuib.ttf", "arialbd.ttf"], 24), fill="#ffffff")
     d.text((56, 560), "ruthraaz.github.io/d3-companion", font=fonte(sans, 22), fill="#9295a1")
     img.save(arquivo, optimize=True)
 
 
 def main():
     DESTINO.mkdir(parents=True, exist_ok=True)
-    janela = DESTINO / "janela.png"
-    print_da_janela(janela)
-    Image.open(janela).convert("RGB").save(janela, optimize=True)
-    imagem_de_compartilhar(janela, DESTINO / "compartilhar.png")
-    for nome in ("janela.png", "compartilhar.png"):
+    for idioma, nome in (("en", "janela.png"), ("pt", "janela.pt.png")):
+        janela = DESTINO / nome
+        print_da_janela(janela, idioma)
+        Image.open(janela).convert("RGB").save(janela, optimize=True)
+    imagem_de_compartilhar(DESTINO / "janela.png", DESTINO / "compartilhar.png")
+    for nome in ("janela.png", "janela.pt.png", "compartilhar.png"):
         print(f"Pronto: docs/img/{nome} ({(DESTINO / nome).stat().st_size // 1024} KB)")
 
 
