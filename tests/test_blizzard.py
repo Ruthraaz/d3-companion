@@ -121,6 +121,7 @@ class TestBlizzard(unittest.TestCase):
         multi = hab["ativas"][0]
         self.assertEqual((multi["nome"], multi["nome_pt"]), ("Multishot", "Tiro Múltiplo"))
         self.assertEqual(multi["descricao_pt"], "Dispara uma salva de flechas")
+        self.assertIsInstance(multi["descricao"], str)  # a da API em inglês (janela em inglês)
         self.assertTrue(multi["icone"].endswith("/skills/64/demonhunter_multishot.png"))
         self.assertEqual(hab["passivas"][0]["nome_pt"], "Arquearia")
 

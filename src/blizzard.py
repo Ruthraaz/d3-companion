@@ -161,7 +161,7 @@ class Blizzard:
         """{"ativas": [...], "passivas": [...]} da classe ("Demon Hunter").
 
         Cada habilidade: slug, nome (inglês, como no jogo), nome_pt, nivel,
-        icone (endereço da imagem), descricao_pt.
+        icone (endereço da imagem), descricao (inglês) e descricao_pt.
         """
         if classe not in CLASSES:
             raise ErroBlizzard(f"Classe {classe!r} não existe. Opções: {', '.join(CLASSES)}.")
@@ -176,25 +176,27 @@ class Blizzard:
                 "nome_pt": em_pt.get(h["slug"], h)["name"],
                 "nivel": h.get("level"),
                 "icone": icone_da_habilidade(h["icon"]),
+                "descricao": h.get("description", ""),
                 "descricao_pt": em_pt.get(h["slug"], h).get("description", ""),
             } for h in en["skills"][chave]]
         return resultado
 
     def runas(self, classe: str, slug: str) -> list[dict]:
         """As 5 runas de uma habilidade ativa: letra (a-e, como a build guarda),
-        slug, nome, nome_pt, descricao_pt e nivel (em que nível do herói libera)."""
+        slug, nome, nome_pt, descricao, descricao_pt e nivel (em que nível do herói libera)."""
         caminho = f"/d3/data/hero/{CLASSES[classe]}/skill/{slug}"
         en, pt = self.pegar(caminho, "en_US"), self.pegar(caminho, "pt_BR")
         em_pt = {r["type"]: r for r in pt.get("runes", [])}
         return [{"letra": r["type"], "slug": r["slug"], "nome": r["name"],
                  "nome_pt": em_pt.get(r["type"], r)["name"],
+                 "descricao": r.get("description", ""),
                  "descricao_pt": em_pt.get(r["type"], r).get("description", ""),
                  "nivel": r.get("level")}
                 for r in en.get("runes", [])]
 
     def seguidor(self, quem: str) -> dict:
         """O seguidor ("templar"): nome_pt e as habilidades (slug, nome, nome_pt,
-        nivel, icone, descricao_pt, codigo = nome do ícone, igual ao código do Maxroll)."""
+        nivel, icone, descricao, descricao_pt, codigo = nome do ícone, igual ao código do Maxroll)."""
         if quem not in SEGUIDORES:
             raise ErroBlizzard(f"Seguidor {quem!r} não existe. Opções: {', '.join(SEGUIDORES)}.")
         caminho = f"/d3/data/follower/{quem}"
@@ -205,6 +207,7 @@ class Blizzard:
                     "slug": h["slug"], "codigo": h.get("icon", ""),
                     "nome": h["name"], "nome_pt": em_pt.get(h["slug"], h)["name"],
                     "nivel": h.get("level"), "icone": icone_da_habilidade(h["icon"]),
+                    "descricao": h.get("description", ""),
                     "descricao_pt": em_pt.get(h["slug"], h).get("description", ""),
                 } for h in en.get("skills", [])]}
 

@@ -21,6 +21,7 @@ import sys
 import tempfile
 import unittest
 import zlib
+from html.parser import HTMLParser
 from pathlib import Path
 from unittest import mock
 
@@ -309,10 +310,13 @@ class TestMontarNoApp(unittest.TestCase):
         self.assertIn("erro", self.api.salvar_montada(BUILD | {"nome": "a" * 300_000}))
         self.assertEqual(list(self.pasta.glob("*.json")), [])
 
-    def test_dados_do_jogo_so_os_dois_arquivos(self):
+    def test_dados_do_jogo_so_os_arquivos_conhecidos(self):
         self.assertIn("classes", self.api.dados_do_jogo("jogo"))
         self.assertIn("itens", self.api.dados_do_jogo("dicas"))
-        self.assertIn("erro", self.api.dados_do_jogo("../../.env"))
+        self.assertIn("itens", self.api.dados_do_jogo("dicas.en"))
+        self.assertEqual(self.api.dados_do_jogo("en")["Salvar no app"], "Save to app")
+        for estranho in ("../../.env", "dicas.en/../../.env", "EN", ""):
+            self.assertIn("erro", self.api.dados_do_jogo(estranho))
 
 
 class TestIdioma(unittest.TestCase):
@@ -331,30 +335,47 @@ class TestIdioma(unittest.TestCase):
 
     @staticmethod
     def frases_do_html(caminho):
-        html = caminho.read_text(encoding="utf-8")
+        """O que Idioma.aplicar() traduz: os textos de dentro de quem tem data-t
+        (sem espaço sobrando) e os atributos de texto dele."""
         frases = set()
-        for tag, dentro in re.findall(r"<([a-z0-9]+)\b([^>]*\sdata-t\b[^>]*)>", html):
-            for atributo in ("placeholder", "title", "aria-label", "alt", "content"):
-                valor = re.search(rf'\s{atributo}="([^"]*)"', dentro)
-                if valor:
-                    frases.add(valor.group(1))
-        for corpo in re.findall(r"<[a-z0-9]+\b[^>]*\sdata-t\b[^>]*>(.*?)<", html, re.S):
-            if corpo.strip() and "data-trocar-idioma" not in corpo:
-                frases.add(corpo.strip())
+        vazios = {"input", "meta", "link", "br", "img", "hr", "source"}
+
+        class Leitor(HTMLParser):
+            pilha = []
+
+            def handle_starttag(self, tag, atributos):
+                atributos = dict(atributos)
+                marcado = "data-t" in atributos and "data-trocar-idioma" not in atributos
+                if marcado:
+                    for nome in ("placeholder", "title", "aria-label", "alt", "content"):
+                        if atributos.get(nome):
+                            frases.add(atributos[nome])
+                if tag not in vazios:
+                    self.pilha.append(marcado)
+
+            def handle_endtag(self, tag):
+                if tag not in vazios and self.pilha:
+                    self.pilha.pop()
+
+            def handle_data(self, dados):
+                if self.pilha and self.pilha[-1] and dados.strip():
+                    frases.add(re.sub(r"\s+", " ", dados.strip()))
+
+        Leitor().feed(caminho.read_text(encoding="utf-8"))
         return frases
 
     def test_toda_frase_do_js_tem_traducao(self):
-        for js in (RAIZ / "src" / "web" / "montar.js",):
+        for js in (RAIZ / "src" / "web" / "montar.js", RAIZ / "src" / "web" / "app.js"):
             with self.subTest(js.name):
                 faltam = sorted(self.frases_do_js(js) - set(self.en))
                 self.assertEqual(faltam, [], "ponha em src/web/dados/en.json")
 
     def test_toda_frase_marcada_no_html_tem_traducao(self):
-        for pagina in (RAIZ / "docs" / "montar.html",):
+        for pagina in (RAIZ / "docs" / "montar.html", RAIZ / "src" / "web" / "index.html"):
             with self.subTest(pagina.name):
                 frases = self.frases_do_html(pagina)
                 self.assertGreater(len(frases), 10)
-                faltam = sorted(f for f in frases if f not in self.en and f != "English")
+                faltam = sorted(frases - set(self.en))
                 self.assertEqual(faltam, [], "ponha em src/web/dados/en.json")
 
     def test_nomes_do_montador_tem_traducao(self):

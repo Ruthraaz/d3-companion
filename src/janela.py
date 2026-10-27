@@ -189,9 +189,10 @@ class Api:
     # ------------------------------------------------------------ Montar build
 
     def dados_do_jogo(self, qual: str = "jogo") -> dict:
-        """dados/jogo.json (o que o montador oferece) ou dados/dicas.json (o que
-        cada item faz). Vêm junto com o app, gerados por ferramentas/dados_do_site.py."""
-        if qual not in ("jogo", "dicas"):
+        """dados/jogo.json (o que o montador oferece), dados/dicas.json e
+        dicas.en.json (o que cada item faz) ou dados/en.json (as frases da janela em
+        inglês). Vêm junto com o app, gerados por ferramentas/dados_do_site.py."""
+        if qual not in ("jogo", "dicas", "dicas.en", "en"):
             return {"erro": "Não sei que dados são esses."}
         try:
             return json.loads((WEB / "dados" / f"{qual}.json").read_text(encoding="utf-8"))

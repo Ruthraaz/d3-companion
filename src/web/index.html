@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,7 +18,7 @@
       <span class="abertura-runa" aria-hidden="true"></span>
       <p class="abertura-nome">D3 Companion</p>
       <div class="abertura-barra"><span id="abertura-progresso"></span></div>
-      <p class="abertura-texto" id="abertura-texto">Abrindo…</p>
+      <p class="abertura-texto" id="abertura-texto" data-t>Abrindo…</p>
     </div>
   </div>
 
@@ -28,28 +28,28 @@
       <span class="marca-nome">D3 Companion</span>
     </div>
     <nav class="abas" role="tablist">
-      <button class="aba" data-aba="guias" role="tab">
+      <button class="aba" data-aba="guias" role="tab" data-t>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM13 4h5.5c.8 0 1.5.7 1.5 1.5v13c0 .8-.7 1.5-1.5 1.5H13z"/></svg>
         Guias</button>
-      <button class="aba ativa" data-aba="builds" role="tab">
+      <button class="aba ativa" data-aba="builds" role="tab" data-t>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5l6 6-9 9-3-3-3 3-2-2 3-3-3-3zM16 8l-6 6"/></svg>
         Builds</button>
-      <button class="aba" data-aba="montar" role="tab">
+      <button class="aba" data-aba="montar" role="tab" data-t>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16zM14 7l3 3"/></svg>
         Montar</button>
-      <button class="aba" data-aba="heroi" role="tab">
+      <button class="aba" data-aba="heroi" role="tab" data-t>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/></svg>
         Meu herói</button>
-      <button class="aba" data-aba="historico" role="tab">
+      <button class="aba" data-aba="historico" role="tab" data-t>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 1-7.4 5M12 8v4l3 2M4 4v5h5"/></svg>
         Histórico</button>
-      <button class="aba" data-aba="config" role="tab">
+      <button class="aba" data-aba="config" role="tab" data-t>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
         Configurações</button>
     </nav>
     <div class="estado" id="estado">
       <span class="estado-ponto"></span>
-      <span class="estado-texto">Ligando o overlay…</span>
+      <span class="estado-texto" data-t>Ligando o overlay…</span>
     </div>
   </header>
 
@@ -57,21 +57,21 @@
     <!-- GUIAS -->
     <section class="painel" id="painel-guias">
       <div class="cabeca-painel">
-        <h2>Guias do Maxroll</h2>
-        <p class="mudo">Escolha a classe do seu boneco. Abra um guia pra ver as builds dele e trazer a que quiser pro app.</p>
+        <h2 data-t>Guias do Maxroll</h2>
+        <p class="mudo" data-t>Escolha a classe do seu boneco. Abra um guia pra ver as builds dele e trazer a que quiser pro app.</p>
       </div>
       <div class="layout-lado">
         <aside class="grade-classes" id="classes" role="tablist"></aside>
         <div class="lado-conteudo">
           <label class="busca">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM20 20l-4.8-4.8"/></svg>
-            <input id="filtro-guias" type="search" autocomplete="off" spellcheck="false" maxlength="60" placeholder="Buscar pelo nome do guia…">
+            <input id="filtro-guias" type="search" autocomplete="off" spellcheck="false" maxlength="60" placeholder="Buscar pelo nome do guia…" data-t>
           </label>
           <p class="importar-status" id="guias-status" role="status"></p>
           <ul class="lista-guias" id="lista-guias"></ul>
-          <p class="nota-guias mudo">
+          <p class="nota-guias mudo" data-t>
             A lista vem do mapa do site do Maxroll e é atualizada uma vez por dia.
-            <button class="link" type="button" id="atualizar-guias">Atualizar agora</button>
+            <button class="link" type="button" id="atualizar-guias" data-t>Atualizar agora</button>
           </p>
         </div>
       </div>
@@ -84,12 +84,12 @@
       <header class="cabeca-build" id="cabeca-build"></header>
       <div class="escolha-build" id="escolha-build"></div>
       <section class="importar" id="importar" hidden>
-        <h2 class="importar-titulo">Importar build (Maxroll ou site)</h2>
+        <h2 class="importar-titulo" data-t>Importar build (Maxroll ou site)</h2>
         <form class="importar-busca" id="form-importar">
           <input name="link" autocomplete="off" spellcheck="false" maxlength="300"
-                 placeholder="Cole o link do guia do Maxroll, do planejador ou de uma build montada no site">
-          <button type="submit" class="botao">Buscar</button>
-          <button type="button" class="botao botao-leve" id="fechar-importar">Cancelar</button>
+                 placeholder="Cole o link do guia do Maxroll, do planejador ou de uma build montada no site" data-t>
+          <button type="submit" class="botao" data-t>Buscar</button>
+          <button type="button" class="botao botao-leve" id="fechar-importar" data-t>Cancelar</button>
         </form>
         <p class="importar-status" id="importar-status" role="status"></p>
         <div id="importar-opcoes"></div>
@@ -97,19 +97,19 @@
       <p class="avaliando" id="avaliando"></p>
       <div class="builds-corpo" id="builds-corpo">
         <nav class="sub-abas" id="sub-abas" role="tablist">
-          <button class="sub-aba ativa" data-sub="equipamento" role="tab">
+          <button class="sub-aba ativa" data-sub="equipamento" role="tab" data-t>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l1 4-5 3-5-3zM7 7v6l5 8 5-8V7"/></svg>
             Equipamento</button>
-          <button class="sub-aba" data-sub="habilidades" role="tab">
+          <button class="sub-aba" data-sub="habilidades" role="tab" data-t>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
             Habilidades</button>
-          <button class="sub-aba" data-sub="seguidor" role="tab">
+          <button class="sub-aba" data-sub="seguidor" role="tab" data-t>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg>
             Seguidor</button>
-          <button class="sub-aba" data-sub="paragon" role="tab">
+          <button class="sub-aba" data-sub="paragon" role="tab" data-t>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 7h7l-5.5 4.5 2 7.5-6.5-4.5L5.5 21l2-7.5L2 9h7z"/></svg>
             Paragon</button>
-          <button class="sub-aba" data-sub="upar" role="tab">
+          <button class="sub-aba" data-sub="upar" role="tab" data-t>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16V10M12 16V6M17 16v-4"/></svg>
             Ao upar</button>
         </nav>
@@ -122,19 +122,19 @@
                 <div class="centro-equip">
                   <div class="roda" id="roda"></div>
                   <div class="extra">
-                    <h3 class="extra-titulo">Gemas lendárias</h3>
+                    <h3 class="extra-titulo" data-t>Gemas lendárias</h3>
                     <div class="fila-icones" id="gemas"></div>
                   </div>
                 </div>
                 <div class="coluna-equip direita" id="equip-dir"></div>
               </div>
-              <p class="legenda">
-                <span class="leg leg-item">item da build</span>
-                <span class="leg leg-livre">qualquer item com os afixos</span>
-                <span class="leg leg-geral">só as regras gerais</span>
+              <p class="legenda" data-t>
+                <span class="leg leg-item" data-t>item da build</span>
+                <span class="leg leg-livre" data-t>qualquer item com os afixos</span>
+                <span class="leg leg-geral" data-t>só as regras gerais</span>
               </p>
               <section class="cubo-kanai">
-                <h3 class="faixa-titulo"><span>Cubo de Kanai</span></h3>
+                <h3 class="faixa-titulo" data-t><span data-t>Cubo de Kanai</span></h3>
                 <div class="cubo-cartas" id="cubo"></div>
               </section>
             </div>
@@ -148,7 +148,7 @@
               <div class="paragon" id="paragon"></div>
             </div>
             <div class="sub-painel" id="sub-upar">
-              <p class="mudo sub-intro">Em que nível libera cada habilidade, runa e passiva da build. Os níveis vêm da API da Blizzard.</p>
+              <p class="mudo sub-intro" data-t>Em que nível libera cada habilidade, runa e passiva da build. Os níveis vêm da API da Blizzard.</p>
               <div class="ao-upar" id="ao-upar"></div>
             </div>
           </div>
@@ -160,20 +160,20 @@
     <!-- MEU HERÓI -->
     <!-- MONTAR: o mesmo montador do site (montar.js). Tudo dentro de data-montador. -->
     <section class="painel" id="painel-montar" data-montador="app">
-      <p class="carregando-jogo" data-m="carregando">Carregando os itens do jogo…</p>
+      <p class="carregando-jogo" data-m="carregando" data-t>Carregando os itens do jogo…</p>
       <div class="faixa-classes" data-m="classes-builds" role="tablist"></div>
       <div class="cabeca-build" data-m="cabeca-build"></div>
       <p class="avaliando" data-m="avaliando" role="status"></p>
 
       <div class="builds-corpo" data-m="builds-corpo" hidden>
         <nav class="sub-abas" role="tablist">
-          <button class="sub-aba ativa" data-sub="equipamento" role="tab">
+          <button class="sub-aba ativa" data-sub="equipamento" role="tab" data-t>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l1 4-5 3-5-3zM7 7v6l5 8 5-8V7"/></svg>
             Equipamento</button>
-          <button class="sub-aba" data-sub="habilidades" role="tab">
+          <button class="sub-aba" data-sub="habilidades" role="tab" data-t>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
             Habilidades</button>
-          <button class="sub-aba" data-sub="paragon" role="tab">
+          <button class="sub-aba" data-sub="paragon" role="tab" data-t>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 7h7l-5.5 4.5 2 7.5-6.5-4.5L5.5 21l2-7.5L2 9h7z"/></svg>
             Paragon</button>
         </nav>
@@ -185,19 +185,19 @@
                 <div class="centro-equip">
                   <div class="roda" data-m="roda"></div>
                   <div class="extra">
-                    <h3 class="extra-titulo">Gemas lendárias</h3>
+                    <h3 class="extra-titulo" data-t>Gemas lendárias</h3>
                     <div class="fila-icones" data-m="gemas"></div>
                   </div>
                 </div>
                 <div class="coluna-equip direita" data-m="equip-dir"></div>
               </div>
-              <p class="legenda">
-                <span class="leg leg-item">item escolhido</span>
-                <span class="leg leg-livre">qualquer item com os afixos</span>
-                <span class="leg leg-geral">ainda vazio</span>
+              <p class="legenda" data-t>
+                <span class="leg leg-item" data-t>item escolhido</span>
+                <span class="leg leg-livre" data-t>qualquer item com os afixos</span>
+                <span class="leg leg-geral" data-t>ainda vazio</span>
               </p>
               <section class="cubo-kanai">
-                <h3 class="faixa-titulo"><span>Cubo de Kanai</span></h3>
+                <h3 class="faixa-titulo" data-t><span data-t>Cubo de Kanai</span></h3>
                 <div class="cubo-cartas" data-m="cubo"></div>
               </section>
             </div>
@@ -215,13 +215,13 @@
 
     <section class="painel" id="painel-heroi">
       <div class="cabeca-painel">
-        <h2>Meu herói vs. a build</h2>
-        <p class="mudo">O app pega na Blizzard os itens que seu herói está usando e diz, peça por peça, o que já bate com a build e o que falta.
-          A Blizzard só atualiza quando você <strong>sai do jogo</strong> (ou troca de personagem).</p>
+        <h2 data-t>Meu herói vs. a build</h2>
+        <p class="mudo" data-t>O app pega na Blizzard os itens que seu herói está usando e diz, peça por peça, o que já bate com a build e o que falta.
+          A Blizzard só atualiza quando você <strong data-t>sai do jogo</strong> (ou troca de personagem).</p>
       </div>
       <form class="importar-busca busca-heroi" id="form-heroi">
-        <input name="battletag" autocomplete="off" spellcheck="false" maxlength="24" placeholder="Sua BattleTag, ex.: Jogador#1234">
-        <button type="submit" class="botao">Buscar heróis</button>
+        <input name="battletag" autocomplete="off" spellcheck="false" maxlength="24" placeholder="Sua BattleTag, ex.: Jogador#1234" data-t>
+        <button type="submit" class="botao" data-t>Buscar heróis</button>
       </form>
       <p class="importar-status" id="heroi-status" role="status"></p>
       <div class="lista-herois" id="lista-herois"></div>
@@ -232,13 +232,13 @@
     <!-- HISTÓRICO -->
     <section class="painel" id="painel-historico">
       <div class="cabeca-painel">
-        <h2>Últimos itens avaliados</h2>
-        <p class="mudo">Cada vez que você aperta o atalho no jogo, o item aparece aqui.</p>
+        <h2 data-t>Últimos itens avaliados</h2>
+        <p class="mudo" data-t>Cada vez que você aperta o atalho no jogo, o item aparece aqui.</p>
       </div>
       <div class="filtros" id="filtros">
-        <button class="filtro ativo" data-filtro="todos">Todos</button>
-        <button class="filtro" data-filtro="serve">Serve (e por enquanto)</button>
-        <button class="filtro" data-filtro="nao">Não serve</button>
+        <button class="filtro ativo" data-filtro="todos" data-t>Todos</button>
+        <button class="filtro" data-filtro="serve" data-t>Serve (e por enquanto)</button>
+        <button class="filtro" data-filtro="nao" data-t>Não serve</button>
       </div>
       <ol class="lista-historico" id="lista-historico"></ol>
     </section>
@@ -246,51 +246,61 @@
     <!-- CONFIGURAÇÕES -->
     <section class="painel" id="painel-config">
       <div class="cabeca-painel">
-        <h2>Configurações</h2>
-        <p class="mudo">Ficam no arquivo <code>.env</code>. Ao salvar, o overlay reinicia sozinho.</p>
+        <h2 data-t>Configurações</h2>
+        <p class="mudo" data-t>Ficam no arquivo <code>.env</code>. Ao salvar, o overlay reinicia sozinho.</p>
       </div>
       <form class="form-config" id="form-config" novalidate>
         <label class="campo campo-chave">
           <input type="checkbox" name="AUTOMATICO">
-          <span>
-            <span class="campo-nome">Avaliar sozinho ao passar o mouse</span>
-            <span class="campo-dica">Com o Diablo na frente, o app olha a tela e avalia cada dica que aparece. O selo fica enquanto a dica estiver na tela. O atalho continua funcionando.</span>
+          <span data-t>
+            <span class="campo-nome" data-t>Avaliar sozinho ao passar o mouse</span>
+            <span class="campo-dica" data-t>Com o Diablo na frente, o app olha a tela e avalia cada dica que aparece. O selo fica enquanto a dica estiver na tela. O atalho continua funcionando.</span>
           </span>
         </label>
         <label class="campo">
-          <span class="campo-nome">Atalho</span>
+          <span class="campo-nome" data-t>Atalho</span>
           <input name="ATALHO" autocomplete="off" spellcheck="false" maxlength="20">
-          <span class="campo-dica">Tecla que avalia o item sob o mouse. Ex.: F8, Ctrl+F8, Alt+Q.</span>
+          <span class="campo-dica" data-t>Tecla que avalia o item sob o mouse. Ex.: F8, Ctrl+F8, Alt+Q.</span>
           <span class="campo-erro" data-erro="ATALHO"></span>
         </label>
         <label class="campo">
-          <span class="campo-nome">Tempo do selo (segundos)</span>
+          <span class="campo-nome" data-t>Tempo do selo (segundos)</span>
           <input name="SELO_SEGUNDOS" inputmode="decimal" autocomplete="off" maxlength="4">
-          <span class="campo-dica">Quanto tempo o selo fica na tela, de 1 a 60.</span>
+          <span class="campo-dica" data-t>Quanto tempo o selo fica na tela, de 1 a 60.</span>
           <span class="campo-erro" data-erro="SELO_SEGUNDOS"></span>
         </label>
+        <label class="campo">
+          <span class="campo-nome" data-t>Idioma</span>
+          <select name="IDIOMA">
+            <option value="en" lang="en">English</option>
+            <option value="pt" lang="pt-BR">Português</option>
+          </select>
+          <span class="campo-dica" data-t>Da janela e do selo no jogo. Os nomes dos itens continuam em inglês, como no jogo.</span>
+          <span class="campo-erro" data-erro="IDIOMA"></span>
+        </label>
         <div class="acoes">
-          <button type="submit" class="botao">Salvar</button>
-          <button type="button" class="botao botao-leve" id="reiniciar">Reiniciar overlay</button>
+          <button type="submit" class="botao" data-t>Salvar</button>
+          <button type="button" class="botao botao-leve" id="reiniciar" data-t>Reiniciar overlay</button>
           <span class="aviso" id="aviso-config" role="status"></span>
         </div>
       </form>
       <section class="indicar">
-        <h2>Gostou? Indique pra um amigo</h2>
-        <p class="mudo">No site dá pra baixar o app e montar builds sem instalar nada.</p>
+        <h2 data-t>Gostou? Indique pra um amigo</h2>
+        <p class="mudo" data-t>No site dá pra baixar o app e montar builds sem instalar nada.</p>
         <div class="acoes">
-          <button type="button" class="botao" id="copiar-site">Copiar link do site</button>
-          <button type="button" class="botao botao-leve" id="abrir-site">Abrir o site</button>
+          <button type="button" class="botao" id="copiar-site" data-t>Copiar link do site</button>
+          <button type="button" class="botao botao-leve" id="abrir-site" data-t>Abrir o site</button>
           <span class="aviso" id="aviso-indicar" role="status"></span>
         </div>
       </section>
       <details class="log">
-        <summary>Mensagens do overlay</summary>
+        <summary data-t>Mensagens do overlay</summary>
         <pre id="log"></pre>
       </details>
     </section>
   </main>
 
+  <script src="idioma.js"></script>
   <script src="dica.js"></script>
   <script src="montar.js"></script>
   <script src="app.js"></script>

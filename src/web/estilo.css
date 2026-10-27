@@ -98,7 +98,7 @@ main::-webkit-scrollbar-thumb { background: var(--borda-forte); border-radius: 1
   transform: rotate(45deg);
   box-shadow: 0 0 10px rgba(211, 58, 44, .5);
 }
-.marca-nome { font-weight: 600; font-size: 15px; letter-spacing: .14em; text-transform: uppercase; }
+.marca-nome { font-weight: 600; font-size: 15px; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
 
 .abas { display: flex; gap: 2px; height: 100%; }
 .aba {
@@ -947,7 +947,8 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(.6); }
 @media (max-width: 1120px) {
   .builds-grade { grid-template-columns: 1fr; }
   .detalhe { border-left: 0; border-top: 1px solid var(--borda); border-radius: 0 0 8px 8px; }
-  .estado { max-width: 220px; }
+  .estado { max-width: 180px; }
+  .aba { padding: 0 10px; }  /* em inglês as abas são mais largas */
 }
 @media (max-width: 960px) {
   .topo { grid-template-columns: auto 1fr auto; }

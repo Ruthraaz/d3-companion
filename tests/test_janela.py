@@ -19,7 +19,7 @@ import historico  # noqa: E402
 from avaliador import (ESPACOS, avaliar_todas, builds_escolhidas, carregar_builds,  # noqa: E402
                        ficha_da_build)
 from builds_dos_testes import BUILDS_DOS_TESTES, PASTA_DOS_TESTES  # noqa: E402
-from config import ler_config, salvar_config  # noqa: E402
+from config import idioma_do_windows, ler_config, salvar_config  # noqa: E402
 from nucleo import Avaliacao, Selo, montar_selo, texto_do_selo  # noqa: E402
 
 
@@ -59,7 +59,18 @@ class TestConfig(unittest.TestCase):
         self.pasta.cleanup()
 
     def test_padroes_sem_env(self):
-        self.assertEqual(ler_config(self.env), {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim", "BATTLETAG": ""})
+        with mock.patch("config.idioma_do_windows", return_value="pt"):
+            self.assertEqual(ler_config(self.env), {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim",
+                                                    "BATTLETAG": "", "IDIOMA": "pt"})
+
+    def test_idioma_escolhido_ou_o_do_windows(self):
+        self.assertEqual(salvar_config({"IDIOMA": "en"}, self.env), {})
+        with mock.patch("config.idioma_do_windows", return_value="pt"):
+            self.assertEqual(ler_config(self.env)["IDIOMA"], "en")
+            self.env.write_text("IDIOMA=klingon\n", encoding="utf-8")  # editado à mão: vale o do Windows
+            self.assertEqual(ler_config(self.env)["IDIOMA"], "pt")
+        self.assertIn("IDIOMA", salvar_config({"IDIOMA": "fr"}, self.env))
+        self.assertIn(idioma_do_windows(), ("en", "pt"))
 
     def test_salva_sem_mexer_no_resto(self):
         self.env.write_text("# meu comentário\nTESSERACT_CMD=C:\\Tess\\tesseract.exe\nATALHO=F8\n",
@@ -68,7 +79,9 @@ class TestConfig(unittest.TestCase):
         texto = self.env.read_text(encoding="utf-8")
         self.assertIn("# meu comentário", texto)
         self.assertIn("TESSERACT_CMD=C:\\Tess\\tesseract.exe", texto)
-        self.assertEqual(ler_config(self.env), {"ATALHO": "Ctrl+F9", "SELO_SEGUNDOS": "4.5", "BUILD_ATIVA": "", "AUTOMATICO": "sim", "BATTLETAG": ""})
+        config = ler_config(self.env)
+        config.pop("IDIOMA")
+        self.assertEqual(config, {"ATALHO": "Ctrl+F9", "SELO_SEGUNDOS": "4.5", "BUILD_ATIVA": "", "AUTOMATICO": "sim", "BATTLETAG": ""})
 
     def test_invalido_nao_grava_nada(self):
         self.env.write_text("ATALHO=F8\n", encoding="utf-8")

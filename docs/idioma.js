@@ -58,8 +58,8 @@
       for (const filho of no.childNodes) {
         if (filho.nodeType !== Node.TEXT_NODE || !filho.textContent.trim()) continue;
         filho.ptOriginal ??= filho.textContent;
-        const limpo = filho.ptOriginal.trim();
-        filho.textContent = filho.ptOriginal.replace(limpo, t(limpo));
+        const cru = filho.ptOriginal.trim();
+        filho.textContent = filho.ptOriginal.replace(cru, t(cru.replace(/\s+/g, " ")));  // chave sem quebra de linha
       }
       for (const a of ATRIBUTOS) {
         if (!no.hasAttribute(a)) continue;

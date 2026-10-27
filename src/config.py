@@ -5,7 +5,9 @@ Só mexemos nas chaves de CHAVES. O resto do .env (e os comentários) fica como
 estava, porque a pessoa também pode editar esse arquivo à mão.
 """
 
+import ctypes
 import re
+import sys
 from pathlib import Path
 
 from dotenv import dotenv_values
@@ -17,12 +19,29 @@ from pastas import ARQUIVO_ENV  # o .env do projeto (ou do usuário, no .exe)
 # BUILD_ATIVA = id da build escolhida na janela (nome do arquivo em builds/); vazio = todas.
 # AUTOMATICO = "sim": avalia sozinho ao passar o mouse num item; "nao": só pelo atalho.
 # BATTLETAG = a da aba "Meu herói" (ex.: Jogador#1234), pra não digitar toda vez.
-CHAVES = {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim", "BATTLETAG": ""}
+# IDIOMA = "en" ou "pt" (janela e selo); vazio = o idioma do Windows.
+CHAVES = {"ATALHO": "F8", "SELO_SEGUNDOS": "6", "BUILD_ATIVA": "", "AUTOMATICO": "sim", "BATTLETAG": "",
+          "IDIOMA": ""}
+IDIOMAS = ("en", "pt")
+
+
+def idioma_do_windows() -> str:
+    """ "pt" se o Windows está em português (qualquer país), senão "en"."""
+    if sys.platform != "win32":
+        return "en"
+    try:
+        lingua = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+    except (AttributeError, OSError):
+        return "en"
+    return "pt" if lingua & 0x3FF == 0x16 else "en"  # 0x16 = LANG_PORTUGUESE
 
 
 def ler_config(arquivo: Path = ARQUIVO_ENV) -> dict[str, str]:
     valores = dotenv_values(arquivo) if arquivo.exists() else {}
-    return {chave: (valores.get(chave) or padrao) for chave, padrao in CHAVES.items()}
+    config = {chave: (valores.get(chave) or padrao) for chave, padrao in CHAVES.items()}
+    if config["IDIOMA"] not in IDIOMAS:
+        config["IDIOMA"] = idioma_do_windows()
+    return config
 
 
 def validar(chave: str, valor: str) -> str | None:
@@ -39,6 +58,9 @@ def validar(chave: str, valor: str) -> str | None:
             return "Tempo do selo precisa ser um número (ex.: 6)."
         if not 1 <= segundos <= 60:
             return "Tempo do selo precisa ficar entre 1 e 60 segundos."
+    elif chave == "IDIOMA":
+        if valor not in IDIOMAS:
+            return 'Idioma precisa ser "en" ou "pt".'
     elif chave == "AUTOMATICO":
         if valor not in ("sim", "nao"):
             return 'Avaliação automática precisa ser "sim" ou "nao".'

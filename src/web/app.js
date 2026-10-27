@@ -35,6 +35,15 @@ const ICONE_DA_CLASSE = {
 const SITE_DO_APP = "https://ruthraaz.github.io/d3-companion/";
 const URL_DE_ICONE = "https://blzmedia-a.akamaihd.net/d3/icons/skills/64/";
 
+// Idioma (idioma.js): t() traduz a frase pelo dados/en.json. Em inglês, os nomes
+// do jogo (classes, habilidades, runas, seguidor) e os textos vêm do jogo em inglês.
+const t = (texto, vars) => (window.Idioma ? window.Idioma.t(texto, vars) : texto);
+const emIngles = () => Boolean(window.Idioma) && window.Idioma.atual === "en";
+const nomeDaClasse = cl => (emIngles() ? cl : CLASSES[cl] || cl);
+const nomeDe = h => (emIngles() ? h.nome || h.nome_pt : h.nome_pt);
+const descricaoDe = h => (emIngles() ? h.descricao || h.descricao_pt : h.descricao_pt) || "";
+const LOCALE = () => (emIngles() ? "en-US" : "pt-BR");
+
 const estado = {
   api: null,
   builds: [],
@@ -95,15 +104,15 @@ function botaoDeClasse(cl, qtd, extra, onclick) {
   return el("button", { class: `classe${cl === estado.classe ? " ativo" : ""}${extra}`, role: "tab", onclick },
     iconeDaClasse(cl),
     el("span", { class: "classe-texto" },
-      el("span", { class: "classe-nome" }, CLASSES[cl]),
+      el("span", { class: "classe-nome" }, nomeDaClasse(cl)),
       el("span", { class: "classe-qtd" }, qtd)));
 }
 
 function hora(iso) {
   const d = new Date(iso);
   const hoje = new Date().toDateString() === d.toDateString();
-  const hh = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  return hoje ? hh : `${d.toLocaleDateString("pt-BR")} ${hh}`;
+  const hh = d.toLocaleTimeString(LOCALE(), { hour: "2-digit", minute: "2-digit" });
+  return hoje ? hh : `${d.toLocaleDateString(LOCALE())} ${hh}`;
 }
 
 // ------------------------------------------------------------ abas
@@ -155,7 +164,7 @@ async function abrirNoMontador(b) {
 async function carregarGuias(atualizar = false) {
   const status = document.getElementById("guias-status");
   status.className = "importar-status";
-  status.textContent = "Buscando a lista de guias no Maxroll…";
+  status.textContent = t("Buscando a lista de guias no Maxroll…");
   const r = await estado.api.guias(atualizar);
   if (r.erro) {
     status.className = "importar-status erro";
@@ -173,7 +182,7 @@ const normalizar = t => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
 function desenharGuias() {
   const porClasse = cl => estado.guias.filter(g => g.classe === cl);
   trocar(document.getElementById("classes"), Object.keys(CLASSES).map(cl =>
-    botaoDeClasse(cl, `${porClasse(cl).length} guias`, "", () => { trocarClasse(cl); desenharGuias(); })));
+    botaoDeClasse(cl, t("{n} guias", { n: porClasse(cl).length }), "", () => { trocarClasse(cl); desenharGuias(); })));
   const busca = normalizar(document.getElementById("filtro-guias").value.trim());
   const daClasse = porClasse(estado.classe).filter(g => !busca || normalizar(g.titulo).includes(busca));
 
@@ -189,13 +198,13 @@ function desenharGuias() {
       el("div", {},
         el("p", { class: "guia-titulo" }, g.titulo),
         el("p", { class: "guia-sub" }, importadas[g.link]
-          ? `No app: ${importadas[g.link].join(", ")}`
-          : CLASSES[g.classe])),
+          ? t("No app: {builds}", { builds: importadas[g.link].join(", ") })
+          : nomeDaClasse(g.classe))),
       el("div", { class: "guia-acoes" },
-        el("button", { type: "button", class: "botao", onclick: () => verBuildsDoGuia(g.link) }, "Ver builds"),
+        el("button", { type: "button", class: "botao", onclick: () => verBuildsDoGuia(g.link) }, t("Ver builds")),
         el("button", { type: "button", class: "botao botao-leve", onclick: () => estado.api.abrir_link(g.link) },
-          "Ler o guia"))))
-    : el("li", { class: "vazio-lista" }, busca ? "Nenhum guia com esse nome." : "Nenhum guia dessa classe."));
+          t("Ler o guia")))))
+    : el("li", { class: "vazio-lista" }, busca ? t("Nenhum guia com esse nome.") : t("Nenhum guia dessa classe.")));
 }
 
 // Abre o painel de importar (aba Builds) já buscando as builds do guia.
@@ -215,11 +224,12 @@ function desenharProblemas(problemas) {
   caixa.hidden = !arquivos.length;
   trocar(caixa, arquivos.length && [
     el("p", { class: "problemas-titulo" },
-      `${arquivos.length === 1 ? "Uma build ficou" : `${arquivos.length} builds ficaram`} de fora por erro no arquivo:`),
+      arquivos.length === 1 ? t("Uma build ficou de fora por erro no arquivo:")
+        : t("{n} builds ficaram de fora por erro no arquivo:", { n: arquivos.length })),
     arquivos.map(arquivo => el("div", { class: "problema" },
       el("code", {}, `builds/${arquivo}`),
       el("ul", {}, problemas[arquivo].map(p => el("li", {}, p))))),
-    el("p", { class: "mudo" }, "Corrija o arquivo e abra o app de novo. Pra conferir antes: ",
+    el("p", { class: "mudo" }, t("Corrija o arquivo e abra o app de novo. Pra conferir antes:"), " ",
       el("code", {}, "python src/avaliador.py --conferir")),
   ]);
 }
@@ -238,7 +248,7 @@ function trocarClasse(cl) {
 function desenharClassesDasBuilds() {
   trocar(document.getElementById("classes-builds"), Object.keys(CLASSES).map(cl => {
     const n = estado.builds.filter(b => b.classe === cl).length;
-    return botaoDeClasse(cl, n ? `${n} build${n > 1 ? "s" : ""}` : "nenhuma build", n ? "" : " sem-build",
+    return botaoDeClasse(cl, n ? (n > 1 ? t("{n} builds", { n }) : t("1 build")) : t("nenhuma build"), n ? "" : " sem-build",
       () => { trocarClasse(cl); desenharBuilds(); });
   }));
 }
@@ -252,22 +262,22 @@ function desenharCabecaDaBuild(b) {
     el("div", { class: "cabeca-texto" },
       el("h1", { class: "build-titulo" }, b.apelido),
       el("p", { class: "build-sub" }, b.nome),
-      el("p", { class: "build-meta" }, [CLASSES[b.classe] || b.classe,
-        fonte && fonte.site && (fonte.site === "montar" ? "Montada no site" : `Fonte: ${fonte.site === "maxroll" ? "Maxroll" : fonte.site}`),
+      el("p", { class: "build-meta" }, [nomeDaClasse(b.classe),
+        fonte && fonte.site && (fonte.site === "montar" ? t("Montada no site") : t("Fonte: {site}", { site: fonte.site === "maxroll" ? "Maxroll" : fonte.site })),
         fonte && fonte.perfil].filter(Boolean).join(" · "))),
     el("div", { class: "cabeca-acoes" },
       fonte && fonte.link && el("button", { type: "button", class: "botao botao-leve", onclick: () => estado.api.abrir_link(fonte.link) },
-        "Abrir no Maxroll"),
+        t("Abrir no Maxroll")),
       el("button", {
         type: "button", class: "botao" + (noAtalho ? " no-atalho" : ""),
-        title: noAtalho ? "O atalho já avalia os itens com esta build" : "O atalho passa a avaliar os itens só com esta build",
+        title: noAtalho ? t("O atalho já avalia os itens com esta build") : t("O atalho passa a avaliar os itens só com esta build"),
         onclick: () => { if (!noAtalho) escolherBuild(b.id); },
-      }, noAtalho ? "✓ No atalho" : "Usar no atalho"),
+      }, noAtalho ? t("✓ No atalho") : t("Usar no atalho")),
       el("button", {
         type: "button", class: "botao botao-leve",
-        title: fonte && fonte.site === "montar" ? "Abrir na aba Montar pra mudar" : "Abrir uma cópia na aba Montar (a original fica como está)",
+        title: fonte && fonte.site === "montar" ? t("Abrir na aba Montar pra mudar") : t("Abrir uma cópia na aba Montar (a original fica como está)"),
         onclick: () => abrirNoMontador(b),
-      }, fonte && fonte.site === "montar" ? "Mudar no montador" : "Copiar pro montador"),
+      }, fonte && fonte.site === "montar" ? t("Mudar no montador") : t("Copiar pro montador")),
       botaoDeRemover(b)),
   ]);
 }
@@ -275,12 +285,12 @@ function desenharCabecaDaBuild(b) {
 // Remover pede um segundo clique (o arquivo some de builds/ de verdade).
 function botaoDeRemover(b) {
   let confirmando = null;
-  const botao = el("button", { type: "button", class: "botao botao-leve botao-remover", title: "Tirar esta build do app" }, "Remover");
+  const botao = el("button", { type: "button", class: "botao botao-leve botao-remover", title: t("Tirar esta build do app") }, t("Remover"));
   botao.addEventListener("click", async () => {
     if (!confirmando) {
-      botao.textContent = "Clique de novo pra remover";
+      botao.textContent = t("Clique de novo pra remover");
       botao.classList.add("confirmar");
-      confirmando = setTimeout(() => { confirmando = null; botao.textContent = "Remover"; botao.classList.remove("confirmar"); }, 4000);
+      confirmando = setTimeout(() => { confirmando = null; botao.textContent = t("Remover"); botao.classList.remove("confirmar"); }, 4000);
       return;
     }
     clearTimeout(confirmando);
@@ -293,7 +303,7 @@ function botaoDeRemover(b) {
     estado.habilidade = null;
     if (estado.guias) desenharGuias();
     desenharBuilds();
-    if (!r.erro) trocar(document.getElementById("avaliando"), `Build removida: ${b.apelido}.`);
+    if (!r.erro) trocar(document.getElementById("avaliando"), t("Build removida: {nome}.", { nome: b.apelido }));
   });
   return botao;
 }
@@ -308,11 +318,10 @@ function desenharBuilds() {
     // App novo: as builds são de cada um. Começa com o colar link aberto.
     desenharCabecaDaBuild(null);
     trocar(caixa, el("div", { class: "boas-vindas" },
-      el("h2", {}, "Monte a sua lista de builds"),
-      el("p", {}, "Cole abaixo o link de um guia ou do planejador do Maxroll. A build é importada e fica salva aqui no app, ",
-        "pronta pro atalho. Pode colar quantas quiser e tirar quando não usar mais."),
-      el("p", { class: "mudo" }, "Não sabe qual? ",
-        el("button", { class: "link", type: "button", onclick: () => abrirAba("guias") }, "Veja os guias por classe"), ".")));
+      el("h2", {}, t("Monte a sua lista de builds")),
+      el("p", {}, t("Cole abaixo o link de um guia ou do planejador do Maxroll. A build é importada e fica salva aqui no app, pronta pro atalho. Pode colar quantas quiser e tirar quando não usar mais.")),
+      el("p", { class: "mudo" }, t("Não sabe qual?"), " ",
+        el("button", { class: "link", type: "button", onclick: () => abrirAba("guias") }, t("Veja os guias por classe")), ".")));
     if (document.getElementById("importar").hidden) abrirImportar();
     document.getElementById("fechar-importar").hidden = true;
     trocar(document.getElementById("avaliando"));
@@ -322,10 +331,10 @@ function desenharBuilds() {
   if (!daClasse.length) {
     desenharCabecaDaBuild(null);
     trocar(caixa,
-      el("p", { class: "mudo" }, `Nenhuma build de ${CLASSES[estado.classe] || estado.classe} ainda. `,
-        el("button", { class: "link", type: "button", onclick: () => abrirAba("guias") }, "Ver os guias dessa classe")),
+      el("p", { class: "mudo" }, t("Nenhuma build de {classe} ainda.", { classe: nomeDaClasse(estado.classe) }), " ",
+        el("button", { class: "link", type: "button", onclick: () => abrirAba("guias") }, t("Ver os guias dessa classe"))),
       el("button", { class: "chip-build chip-importar", onclick: () => abrirImportar() },
-        el("span", { class: "chip-apelido" }, "+ Colar link"), el("span", { class: "chip-nome" }, "de uma build do Maxroll")));
+        el("span", { class: "chip-apelido" }, t("+ Colar link")), el("span", { class: "chip-nome" }, t("de uma build do Maxroll"))));
     trocar(document.getElementById("avaliando"));
     return;
   }
@@ -335,16 +344,16 @@ function desenharBuilds() {
   trocar(caixa,
     el("button", {
       class: "chip-build chip-todas" + (todas ? " ativo" : ""),
-      title: "O atalho avalia o item com todas as builds",
+      title: t("O atalho avalia o item com todas as builds"),
       onclick: () => escolherBuild(""),
     },
-      el("span", { class: "chip-apelido" }, "Todas"),
-      el("span", { class: "chip-nome" }, `${estado.builds.length} builds, de todas as classes`),
+      el("span", { class: "chip-apelido" }, t("Todas")),
+      el("span", { class: "chip-nome" }, t("{n} builds, de todas as classes", { n: estado.builds.length })),
     ),
     daClasse.map(([b, i]) =>
       el("button", {
         class: "chip-build" + (b.id === estado.ativa ? " ativo" : "") + (i === estado.build && b.id !== estado.ativa ? " vendo" : ""),
-        title: `O atalho avalia o item só com ${b.apelido}`,
+        title: t("O atalho avalia o item só com {nome}", { nome: b.apelido }),
         onclick: () => { estado.build = i; escolherBuild(b.id); },
       },
         el("span", { class: "chip-apelido" }, b.apelido),
@@ -353,13 +362,13 @@ function desenharBuilds() {
   );
   caixa.append(el("button", {
     class: "chip-build chip-importar",
-    title: "Trazer uma build pronta de um guia do Maxroll",
+    title: t("Trazer uma build pronta de um guia do Maxroll"),
     onclick: () => abrirImportar(),
-  }, el("span", { class: "chip-apelido" }, "+ Colar link"), el("span", { class: "chip-nome" }, "de uma build do Maxroll")));
+  }, el("span", { class: "chip-apelido" }, t("+ Colar link")), el("span", { class: "chip-nome" }, t("de uma build do Maxroll"))));
   // A build do atalho pode ser de outra classe que a que está no boneco.
   const com = apelidoAtivo({ BUILD_ATIVA: estado.ativa });
   desenharCabecaDaBuild(estado.builds[estado.build]);
-  trocar(document.getElementById("avaliando"), "O atalho avalia o item com ", el("strong", {}, com), ".");
+  trocar(document.getElementById("avaliando"), t("O atalho avalia o item com"), " ", el("strong", {}, com), ".");
   desenharVisual();
   carregarVisual(estado.builds[estado.build]);
 }
@@ -372,7 +381,7 @@ function desenharVisual() {
   const v = visualDa(estado.builds[estado.build]);
   const aviso = document.getElementById("aviso-visual");
   aviso.hidden = !v.erro;
-  aviso.textContent = v.erro ? `Sem ícones da Blizzard: ${v.erro}` : "";
+  aviso.textContent = v.erro ? t("Sem ícones da Blizzard: {erro}", { erro: v.erro }) : "";
 }
 
 // Ícones e textos em português vêm da Blizzard pelo Python (com cache em
@@ -405,7 +414,7 @@ async function escolherBuild(id) {
 
 function apelidoAtivo(config) {
   const b = estado.builds.find(x => x.id === config.BUILD_ATIVA);
-  return b ? b.apelido : "todas as builds";
+  return b ? b.apelido : t("todas as builds");
 }
 
 // Os itens que aparecem num lugar do boneco. Com dois anéis na build (ex.:
@@ -423,21 +432,21 @@ function botaoDoEspaco(build, chave, area) {
   const espaco = build.espacos[chave];
   const itens = itensDoLugar(espaco, area);
   const classe = !espaco.definido ? "geral" : itens.length ? "com-item" : "livre";
-  const item = itens.length ? itens.join(" ou ") : "Qualquer item";
+  const item = itens.length ? itens.join(t(" ou ")) : t("Qualquer item");
   const n = espaco.obrigatorios.length + espaco.desejaveis.length;
   const selecionado = chave === estado.espaco && !estado.habilidade;
   return el("button", {
     class: `espaco ${classe}` + (selecionado ? " selecionado" : ""),
-    ...(itens.length ? { "data-dica": itens[0] } : { title: espaco.definido ? item : "A build não fala deste espaço: valem só as regras gerais" }),
+    ...(itens.length ? { "data-dica": itens[0] } : { title: espaco.definido ? item : t("A build não fala deste espaço: valem só as regras gerais") }),
     onclick: () => { estado.espaco = chave; estado.habilidade = null; desenharVisual(); },
   },
     el("span", { class: "espaco-icone" },
       icone(itens.length ? iconeDoItem(itens[0]) : null, "icone-item"),
-      espaco.exige_ancient && el("span", { class: "selo-ancient", title: "Precisa ser Ancient" }, "ANC")),
+      espaco.exige_ancient && el("span", { class: "selo-ancient", title: t("Precisa ser Ancient") }, "ANC")),
     el("span", { class: "espaco-texto" },
       el("span", { class: "espaco-item" }, item),
-      el("span", { class: "espaco-nome" }, NOME_DO_LUGAR[area] || ESPACOS[chave] || chave),
-      n > 0 && el("span", { class: "espaco-afixos" }, `${n} afixo${n > 1 ? "s" : ""}`),
+      el("span", { class: "espaco-nome" }, t(NOME_DO_LUGAR[area] || ESPACOS[chave] || chave)),
+      n > 0 && el("span", { class: "espaco-afixos" }, n > 1 ? t("{n} afixos", { n }) : t("1 afixo")),
     ),
   );
 }
@@ -458,17 +467,17 @@ function desenharExtras() {
     el("div", { class: "cubo-carta" + (cubo[parte] ? "" : " vazio"), ...(cubo[parte] ? { "data-dica": cubo[parte] } : {}) },
       icone(cubo[parte] && iconeDoItem(cubo[parte]), "icone-cubo"),
       el("div", {},
-        el("p", { class: "cubo-rotulo" }, rotulo),
-        el("p", { class: "cubo-nome" + (cubo[parte] ? " t-lendario" : " mudo") }, cubo[parte] || "a build não diz")))));
+        el("p", { class: "cubo-rotulo" }, t(rotulo)),
+        el("p", { class: "cubo-nome" + (cubo[parte] ? " t-lendario" : " mudo") }, cubo[parte] || t("a build não diz"))))));
   trocar(document.getElementById("gemas"), build.gemas.length
     ? build.gemas.map(g => el("div", { class: "mini-item", "data-dica": g },
         icone(iconeDoItem(g), "icone-mini"), el("span", { class: "t-lendario" }, g)))
-    : el("p", { class: "nada" }, "A build não diz."));
+    : el("p", { class: "nada" }, t("A build não diz.")));
 
   // A roda é só das gemas lendárias (como as runas no d4builds): 3 casas em triângulo.
   const no = (nome, pos) => {
     const url = nome && iconeDoItem(nome);
-    return el("span", { class: `roda-no gema p${pos}` + (nome ? "" : " vazio"), ...(nome ? { "data-dica": nome } : { title: "Gema: a build não diz" }) },
+    return el("span", { class: `roda-no gema p${pos}` + (nome ? "" : " vazio"), ...(nome ? { "data-dica": nome } : { title: t("Gema: a build não diz") }) },
       url && el("img", { src: url, alt: "", draggable: "false", onerror: e => e.target.remove() }));
   };
   trocar(document.getElementById("roda"),
@@ -503,8 +512,8 @@ function desenharHabilidades() {
   const janela = document.getElementById("janela-habilidades");
   if (vazio) {
     trocar(janela, el("p", { class: "nada" },
-      "Esta build ainda não tem habilidades. Elas vêm junto quando a build é importada do Maxroll."));
-    trocar(document.getElementById("ao-upar"), el("p", { class: "nada" }, "Sem habilidades na build."));
+      t("Esta build ainda não tem habilidades. Elas vêm junto quando a build é importada do Maxroll.")));
+    trocar(document.getElementById("ao-upar"), el("p", { class: "nada" }, t("Sem habilidades na build.")));
     return;
   }
 
@@ -527,36 +536,36 @@ function desenharHabilidades() {
       ...(h ? {} : { disabled: "" }),
       onclick: () => escolher("ativas", i),
     },
-      el("span", { class: "carta-lugar" }, lugar),
+      el("span", { class: "carta-lugar" }, t(lugar)),
       el("span", { class: "carta-corpo" },
         icone(h && h.icone, "icone-habilidade"),
         el("span", { class: "carta-texto" },
-          el("span", { class: "carta-nome" }, h ? h.nome_pt : "vazio"),
-          h && el("span", { class: "carta-runa" + (h.runa ? "" : " sem") }, h.runa ? h.runa.nome_pt : "sem runa"))),
-      el("span", { class: "carta-tecla" }, tecla),
-      h && nivelDe(h) && el("span", { class: "carta-nivel" }, `nível ${nivelDe(h)}`));
+          el("span", { class: "carta-nome" }, h ? nomeDe(h) : t("vazio")),
+          h && el("span", { class: "carta-runa" + (h.runa ? "" : " sem") }, h.runa ? nomeDe(h.runa) : t("sem runa")))),
+      el("span", { class: "carta-tecla" }, t(tecla)),
+      h && nivelDe(h) && el("span", { class: "carta-nivel" }, t("nível {n}", { n: nivelDe(h) })));
   };
   const passiva = i => {
     const h = daBuild("passivas", i);
     return el("button", {
       type: "button", class: "passiva-jogo" + (h ? "" : " vazia") + (escolhida("passivas", i) ? " selecionado" : ""),
       ...(h ? {} : { disabled: "" }),
-      title: h ? h.nome_pt + (nivelDe(h) ? ` · libera no nível ${nivelDe(h)}` : "") : "",
+      title: h ? nomeDe(h) + (nivelDe(h) ? ` · ${t("libera no nível {n}", { n: nivelDe(h) })}` : "") : "",
       onclick: () => escolher("passivas", i),
-    }, icone(h && h.icone, "icone-passiva icone-grande"), el("span", {}, h ? h.nome_pt : "vazio"));
+    }, icone(h && h.icone, "icone-passiva icone-grande"), el("span", {}, h ? nomeDe(h) : t("vazio")));
   };
 
   trocar(janela,
     el("section", { class: "secao-jogo" },
-      el("h3", { class: "faixa-titulo" }, el("span", {}, "Habilidades do mouse")),
+      el("h3", { class: "faixa-titulo" }, el("span", {}, t("Habilidades do mouse"))),
       el("div", { class: "grade-cartas" }, [0, 1].map(carta))),
     el("section", { class: "secao-jogo" },
-      el("h3", { class: "faixa-titulo" }, el("span", {}, "Barra de ação")),
+      el("h3", { class: "faixa-titulo" }, el("span", {}, t("Barra de ação"))),
       el("div", { class: "grade-cartas" }, [2, 3, 4, 5].map(carta))),
     el("section", { class: "secao-jogo" },
-      el("h3", { class: "faixa-titulo" }, el("span", {}, "Passivas")),
+      el("h3", { class: "faixa-titulo" }, el("span", {}, t("Passivas"))),
       el("div", { class: "fila-passivas" }, [0, 1, 2, 3].map(passiva))),
-    el("p", { class: "nota" }, "Clique numa habilidade pra ver o que ela e a runa fazem."));
+    el("p", { class: "nota" }, t("Clique numa habilidade pra ver o que ela e a runa fazem.")));
   desenharAoUpar(v);
 }
 
@@ -574,8 +583,7 @@ function desenharSeguidor(build) {
   const caixa = document.getElementById("janela-seguidor");
   const s = build.seguidor;
   if (!s) {
-    trocar(caixa, el("p", { class: "nada" }, "Esta build não traz seguidor. As builds importadas do Maxroll trazem o seguidor ",
-      "do guia; se esta é de antes, cole o link de novo pra importar com ele."));
+    trocar(caixa, el("p", { class: "nada" }, t("Esta build não traz seguidor. As builds importadas do Maxroll trazem o seguidor do guia; se esta é de antes, cole o link de novo pra importar com ele.")));
     return;
   }
   const v = visualDa(build);
@@ -586,27 +594,27 @@ function desenharSeguidor(build) {
 
   trocar(caixa,
     el("div", { class: "seguidor-cabeca" },
-      el("p", { class: "seguidor-nome" }, (dele && dele.nome_pt) || SEGUIDORES[s.quem] || s.quem),
-      el("p", { class: "mudo" }, "O seguidor que o guia usa, com os itens e as 4 habilidades (uma a cada 5 níveis dele).")),
+      el("p", { class: "seguidor-nome" }, (dele && nomeDe(dele)) || t(SEGUIDORES[s.quem] || s.quem)),
+      el("p", { class: "mudo" }, t("O seguidor que o guia usa, com os itens e as 4 habilidades (uma a cada 5 níveis dele)."))),
     el("div", { class: "seguidor-grade" },
       el("section", { class: "secao-jogo" },
-        el("h3", { class: "faixa-titulo" }, el("span", {}, "Itens")),
+        el("h3", { class: "faixa-titulo" }, el("span", {}, t("Itens"))),
         itens.length
           ? el("ul", { class: "seguidor-itens" }, itens.map(([chave, rotulo]) =>
               el("li", { "data-dica": s.itens[chave] },
                 icone(iconeDoItem(s.itens[chave]), "icone-mini"),
-                el("span", {}, el("span", { class: "mini-rotulo" }, rotulo), el("span", { class: "t-lendario" }, s.itens[chave])))))
-          : el("p", { class: "nada" }, "O guia não diz os itens.")),
+                el("span", {}, el("span", { class: "mini-rotulo" }, t(rotulo)), el("span", { class: "t-lendario" }, s.itens[chave])))))
+          : el("p", { class: "nada" }, t("O guia não diz os itens."))),
       el("section", { class: "secao-jogo" },
-        el("h3", { class: "faixa-titulo" }, el("span", {}, "Habilidades")),
+        el("h3", { class: "faixa-titulo" }, el("span", {}, t("Habilidades"))),
         el("ol", { class: "seguidor-habilidades" }, habilidades.map(h =>
           el("li", {},
             icone(h.icone, "icone-habilidade"),
             el("div", {},
-              el("p", { class: "seguidor-nivel" }, h.nivel ? `Escolhida no nível ${h.nivel}` : "Habilidade"),
-              el("p", { class: "seguidor-hab-nome" }, h.nome_pt),
-              h.descricao_pt && el("p", { class: "descricao" }, h.descricao_pt))))))),
-    !dele && el("p", { class: "nota" }, v.carregando ? "Buscando nomes e ícones na Blizzard…" : "Sem nomes em português: falta a chave da Blizzard?"),
+              el("p", { class: "seguidor-nivel" }, h.nivel ? t("Escolhida no nível {n}", { n: h.nivel }) : t("Habilidade")),
+              el("p", { class: "seguidor-hab-nome" }, nomeDe(h)),
+              descricaoDe(h) && el("p", { class: "descricao" }, descricaoDe(h)))))))),
+    !dele && el("p", { class: "nota" }, v.carregando ? t("Buscando nomes e ícones na Blizzard…") : t("Sem nomes em português: falta a chave da Blizzard?")),
   );
 }
 
@@ -619,21 +627,21 @@ function nivelDe(h) {
 function desenharAoUpar(v) {
   const marcos = [];
   for (const h of v.habilidades.ativas) {
-    if (h.nivel) marcos.push({ nivel: h.nivel, texto: h.nome_pt, tipo: "ativa" });
-    if (h.runa && h.runa.nivel) marcos.push({ nivel: h.runa.nivel, texto: `runa ${h.runa.nome_pt} (${h.nome_pt})`, tipo: "runa" });
+    if (h.nivel) marcos.push({ nivel: h.nivel, texto: nomeDe(h), tipo: "ativa" });
+    if (h.runa && h.runa.nivel) marcos.push({ nivel: h.runa.nivel, texto: t("runa {runa} ({hab})", { runa: nomeDe(h.runa), hab: nomeDe(h) }), tipo: "runa" });
   }
   for (const h of v.habilidades.passivas) {
-    if (h.nivel) marcos.push({ nivel: h.nivel, texto: `passiva ${h.nome_pt}`, tipo: "passiva" });
+    if (h.nivel) marcos.push({ nivel: h.nivel, texto: t("passiva {hab}", { hab: nomeDe(h) }), tipo: "passiva" });
   }
   const caixa = document.getElementById("ao-upar");
   if (!marcos.length) {
-    trocar(caixa, el("p", { class: "nada" }, v.carregando ? "Buscando na Blizzard…" : "Sem dados de nível (falta a chave da Blizzard?)."));
+    trocar(caixa, el("p", { class: "nada" }, v.carregando ? t("Buscando na Blizzard…") : t("Sem dados de nível (falta a chave da Blizzard?).")));
     return;
   }
   const niveis = [...new Set(marcos.map(m => m.nivel))].sort((a, b) => a - b);
   trocar(caixa, el("ol", { class: "marcos" }, niveis.map(n =>
     el("li", { class: "marco" },
-      el("span", { class: "marco-nivel" }, `Nv ${n}`),
+      el("span", { class: "marco-nivel" }, t("Nv {n}", { n })),
       el("span", {}, marcos.filter(m => m.nivel === n).map((m, i) => [
         i ? ", " : "", el("span", { class: `marco-${m.tipo}` }, m.texto)]))))));
 }
@@ -651,53 +659,52 @@ function desenharParagon(build) {
   const caixa = document.getElementById("paragon");
   const p = build.paragon;
   if (!p) {
-    trocar(caixa, el("p", { class: "nada" }, "A build não diz. Vem junto quando a build é importada do Maxroll."));
+    trocar(caixa, el("p", { class: "nada" }, t("A build não diz. Vem junto quando a build é importada do Maxroll.")));
     return;
   }
-  const atributo = ATRIBUTO[build.classe] || "Atributo principal";
+  const atributo = t(ATRIBUTO[build.classe] || "Atributo principal");
   const [principal, vit] = p.pontos[0];
   const passo = (numero, nome, n) => el("li", { class: "passo" + (n === 0 ? " zero" : "") },
     el("span", { class: "passo-num" }, numero),
-    el("span", { class: "passo-nome" }, nome),
-    el("span", { class: "paragon-valor" }, n === 0 ? "não pôr" : n >= MAXIMO_DO_PARAGON ? "até 50" : `${n} pontos`));
+    el("span", { class: "passo-nome" }, t(nome)),
+    el("span", { class: "paragon-valor" }, n === 0 ? t("não pôr") : n >= MAXIMO_DO_PARAGON ? t("até 50") : t("{n} pontos", { n })));
 
   const grupos = PARAGON.map(([grupo, nomes], g) => {
     const ordem = ORDEM_DO_PARAGON[g];
     const comPonto = ordem.filter(i => p.pontos[g][i] > 0);
     const semPonto = ordem.filter(i => p.pontos[g][i] === 0);
     const linhas = [...comPonto, ...semPonto].map((i, k) =>
-      passo(k < comPonto.length ? String(k + 1) : "–", nomes[i], p.pontos[g][i]));
+      passo(k < comPonto.length ? String(k + 1) : "–", nomes[i] || atributo, p.pontos[g][i]));
     if (g === 0) {
       // O número gigante do atributo principal é "o que sobra", não a prioridade.
       linhas.splice(comPonto.length, 0, el("li", { class: "passo passo-resto" },
         el("span", { class: "passo-num" }, String(comPonto.length + 1)),
-        el("span", { class: "passo-nome" }, "Todo o resto",
-          el("small", {}, [`${atributo} ${principal}`, vit && `Vitalidade ${vit}`].filter(Boolean).join(" · "))),
-        el("span", { class: "paragon-valor" }, "sem limite")));
+        el("span", { class: "passo-nome" }, t("Todo o resto"),
+          el("small", {}, [`${atributo} ${principal}`, vit && `${t("Vitalidade")} ${vit}`].filter(Boolean).join(" · "))),
+        el("span", { class: "paragon-valor" }, t("sem limite"))));
     }
     return el("div", { class: "paragon-grupo" },
-      el("p", { class: "paragon-titulo" }, el("span", { class: "paragon-ordem" }, String(g + 1)), grupo),
+      el("p", { class: "paragon-titulo" }, el("span", { class: "paragon-ordem" }, String(g + 1)), t(grupo)),
       el("ol", { class: "passos" }, linhas));
   });
 
   trocar(caixa,
     el("div", { class: "paragon-explica" },
-      el("p", {}, el("strong", {}, "Como ler: "),
-        "cada nível de paragon dá 1 ponto, e os grupos se revezam (Principal → Ataque → Defesa → Utilidade). ",
-        "Dentro de cada grupo, encha na ordem dos números: o 1 primeiro, até o máximo, depois o 2…"),
-      el("p", {}, el("strong", {}, `${atributo} não é a prioridade: `),
-        "o número dela é grande só porque não tem limite. É onde caem os pontos do Principal depois que ",
-        "Velocidade e Recurso já encheram.")),
+      el("p", {}, el("strong", {}, t("Como ler:")), " ",
+        t("cada nível de paragon dá 1 ponto, e os grupos se revezam (Principal → Ataque → Defesa → Utilidade)."), " ",
+        t("Dentro de cada grupo, encha na ordem dos números: o 1 primeiro, até o máximo, depois o 2…")),
+      el("p", {}, el("strong", {}, t("{atributo} não é a prioridade:", { atributo })), " ",
+        t("o número dela é grande só porque não tem limite. É onde caem os pontos do Principal depois que Velocidade e Recurso já encheram."))),
     el("div", { class: "paragon-grupos" }, grupos),
     p.nivel && el("p", { class: "nota" },
-      `Números da build no paragon ${p.nivel}. "Não pôr" = a build deixa esse atributo em 0. `,
-      "A ordem dentro dos grupos é a comum dos guias; o Maxroll só guarda os números."),
+      t("Números da build no paragon {n}. \"Não pôr\" = a build deixa esse atributo em 0.", { n: p.nivel }), " ",
+      t("A ordem dentro dos grupos é a comum dos guias; o Maxroll só guarda os números.")),
   );
 }
 
 function etiquetas(lista, classe) {
-  if (!lista.length) return el("p", { class: "nada" }, "Nenhum.");
-  return el("ul", {}, lista.map(t => el("li", { class: `etiqueta ${classe}` }, t)));
+  if (!lista.length) return el("p", { class: "nada" }, t("Nenhum."));
+  return el("ul", {}, lista.map(x => el("li", { class: `etiqueta ${classe}` }, t(x))));
 }
 
 function desenharDetalhe() {
@@ -707,23 +714,23 @@ function desenharDetalhe() {
   if (estado.habilidade) return desenharDetalheDaHabilidade();
   const build = estado.builds[estado.build];
   const espaco = build.espacos[estado.espaco];
-  const nome = ESPACOS[estado.espaco] || estado.espaco;
+  const nome = t(ESPACOS[estado.espaco] || estado.espaco);
   const caixa = document.getElementById("detalhe");
 
   trocar(caixa,
     el("div", { class: "detalhe-slot" }, nome + (espaco.exige_ancient ? " · Ancient" : "")),
     el("p", { class: "detalhe-titulo " + (espaco.itens.length ? "com-item" : "livre") },
-      espaco.itens.length ? espaco.itens.join(" ou ") : "Qualquer item"),
+      espaco.itens.length ? espaco.itens.join(t(" ou ")) : t("Qualquer item")),
     !espaco.definido && el("p", { class: "mudo" },
-      `A build ${build.apelido} não fala deste espaço: valem só as regras gerais, que ela pede em todos.`),
-    el("h3", {}, "Obrigatórios"),
+      t("A build {nome} não fala deste espaço: valem só as regras gerais, que ela pede em todos.", { nome: build.apelido })),
+    el("h3", {}, t("Obrigatórios")),
     etiquetas(espaco.obrigatorios, "obrigatorio"),
-    el("h3", {}, "Desejáveis"),
+    el("h3", {}, t("Desejáveis")),
     etiquetas(espaco.desejaveis, ""),
     blocoGemas(build),
     el("p", { class: "nota" },
-      "Obrigatório que falta = \"não serve\". Desejáveis só dão nota. ",
-      "Pra mudar, edite o arquivo da build em ", el("code", {}, "builds/"), "."),
+      t("Obrigatório que falta = \"não serve\". Desejáveis só dão nota."), " ",
+      t("Pra mudar, edite o arquivo da build em"), " ", el("code", {}, "builds/"), "."),
   );
 }
 
@@ -733,33 +740,34 @@ function desenharDetalheDaHabilidade() {
   const h = v.habilidades[tipo][i];
   const caixa = document.getElementById("detalhe");
   if (!h) {
-    trocar(caixa, el("p", { class: "mudo" }, v.carregando ? "Buscando na Blizzard…" : "Sem dados desta habilidade."));
+    trocar(caixa, el("p", { class: "mudo" }, v.carregando ? t("Buscando na Blizzard…") : t("Sem dados desta habilidade.")));
     return;
   }
   trocar(caixa,
     el("div", { class: "detalhe-slot" },
-      tipo === "passivas" ? "Passiva" : `Habilidade · ${LUGARES[i][0]} (${LUGARES[i][1]})`),
+      tipo === "passivas" ? t("Passiva") : `${t("Habilidade")} · ${t(LUGARES[i][0])} (${t(LUGARES[i][1])})`),
     el("div", { class: "detalhe-cabeca" },
       icone(h.icone, tipo === "passivas" ? "icone-passiva icone-grande" : "icone-habilidade icone-grande"),
       el("div", {},
-        el("p", { class: "detalhe-titulo livre" }, h.nome_pt),
-        h.nome !== h.nome_pt && el("p", { class: "mudo nome-ingles" }, `No jogo em inglês: ${h.nome}`))),
-    h.nivel && el("p", { class: "mudo" }, `Libera no nível ${h.nivel}`
-      + (h.runa && h.runa.nivel ? `; a runa ${h.runa.nome_pt}, no nível ${h.runa.nivel}.` : ".")),
-    h.descricao_pt && el("p", { class: "descricao" }, h.descricao_pt),
+        el("p", { class: "detalhe-titulo livre" }, nomeDe(h)),
+        !emIngles() && h.nome !== h.nome_pt && el("p", { class: "mudo nome-ingles" }, `No jogo em inglês: ${h.nome}`))),
+    h.nivel && el("p", { class: "mudo" }, h.runa && h.runa.nivel
+      ? t("Libera no nível {n}; a runa {runa}, no nível {nr}.", { n: h.nivel, runa: nomeDe(h.runa), nr: h.runa.nivel })
+      : t("Libera no nível {n}.", { n: h.nivel })),
+    descricaoDe(h) && el("p", { class: "descricao" }, descricaoDe(h)),
     h.runa && [
-      el("h3", {}, "Runa"),
-      el("p", { class: "runa-nome" }, h.runa.nome_pt,
-        h.runa.nome !== h.runa.nome_pt && el("span", { class: "mudo" }, ` (${h.runa.nome})`)),
-      el("p", { class: "descricao" }, h.runa.descricao_pt),
+      el("h3", {}, t("Runa")),
+      el("p", { class: "runa-nome" }, nomeDe(h.runa),
+        !emIngles() && h.runa.nome !== h.runa.nome_pt && el("span", { class: "mudo" }, ` (${h.runa.nome})`)),
+      el("p", { class: "descricao" }, descricaoDe(h.runa)),
     ],
-    tipo === "ativas" && !h.runa && el("p", { class: "mudo" }, "A build não diz qual runa."),
-    el("p", { class: "nota" }, "Textos e ícones da API oficial da Blizzard."),
+    tipo === "ativas" && !h.runa && el("p", { class: "mudo" }, t("A build não diz qual runa.")),
+    el("p", { class: "nota" }, t("Textos e ícones da API oficial da Blizzard.")),
   );
 }
 
 function blocoGemas(build) {
-  return [el("h3", {}, "Gemas lendárias"), etiquetas(build.gemas, "gema")];
+  return [el("h3", {}, t("Gemas lendárias")), etiquetas(build.gemas, "gema")];
 }
 
 // ------------------------------------------------------------ meu herói
@@ -768,16 +776,16 @@ async function buscarHerois(evento) {
   if (evento) evento.preventDefault();
   const battletag = document.getElementById("form-heroi").elements.battletag.value.trim();
   const status = document.getElementById("heroi-status");
-  if (!battletag) { status.className = "importar-status"; status.textContent = "Escreva sua BattleTag primeiro."; return; }
+  if (!battletag) { status.className = "importar-status"; status.textContent = t("Escreva sua BattleTag primeiro."); return; }
   status.className = "importar-status";
-  status.textContent = "Buscando na Blizzard…";
+  status.textContent = t("Buscando na Blizzard…");
   trocar(document.getElementById("lista-herois"));
   trocar(document.getElementById("comparar-com"));
   trocar(document.getElementById("resultado-heroi"));
   const r = await estado.api.herois(battletag);
   if (r.erro) { status.className = "importar-status erro"; status.textContent = r.erro; return; }
   estado.herois = r.herois;
-  status.textContent = r.herois.length ? "Escolha o herói." : "Essa conta não tem heróis.";
+  status.textContent = r.herois.length ? t("Escolha o herói.") : t("Essa conta não tem heróis.");
   desenharHerois();
 }
 
@@ -791,9 +799,9 @@ function desenharHerois() {
       iconeDaClasse(h.classe),
       el("span", {},
         el("span", { class: "chip-apelido" }, h.nome),
-        el("span", { class: "chip-nome" }, [CLASSES[h.classe] || h.classe || "?", `nível ${h.nivel}`,
-          h.paragon ? `paragon ${h.paragon}` : "", h.temporada ? "temporada" : "", h.hardcore ? "hardcore" : "",
-          h.morto ? "morto" : ""].filter(Boolean).join(" · "))))));
+        el("span", { class: "chip-nome" }, [h.classe ? nomeDaClasse(h.classe) : "?", t("nível {n}", { n: h.nivel }),
+          h.paragon ? `paragon ${h.paragon}` : "", h.temporada ? t("temporada") : "", h.hardcore ? "hardcore" : "",
+          h.morto ? t("morto") : ""].filter(Boolean).join(" · "))))));
 }
 
 function escolherHeroi(id) {
@@ -803,9 +811,9 @@ function escolherHeroi(id) {
   const daClasse = estado.builds.filter(b => b.classe === h.classe);
   const caixa = document.getElementById("comparar-com");
   if (!daClasse.length) {
-    trocar(caixa, el("p", { class: "mudo" }, `Você ainda não tem build de ${CLASSES[h.classe] || h.classe}. `,
+    trocar(caixa, el("p", { class: "mudo" }, t("Você ainda não tem build de {classe}.", { classe: nomeDaClasse(h.classe) }), " ",
       el("button", { class: "link", type: "button", onclick: () => { trocarClasse(h.classe); abrirAba("guias"); } },
-        "Ver os guias dessa classe")));
+        t("Ver os guias dessa classe"))));
     trocar(document.getElementById("resultado-heroi"));
     return;
   }
@@ -814,61 +822,62 @@ function escolherHeroi(id) {
   const escolha = el("select", { name: "build" }, daClasse.map(b =>
     el("option", { value: b.id, ...(b.id === inicial.id ? { selected: "" } : {}) }, `${b.apelido} — ${b.nome}`)));
   escolha.addEventListener("change", () => compararHeroi(escolha.value));
-  trocar(caixa, el("label", { class: "campo" }, el("span", { class: "campo-nome" }, "Comparar com a build"), escolha));
+  trocar(caixa, el("label", { class: "campo" }, el("span", { class: "campo-nome" }, t("Comparar com a build")), escolha));
   compararHeroi(inicial.id);
 }
 
-const VEREDITO = { serve: "✅ Serve", parcial: "🟡 Por enquanto", nao: "❌ Não serve" };
+const VEREDITO = { serve: "✅ Serve", parcial: "🟡 Por enquanto", nao: "❌ Não serve" };  // passam por t()
 const MARCA_DA_HABILIDADE = { ok: "✓", runa: "≈", falta: "✗" };
 
 async function compararHeroi(idBuild) {
   const caixa = document.getElementById("resultado-heroi");
   const battletag = document.getElementById("form-heroi").elements.battletag.value.trim();
-  trocar(caixa, el("p", { class: "mudo" }, "Comparando…"));
+  trocar(caixa, el("p", { class: "mudo" }, t("Comparando…")));
   const r = await estado.api.comparar_heroi(battletag, estado.heroi, idBuild);
   if (r.erro) { trocar(caixa, el("p", { class: "importar-status erro" }, r.erro)); return; }
   const ordem = Object.keys(ESPACOS);
   const itens = [...r.itens].sort((a, b) => ordem.indexOf(a.espaco) - ordem.indexOf(b.espaco));
   const conta = v => itens.filter(i => i.veredito === v).length;
-  const quando = r.heroi.atualizado ? new Date(r.heroi.atualizado * 1000).toLocaleString("pt-BR") : null;
+  const quando = r.heroi.atualizado ? new Date(r.heroi.atualizado * 1000).toLocaleString(LOCALE()) : null;
   const h = r.habilidades;
 
   trocar(caixa,
     el("p", { class: "resumo-heroi" },
-      el("strong", {}, r.heroi.nome), ` · ${conta("serve")} peças servem, ${conta("parcial")} por enquanto, ${conta("nao")} não servem`,
-      quando && el("span", { class: "mudo" }, ` · dados da Blizzard de ${quando}`)),
-    !r.classe_igual && el("p", { class: "importar-status erro" }, "Esse herói é de outra classe que a build."),
+      el("strong", {}, r.heroi.nome), " · ",
+      t("{serve} peças servem, {parcial} por enquanto, {nao} não servem", { serve: conta("serve"), parcial: conta("parcial"), nao: conta("nao") }),
+      quando && el("span", { class: "mudo" }, ` · ${t("dados da Blizzard de {quando}", { quando })}`)),
+    !r.classe_igual && el("p", { class: "importar-status erro" }, t("Esse herói é de outra classe que a build.")),
     el("ul", { class: "itens-heroi" }, itens.map(i =>
       el("li", { class: `item-heroi ${i.veredito}` },
         icone(i.icone, "icone-item"),
         el("div", { class: "item-heroi-texto" },
           el("p", { class: "item-heroi-cabeca" },
-            el("span", { class: "espaco-nome" }, ESPACOS[i.espaco] || i.espaco), " ",
+            el("span", { class: "espaco-nome" }, t(ESPACOS[i.espaco] || i.espaco)), " ",
             el("span", { class: "item-heroi-nome" }, i.nome),
-            el("span", { class: "veredito" }, VEREDITO[i.veredito])),
+            el("span", { class: "veredito" }, t(VEREDITO[i.veredito]))),
           i.veredito !== "serve" && el("p", { class: "mudo" }, i.motivo),
           (i.tem.length > 0 || i.falta.length > 0) && el("p", { class: "item-heroi-afixos" },
-            i.tem.map(t => el("span", { class: "t-ok" }, `${t} ✓ `)),
-            i.falta.map(t => el("span", { class: "t-falta" }, `${t} ✗ `))),
+            i.tem.map(x => el("span", { class: "t-ok" }, `${t(x)} ✓ `)),
+            i.falta.map(x => el("span", { class: "t-falta" }, `${t(x)} ✗ `))),
           i.dica && el("p", { class: "dica" }, i.dica),
           i.encantado && !i.dica && i.falta.length > 0
-            && el("p", { class: "mudo" }, `Já trocado no Místico: "${i.encantado}" (só ele pode ser trocado de novo).`))))),
-    el("h3", {}, "Habilidades"),
+            && el("p", { class: "mudo" }, t("Já trocado no Místico: \"{afixo}\" (só ele pode ser trocado de novo).", { afixo: i.encantado })))))),
+    el("h3", {}, t("Habilidades")),
     h.ativas.length || h.passivas.length
       ? el("ul", { class: "habilidades-heroi" },
           h.ativas.map(a => el("li", { class: `hab-${a.estado}` },
             icone(a.icone, "icone-mini"),
             `${MARCA_DA_HABILIDADE[a.estado]} ${a.nome}`,
-            a.runa_nome && el("span", { class: "mudo" }, ` · runa ${a.runa_nome}`),
-            a.estado === "runa" && el("span", { class: "t-falta" }, ` (você usa ${a.runa_do_heroi_nome || "outra"})`),
-            a.estado === "falta" && el("span", { class: "t-falta" }, " (falta na sua barra)"))),
+            a.runa_nome && el("span", { class: "mudo" }, ` · ${t("runa {runa}", { runa: a.runa_nome })}`),
+            a.estado === "runa" && el("span", { class: "t-falta" }, ` (${t("você usa {runa}", { runa: a.runa_do_heroi_nome || t("outra") })})`),
+            a.estado === "falta" && el("span", { class: "t-falta" }, ` (${t("falta na sua barra")})`))),
           h.passivas.map(p => el("li", { class: `hab-${p.estado}` },
             icone(p.icone, "icone-mini"),
-            `${MARCA_DA_HABILIDADE[p.estado]} passiva ${p.nome}`,
-            p.estado === "falta" && el("span", { class: "t-falta" }, " (falta)"))))
-      : el("p", { class: "nada" }, "A build não tem habilidades (importe do Maxroll pra comparar)."),
-    h.fora_da_build.length > 0 && el("p", { class: "mudo" }, `No herói, mas fora da build: ${h.fora_da_build.join(", ")}.`),
-    el("p", { class: "nota" }, "Só os itens equipados. Mochila e baú: use o atalho no jogo."),
+            `${MARCA_DA_HABILIDADE[p.estado]} ${t("passiva {hab}", { hab: p.nome })}`,
+            p.estado === "falta" && el("span", { class: "t-falta" }, ` (${t("falta")})`))))
+      : el("p", { class: "nada" }, t("A build não tem habilidades (importe do Maxroll pra comparar).")),
+    h.fora_da_build.length > 0 && el("p", { class: "mudo" }, t("No herói, mas fora da build: {lista}.", { lista: h.fora_da_build.join(", ") })),
+    el("p", { class: "nota" }, t("Só os itens equipados. Mochila e baú: use o atalho no jogo.")),
   );
 }
 
@@ -896,10 +905,10 @@ async function buscarMaxroll(evento) {
 async function buscarTexto(texto) {
   const status = document.getElementById("importar-status");
   const opcoes = document.getElementById("importar-opcoes");
-  if (!texto) { status.textContent = "Cole um link primeiro."; return; }
+  if (!texto) { status.textContent = t("Cole um link primeiro."); return; }
   trocar(opcoes);
   status.className = "importar-status";
-  status.textContent = "Buscando no Maxroll…";
+  status.textContent = t("Buscando no Maxroll…");
   const r = await estado.api.buscar_maxroll(texto);
   if (r.erro) {
     status.className = "importar-status erro";
@@ -907,13 +916,13 @@ async function buscarTexto(texto) {
     return;
   }
   if (r.site) {
-    status.textContent = `Build montada no site: ${r.site.nome} (${CLASSES[r.site.classe] || r.site.classe}).`;
+    status.textContent = t("Build montada no site: {nome} ({classe}).", { nome: r.site.nome, classe: nomeDaClasse(r.site.classe) });
     desenharImportarDoSite(texto, r.site);
     return;
   }
   status.textContent = r.builds.length > 1
-    ? `Esse link tem ${r.builds.length} builds. Escolha uma e o perfil (cada perfil é uma variação da build).`
-    : "Escolha o perfil (cada perfil é uma variação da build).";
+    ? t("Esse link tem {n} builds. Escolha uma e o perfil (cada perfil é uma variação da build).", { n: r.builds.length })
+    : t("Escolha o perfil (cada perfil é uma variação da build).");
   desenharOpcoesDeImportar(r.builds, 0);
 }
 
@@ -923,7 +932,7 @@ function desenharOpcoesDeImportar(builds, escolhida) {
     b.perfis.map((nome, i) => el("option", { value: String(i), ...(i === b.perfil ? { selected: "" } : {}) },
       `${i + 1}. ${nome}`)));
   const apelido = el("input", { name: "apelido", value: b.nome, autocomplete: "off", maxlength: "40" });
-  const botao = el("button", { type: "button", class: "botao" }, "Importar");
+  const botao = el("button", { type: "button", class: "botao" }, t("Importar"));
   botao.addEventListener("click", () => importarMaxroll(b, Number(perfil.value), apelido.value, botao));
 
   trocar(document.getElementById("importar-opcoes"),
@@ -934,10 +943,10 @@ function desenharOpcoesDeImportar(builds, escolhida) {
         onclick: () => desenharOpcoesDeImportar(builds, i),
       },
         el("span", { class: "chip-apelido" }, x.nome),
-        el("span", { class: "chip-nome" }, `${x.classe} · ${x.perfis.length} perfis`)))),
+        el("span", { class: "chip-nome" }, `${nomeDaClasse(x.classe)} · ${t("{n} perfis", { n: x.perfis.length })}`)))),
     el("div", { class: "importar-campos" },
-      el("label", { class: "campo" }, el("span", { class: "campo-nome" }, "Perfil"), perfil),
-      el("label", { class: "campo" }, el("span", { class: "campo-nome" }, "Nome curto na janela e no selo"), apelido),
+      el("label", { class: "campo" }, el("span", { class: "campo-nome" }, t("Perfil")), perfil),
+      el("label", { class: "campo" }, el("span", { class: "campo-nome" }, t("Nome curto na janela e no selo")), apelido),
       botao),
   );
 }
@@ -945,11 +954,11 @@ function desenharOpcoesDeImportar(builds, escolhida) {
 // Link do "Montar build" do site: a build já vem pronta, só falta o nome curto.
 function desenharImportarDoSite(texto, site) {
   const apelido = el("input", { name: "apelido", value: site.apelido, autocomplete: "off", maxlength: "40" });
-  const botao = el("button", { type: "button", class: "botao" }, "Importar");
+  const botao = el("button", { type: "button", class: "botao" }, t("Importar"));
   botao.addEventListener("click", () => importarMaxroll(null, 0, apelido.value, botao, texto));
   trocar(document.getElementById("importar-opcoes"),
     el("div", { class: "importar-campos" },
-      el("label", { class: "campo" }, el("span", { class: "campo-nome" }, "Nome curto na janela e no selo"), apelido),
+      el("label", { class: "campo" }, el("span", { class: "campo-nome" }, t("Nome curto na janela e no selo")), apelido),
       botao));
 }
 
@@ -957,7 +966,7 @@ async function importarMaxroll(b, perfil, apelido, botao, linkDoSite = null) {
   const status = document.getElementById("importar-status");
   botao.disabled = true;
   status.className = "importar-status";
-  status.textContent = "Importando…";
+  status.textContent = t("Importando…");
   const r = linkDoSite
     ? await estado.api.importar_do_site(linkDoSite, apelido)
     : await estado.api.importar_maxroll(b.numero, perfil, apelido);
@@ -981,8 +990,8 @@ async function importarMaxroll(b, perfil, apelido, botao, linkDoSite = null) {
   estado.api.reiniciar_overlay();
   setTimeout(atualizarEstado, 1500);
   trocar(document.getElementById("avaliando"),
-    el("strong", { class: "t-ok" }, `Build importada: ${estado.builds[estado.build].apelido}. `),
-    "O atalho já avalia com ela: no jogo, passe o mouse num item e aperte o atalho. O arquivo ficou em ",
+    el("strong", { class: "t-ok" }, t("Build importada: {nome}.", { nome: estado.builds[estado.build].apelido })), " ",
+    t("O atalho já avalia com ela: no jogo, passe o mouse num item e aperte o atalho. O arquivo ficou em"), " ",
     el("code", {}, `builds/${r.id}.json`), ".");
 }
 
@@ -996,8 +1005,8 @@ function desenharHistorico(anterior = null) {
   if (!itens.length) {
     trocar(lista, el("li", { class: "vazio-lista" },
       estado.historico.length
-        ? "Nenhum item neste filtro."
-        : "Nada avaliado ainda. No jogo, passe o mouse num item e aperte o atalho."));
+        ? t("Nenhum item neste filtro.")
+        : t("Nada avaliado ainda. No jogo, passe o mouse num item e aperte o atalho.")));
     return;
   }
   trocar(lista, itens.map(h => registro(h, anterior)));
@@ -1013,7 +1022,7 @@ function registro(h, anterior) {
     el("div", {},
       el("p", { class: "registro-titulo" }, h.titulo),
       el("p", { class: "registro-tipo" },
-        [tipo, h.com && `avaliado com ${h.com === "Todas" ? "todas as builds" : h.com}`]
+        [tipo, h.com && t("avaliado com {build}", { build: h.com === "Todas" ? t("todas as builds") : h.com })]
           .filter(Boolean).join(" · ")),
       h.linhas.map(linha => el("p", { class: "registro-linha" },
         linha.map(([texto, estilo]) => el("span", { class: `t-${estilo}` }, texto)))),
@@ -1021,7 +1030,7 @@ function registro(h, anterior) {
     el("div", { class: "registro-hora" },
       hora(h.quando),
       el("br"),
-      el("span", { class: "veredito" }, h.serve ? "Serve" : h.parcial ? "Por enquanto" : "Não serve"),
+      el("span", { class: "veredito" }, h.serve ? t("Serve") : h.parcial ? t("Por enquanto") : t("Não serve")),
     ),
   );
 }
@@ -1052,9 +1061,9 @@ async function atualizarEstado() {
   caixa.classList.toggle("ligado", e.rodando);
   caixa.classList.toggle("parado", !e.rodando);
   caixa.querySelector(".estado-texto").textContent = e.rodando
-    ? `Overlay ativo · ${e.config.AUTOMATICO === "sim" ? "automático + " : ""}${e.config.ATALHO} · ${apelidoAtivo(e.config)}`
-    : "Overlay parado — veja Configurações";
-  document.getElementById("log").textContent = e.log.join("\n") || "(sem mensagens)";
+    ? `${t("Overlay ativo")} · ${e.config.AUTOMATICO === "sim" ? t("automático + ") : ""}${e.config.ATALHO} · ${apelidoAtivo(e.config)}`
+    : t("Overlay parado — veja Configurações");
+  document.getElementById("log").textContent = e.log.join("\n") || t("(sem mensagens)");
 }
 
 async function carregarConfig() {
@@ -1066,6 +1075,7 @@ async function carregarConfig() {
     if (campo.type === "checkbox") campo.checked = valor === "sim";
     else campo.value = valor;
   }
+  if (!form.elements.IDIOMA.value) form.elements.IDIOMA.value = window.Idioma.atual;
 }
 
 async function salvarConfig(evento) {
@@ -1075,6 +1085,7 @@ async function salvarConfig(evento) {
     ATALHO: form.elements.ATALHO.value,
     SELO_SEGUNDOS: form.elements.SELO_SEGUNDOS.value,
     AUTOMATICO: form.elements.AUTOMATICO.checked ? "sim" : "nao",
+    IDIOMA: form.elements.IDIOMA.value,
   };
   const aviso = document.getElementById("aviso-config");
   aviso.textContent = "";
@@ -1085,7 +1096,9 @@ async function salvarConfig(evento) {
     if (aviso) aviso.textContent = erros[chave] || "";
   }
   if (!Object.keys(erros).length) {
-    aviso.textContent = "Salvo. Overlay reiniciado.";
+    // Idioma novo: a janela recarrega pra sair toda no idioma escolhido.
+    if (mudancas.IDIOMA !== window.Idioma.atual) { recarregarNoIdioma(mudancas.IDIOMA); return; }
+    aviso.textContent = t("Salvo. Overlay reiniciado.");
     setTimeout(atualizarEstado, 1500);
   }
 }
@@ -1094,7 +1107,16 @@ async function salvarConfig(evento) {
 
 async function iniciar(api) {
   estado.api = api;
-  window.Dicas.ligar(() => api.dados_do_jogo("dicas"));
+  // Primeiro o idioma (das Configurações; sem escolha, o do Windows), depois o resto.
+  const { IDIOMA } = await api.config();
+  window.Idioma.escolher(IDIOMA);
+  await window.Idioma.carregar(() => api.dados_do_jogo("en"));
+  window.Idioma.trocar = async novo => {
+    await api.salvar_config({ IDIOMA: novo });
+    recarregarNoIdioma(novo);
+  };
+  window.Idioma.aplicar();
+  window.Dicas.ligar(() => api.dados_do_jogo(emIngles() ? "dicas.en" : "dicas"));
   document.querySelectorAll(".aba").forEach(a => a.addEventListener("click", () => abrirAba(a.dataset.aba)));
   document.querySelectorAll(".filtro").forEach(f => f.addEventListener("click", () => {
     estado.filtro = f.dataset.filtro;
@@ -1113,32 +1135,32 @@ async function iniciar(api) {
   document.getElementById("abrir-site").addEventListener("click", () => estado.api.abrir_site());
   document.getElementById("copiar-site").addEventListener("click", async () => {
     const aviso = document.getElementById("aviso-indicar");
-    try { await navigator.clipboard.writeText(SITE_DO_APP); aviso.textContent = "Link copiado!"; }
+    try { await navigator.clipboard.writeText(SITE_DO_APP); aviso.textContent = t("Link copiado!"); }
     catch { aviso.textContent = SITE_DO_APP; }
   });
   document.getElementById("filtro-guias").addEventListener("input", () => { if (estado.guias) desenharGuias(); });
   document.querySelectorAll("#painel-builds .sub-aba").forEach(s => s.addEventListener("click", () => abrirSubAba(s.dataset.sub)));
 
   try {
-    abertura(15, "Lendo as builds…");
+    abertura(15, t("Lendo as builds…"));
     estado.builds = await api.builds();
     desenharProblemas(await api.problemas_das_builds());
-    abertura(45, "Lendo as configurações…");
+    abertura(45, t("Lendo as configurações…"));
     const { BUILD_ATIVA, BATTLETAG } = await api.config();
     document.getElementById("form-heroi").elements.battletag.value = BATTLETAG || "";
     const i = estado.builds.findIndex(b => b.id === BUILD_ATIVA);
     if (i >= 0) { estado.ativa = BUILD_ATIVA; estado.build = i; }
     estado.classe = (estado.builds[estado.build] && estado.builds[estado.build].classe) || "Demon Hunter";
     desenharBuilds();
-    abertura(75, "Ligando o overlay do jogo…");
+    abertura(75, t("Ligando o overlay do jogo…"));
     await Promise.all([atualizarHistorico(), atualizarEstado()]);
-    abertura(100, "Pronto.");
+    abertura(100, t("Pronto."));
     const tela = document.getElementById("abertura");
     setTimeout(() => tela.classList.add("saindo"), 250);
     setTimeout(() => { tela.hidden = true; }, 700);
   } catch (erro) {
     // Sem esconder a tela: diz o que houve pra pessoa poder mandar o erro.
-    abertura(100, `Não deu pra abrir: ${erro && erro.message ? erro.message : erro}`, true);
+    abertura(100, t("Não deu pra abrir: {erro}", { erro: erro && erro.message ? erro.message : erro }), true);
     return;
   }
   // O overlay é outro processo: de tempos em tempos, vê se chegou item novo.
@@ -1146,12 +1168,18 @@ async function iniciar(api) {
   setInterval(atualizarEstado, 3000);
 }
 
+// No app o idioma fica no .env; o navegador guarda também, só pro modo de exemplo.
+function recarregarNoIdioma(novo) {
+  try { localStorage.setItem("d3c-idioma", novo); } catch { /* sem: o .env basta */ }
+  location.reload();
+}
+
 // Barra da tela de abertura (0 a 100).
 function abertura(pct, texto, erro = false) {
   document.getElementById("abertura-progresso").style.width = `${pct}%`;
-  const t = document.getElementById("abertura-texto");
-  t.textContent = texto;
-  t.classList.toggle("erro", erro);
+  const caixa = document.getElementById("abertura-texto");
+  caixa.textContent = texto;
+  caixa.classList.toggle("erro", erro);
 }
 
 function abrirSubAba(nome) {
@@ -1246,7 +1274,7 @@ function apiDeExemplo() {
       linhas: [[["✅ ", "normal"], ["Dreadlands", "build"], [" · Gema da build", "normal"]],
                [["✅ ", "normal"], ["LoN", "build"], [" · Gema da build", "normal"]]] },
   ];
-  let config = { ATALHO: "F8", SELO_SEGUNDOS: "6", BUILD_ATIVA: "", AUTOMATICO: "sim", BATTLETAG: "" };
+  let config = { ATALHO: "F8", SELO_SEGUNDOS: "6", BUILD_ATIVA: "", AUTOMATICO: "sim", BATTLETAG: "", IDIOMA: "" };
   const fichaDe = (build, id) => ({
     ...build, id,
     gerais: { obrigatorios: ["Destreza"], desejaveis: [] },
@@ -1282,10 +1310,11 @@ function apiDeExemplo() {
     config: async () => config,
     salvar_config: async m => {
       const erros = {};
-      if (!/^((ctrl|alt|shift|win)\+)*(f([1-9]|1[0-9]|2[0-4])|[a-z0-9]|insert|pause)$/i.test(m.ATALHO.replace(/\s/g, "")))
+      if (m.ATALHO !== undefined && !/^((ctrl|alt|shift|win)\+)*(f([1-9]|1[0-9]|2[0-4])|[a-z0-9]|insert|pause)$/i.test(m.ATALHO.replace(/\s/g, "")))
         erros.ATALHO = `Atalho inválido: '${m.ATALHO}'. Exemplos: F8, Ctrl+F8, Alt+Q.`;
-      const s = parseFloat(String(m.SELO_SEGUNDOS).replace(",", "."));
+      const s = parseFloat(String(m.SELO_SEGUNDOS || "6").replace(",", "."));
       if (!(s >= 1 && s <= 60)) erros.SELO_SEGUNDOS = "Tempo do selo precisa ficar entre 1 e 60 segundos.";
+      if (m.IDIOMA !== undefined && !["en", "pt"].includes(m.IDIOMA)) erros.IDIOMA = "Idioma precisa ser \"en\" ou \"pt\".";
       if (!Object.keys(erros).length) config = { ...config, ...m };
       return { erros };
     },

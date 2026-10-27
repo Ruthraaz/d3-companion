@@ -251,6 +251,11 @@ trabalho extra agora, não feche essa porta:
   escolha (sem laço de redirecionamento). 404 em inglês com linha em português.
 - Testes `TestIdioma`: toda frase `t("...")` do JS e todo `[data-t]` do montar.html têm tradução, variáveis
   `{x}` iguais nos dois idiomas, nomes do montador/afixos/atributos traduzidos, dicas.en, páginas pt/en.
+- App (fase 2): `config.py` IDIOMA ("en"/"pt"; vazio ou inválido = `idioma_do_windows()`, GetUserDefaultUILanguage
+  0x16). app.js: `iniciar()` lê a config, `Idioma.escolher(IDIOMA)`, carrega en.json por `Api.dados_do_jogo("en")`
+  (aceita jogo, dicas, dicas.en, en), `Idioma.trocar` grava no .env e recarrega. index.html com `data-t`
+  (aplicar() junta espaços/quebras da chave). blizzard.py manda `descricao` (en) junto de `descricao_pt`;
+  app.js usa `nomeDe/descricaoDe`. Teste lê o HTML com HTMLParser (o mesmo que aplicar() traduz).
 - Cache do navegador segura o site.css velho no teste local: recarregar o próprio .css com Ctrl+Shift+R.
 
 ### Segurança (26/10/2026) — notas

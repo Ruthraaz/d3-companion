@@ -1,6 +1,6 @@
 # D3 Companion
 
-**Saiba na hora se o item serve na sua build de Diablo III.** Passe o mouse no item, aperte **F8** e um selo em cima do jogo diz se ele serve, o que tem e o que falta. Grátis, em português, para Windows 10 e 11.
+**Saiba na hora se o item serve na sua build de Diablo III.** Passe o mouse no item, aperte **F8** e um selo em cima do jogo diz se ele serve, o que tem e o que falta. Grátis, em inglês e português, para Windows 10 e 11.
 
 **[⬇ Baixar para Windows](https://github.com/Ruthraaz/d3-companion/releases/latest)** · **[🌐 Site](https://ruthraaz.github.io/d3-companion/)** · **[🛠 Montar uma build no navegador](https://ruthraaz.github.io/d3-companion/montar.html)**
 
@@ -392,6 +392,8 @@ O site usa os mesmos arquivos do app: `docs/app.css` (= `src/web/estilo.css`), `
 ## Inglês e português
 
 O site abre **em inglês** e vai sozinho pra **português** quando o navegador está em português (`docs/pt/` é a página inicial em português; o link **English / Português** no topo troca e a escolha fica guardada no navegador). No montador, o botão do topo faz o mesmo.
+
+**No app**, o idioma fica em **Configurações → Idioma** (`IDIOMA=en` ou `pt` no `.env`); sem escolha, vale o idioma do Windows. Em inglês, as habilidades, runas e o seguidor aparecem com o nome e a descrição do jogo em inglês (a API da Blizzard manda os dois).
 
 Como funciona: o texto no código continua em português e `src/web/dados/en.json` diz como cada frase fica em inglês (`src/web/idioma.js`: `Idioma.t("Salvar no app")`). Em inglês, os nomes do jogo (classes, habilidades, runas) e as dicas dos itens (`dados/dicas.en.json`) vêm do próprio jogo em inglês. Um teste avisa quando falta tradução de alguma frase.
 
