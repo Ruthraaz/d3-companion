@@ -1,3 +1,3 @@
 """Versão do app (o .exe, a Release no GitHub e o site usam esta)."""
 
-VERSAO = "1.0.2"
+VERSAO = "1.0.3"
