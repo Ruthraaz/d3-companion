@@ -18,10 +18,10 @@ sys.path.insert(0, str(RAIZ / "src"))
 os.environ["D3C_IDIOMA"] = "pt"  # as mensagens conferidas são as em português
 
 from avaliador import avaliar, carregar_builds  # noqa: E402
-from blizzard import ErroBlizzard  # noqa: E402
+from blizzard import ErroBlizzard, NaoEncontrado  # noqa: E402
 from builds_dos_testes import PASTA_DOS_TESTES  # noqa: E402
 from config import validar  # noqa: E402
-from heroi import comparar, conta_da_battletag, item_do_perfil  # noqa: E402
+from heroi import comparar, conta_da_battletag, heroi, herois, item_do_perfil  # noqa: E402
 
 UNHALLOWED = next(b for b in carregar_builds(PASTA_DOS_TESTES) if b["id"] == "unhallowed_multidisparo")
 
@@ -61,6 +61,51 @@ class TestBattleTag(unittest.TestCase):
         self.assertIsNone(validar("BATTLETAG", ""))  # vazio = não usa a aba
         self.assertIsNone(validar("BATTLETAG", "Jogador#1234"))
         self.assertIn("BattleTag", validar("BATTLETAG", "Jogador"))
+
+
+class PerfilFalso:
+    """Faz o papel da Blizzard: perfis inventados por região; o resto é 404."""
+
+    def __init__(self, perfis, erro=None):
+        self.perfis, self.erro, self.pedidos = perfis, erro, []
+
+    def pegar(self, caminho, locale="en_US", guardar=True, regiao="us"):
+        self.pedidos.append((regiao, caminho))
+        if self.erro:
+            raise self.erro
+        if regiao not in self.perfis:
+            raise NaoEncontrado("404")
+        return self.perfis[regiao]
+
+
+def _heroi(id_, nome, atualizado):
+    return {"id": id_, "name": nome, "class": "demon-hunter", "level": 70, "last-updated": atualizado}
+
+
+class TestRegioes(unittest.TestCase):
+    def test_procura_nas_quatro_e_junta(self):
+        api = PerfilFalso({"us": {"heroes": [_heroi(1, "Americana", 100)]},
+                           "eu": {"heroes": [_heroi(1, "Europeia", 200)]}})
+        lista = herois(api, "Jogador#1234")
+        self.assertEqual([(h["regiao"], h["nome"]) for h in lista], [("eu", "Europeia"), ("us", "Americana")])
+        self.assertEqual(sorted(r for r, _ in api.pedidos), ["eu", "kr", "tw", "us"])
+
+    def test_so_europa(self):
+        lista = herois(PerfilFalso({"eu": {"heroes": [_heroi(7, "Europeia", 1)]}}), "Jogador#1234")
+        self.assertEqual([(h["regiao"], h["id"]) for h in lista], [("eu", 7)])
+
+    def test_nenhuma_regiao(self):
+        with self.assertRaisesRegex(NaoEncontrado, "nenhuma região"):
+            herois(PerfilFalso({}), "Jogador#1234")
+
+    def test_sem_internet_nao_vira_battletag_errada(self):
+        with self.assertRaisesRegex(ErroBlizzard, "internet"):
+            herois(PerfilFalso({}, erro=ErroBlizzard("Está sem internet?")), "Jogador#1234")
+
+    def test_heroi_pede_na_regiao_dele(self):
+        api = PerfilFalso({"kr": {"id": 9, "name": "Coreana", "class": "demon-hunter"}})
+        self.assertEqual(heroi(api, "Jogador#1234", 9, "kr")["nome"], "Coreana")
+        self.assertEqual({r for r, _ in api.pedidos}, {"kr"})
 
 
 class TestItemDoPerfil(unittest.TestCase):

@@ -362,7 +362,6 @@
   "Anéis": "Rings",
   "(ou {afixo})": "(or {afixo})",
   "A Blizzard mandou uma resposta grande demais; o app não abriu.": "Blizzard sent a response that is too large; the app did not open it.",
-  "A Blizzard não achou essa BattleTag na região Américas. Confira o número depois do #.": "Blizzard did not find that BattleTag in the Americas region. Check the number after the #.",
   "A Blizzard não conhece {caminho}.": "Blizzard does not know {caminho}.",
   "A Blizzard recusou as chaves. Confira BLIZZARD_CLIENT_ID e BLIZZARD_CLIENT_SECRET no .env (sem aspas nem espaços).": "Blizzard rejected the keys. Check BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET in .env (no quotes or spaces).",
   "A Blizzard respondeu com erro {codigo} ao pedir o token.": "Blizzard answered with error {codigo} when asking for the token.",
@@ -466,5 +465,11 @@
   "Esta parte precisa de uma chave grátis da Blizzard. O LEIA-ME.txt, na pasta do app, mostra como criar em develop.battle.net e onde colocar (BLIZZARD_CLIENT_ID e BLIZZARD_CLIENT_SECRET no .env).": "This part needs a free Blizzard key. The LEIA-ME.txt in the app folder shows how to create one at develop.battle.net and where to put it (BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET in .env).",
   "Já tem outro overlay do D3 Companion aberto (talvez de uma versão antiga ou de um terminal). Feche o outro e clique em Reiniciar overlay (ou reinicie o PC).": "Another D3 Companion overlay is already open (maybe from an old version or a terminal). Close it and click Restart overlay (or restart the PC).",
   "O servidor do D3 Companion recebeu pedidos demais. Tente de novo em um minuto.": "The D3 Companion server got too many requests. Try again in a minute.",
-  "O servidor do D3 Companion respondeu com erro {codigo}.": "The D3 Companion server answered with error {codigo}."
+  "O servidor do D3 Companion respondeu com erro {codigo}.": "The D3 Companion server answered with error {codigo}.",
+  "A Blizzard não achou essa BattleTag. Confira o número depois do #.": "Blizzard did not find that BattleTag. Check the number after the #.",
+  "A Blizzard não achou essa BattleTag em nenhuma região (Américas, Europa, Coreia e Taiwan). Confira o número depois do #.": "Blizzard did not find that BattleTag in any region (Americas, Europe, Korea and Taiwan). Check the number after the #.",
+  "Américas": "Americas",
+  "Europa": "Europe",
+  "Coreia": "Korea",
+  "Taiwan": "Taiwan"
 }

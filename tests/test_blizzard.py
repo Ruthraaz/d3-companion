@@ -106,6 +106,23 @@ class TestBlizzard(unittest.TestCase):
         self.assertIsNone(pedidos[0].get_header("Authorization"))  # a chave fica na ponte
         self.assertEqual(len(pedidos), 1)  # nada de token
 
+    def test_regiao_do_perfil(self):
+        pedidos = []
+
+        def abrir(pedido, timeout=None):
+            pedidos.append(pedido.full_url)
+            if "oauth" in pedido.full_url:
+                return io.BytesIO(b'{"access_token": "abc", "expires_in": 86399}')
+            return io.BytesIO(b"{}")
+        Blizzard("", "", Path(self.pasta.name), abrir=abrir, ponte="https://ponte.exemplo/b").pegar(
+            "/d3/profile/x-1234/", guardar=False, regiao="eu")
+        Blizzard("id", "segredo", Path(self.pasta.name), abrir=abrir).pegar(
+            "/d3/profile/x-1234/", guardar=False, regiao="kr")
+        self.assertTrue(pedidos[0].endswith("&regiao=eu"))
+        self.assertTrue(pedidos[2].startswith("https://kr.api.blizzard.com/d3/profile/x-1234/"))
+        with self.assertRaises(ErroBlizzard):
+            self.api.pegar("/d3/profile/x-1234/", guardar=False, regiao="cn")
+
     def test_erros_da_ponte(self):
         for codigo, mensagem in ((429, "um minuto"), (404, "não conhece"), (502, "erro 502")):
             def ponte(pedido, timeout=None):

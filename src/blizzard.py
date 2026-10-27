@@ -47,6 +47,8 @@ PASTA_CACHE = PASTA_DADOS / "blizzard"
 
 URL_TOKEN = "https://oauth.battle.net/token"
 URL_API = "https://us.api.blizzard.com"  # Américas (o Brasil joga nesta região)
+# Regiões do perfil (Meu herói). Os dados do jogo são iguais em todas: vêm sempre de "us".
+REGIOES = ("us", "eu", "kr", "tw")
 URL_ICONES = "https://blzmedia-a.akamaihd.net/d3/icons"
 # A ponte pública (sem chave). D3C_PONTE no ambiente troca (vazio = desliga).
 PONTE = os.environ.get("D3C_PONTE", "https://vemcxjgyedafqsgwbuep.supabase.co/functions/v1/blizzard")
@@ -68,6 +70,10 @@ SEGUIDORES = ("templar", "scoundrel", "enchantress")
 
 class ErroBlizzard(Exception):
     """Erro com mensagem em português, pronta pra mostrar na tela."""
+
+
+class NaoEncontrado(ErroBlizzard):
+    """404: a Blizzard não conhece o caminho (BattleTag ou herói que não existe nessa região)."""
 
 
 def icone_da_habilidade(icone: str, tamanho: int = 64) -> str:
@@ -140,28 +146,34 @@ class Blizzard:
         except (urllib.error.URLError, TimeoutError, OSError) as e:
             raise ErroBlizzard(t("Não consegui falar com a Blizzard. Está sem internet?")) from e
 
-    def _arquivo_do_cache(self, caminho: str, locale: str) -> Path:
+    def _arquivo_do_cache(self, caminho: str, locale: str, regiao: str = "us") -> Path:
         nome = re.sub(r"[^A-Za-z0-9_.-]+", "_", caminho.strip("/"))
+        if regiao != "us":
+            nome = f"{regiao}_{nome}"
         return self.pasta_cache / locale / f"{nome}.json"
 
-    def pegar(self, caminho: str, locale: str = "en_US", guardar: bool = True):
+    def pegar(self, caminho: str, locale: str = "en_US", guardar: bool = True, regiao: str = "us"):
         """GET em /d3/... da API, com cache em disco (guardar=False: sempre da
-        Blizzard e sem gravar; é o caso do perfil do herói, que muda)."""
-        arquivo = self._arquivo_do_cache(caminho, locale)
+        Blizzard e sem gravar; é o caso do perfil do herói, que muda).
+        regiao: us, eu, kr ou tw (só importa pro perfil)."""
+        if regiao not in REGIOES:
+            raise ErroBlizzard(f"Região {regiao!r} não existe. Opções: {', '.join(REGIOES)}.")
+        arquivo = self._arquivo_do_cache(caminho, locale, regiao)
         if guardar and arquivo.exists():
             return json.loads(arquivo.read_text(encoding="utf-8"))
         pela_ponte = not self.tem_chaves() and bool(self.ponte)
         if pela_ponte:  # sem Authorization: quem tem a chave é a ponte
-            url = f"{self.ponte}?{urllib.parse.urlencode({'caminho': caminho, 'locale': locale})}"
+            parametros = {"caminho": caminho, "locale": locale} | ({"regiao": regiao} if regiao != "us" else {})
+            url = f"{self.ponte}?{urllib.parse.urlencode(parametros)}"
             pedido = urllib.request.Request(url)
         else:
-            url = f"{URL_API}{caminho}?{urllib.parse.urlencode({'locale': locale})}"
+            url = f"{URL_API.replace('//us.', f'//{regiao}.')}{caminho}?{urllib.parse.urlencode({'locale': locale})}"
             pedido = urllib.request.Request(url, headers={"Authorization": "Bearer " + self._token_valido()})
         try:
             dados = self._ler(pedido)
         except urllib.error.HTTPError as e:
             if e.code == 404:
-                raise ErroBlizzard(t("A Blizzard não conhece {caminho}.", caminho=repr(caminho))) from e
+                raise NaoEncontrado(t("A Blizzard não conhece {caminho}.", caminho=repr(caminho))) from e
             if pela_ponte and e.code == 429:
                 raise ErroBlizzard(t("O servidor do D3 Companion recebeu pedidos demais. "
                                      "Tente de novo em um minuto.")) from e

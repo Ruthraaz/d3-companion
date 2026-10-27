@@ -258,14 +258,14 @@ class Api:
         salvar_config({"BATTLETAG": battletag.strip()})
         return {"herois": lista}
 
-    def comparar_heroi(self, battletag: str, id_heroi: int, id_build: str) -> dict:
+    def comparar_heroi(self, battletag: str, id_heroi: int, id_build: str, regiao: str = "us") -> dict:
         """O herói contra uma build: item por item (o mesmo avaliador do F8) e
         as habilidades, já com os nomes em português."""
         build = next((b for b in ler_builds()[0] if b["id"] == id_build), None)
         if build is None:
             return {"erro": t("Build {id} não encontrada.", id=repr(id_build))}
         try:
-            h = heroi(self._blizzard, battletag, int(id_heroi))
+            h = heroi(self._blizzard, battletag, int(id_heroi), regiao)
             r = comparar(h, build)
         except ErroBlizzard as e:
             return {"erro": str(e)}

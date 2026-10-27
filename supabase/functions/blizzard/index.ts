@@ -2,6 +2,7 @@
 //
 // Pra que serve: o jogador não precisa criar chave nenhuma. O app pede
 //   GET .../functions/v1/blizzard?caminho=/d3/data/hero/barbarian&locale=pt_BR
+// (e &regiao=eu|kr|tw pro perfil de outras regiões; sem regiao = us, Américas)
 // e esta função pede à Blizzard com as chaves do dono do projeto, que ficam
 // nos "Secrets" do Supabase (BLIZZARD_CLIENT_ID e BLIZZARD_CLIENT_SECRET),
 // nunca no Git nem no app.
@@ -15,7 +16,7 @@
 // Publicar: Supabase → Edge Functions → nome "blizzard", com "Verify JWT" desligado.
 
 const URL_TOKEN = "https://oauth.battle.net/token";
-const URL_API = "https://us.api.blizzard.com";
+const REGIOES = new Set(["us", "eu", "kr", "tw"]);
 
 const CAMINHOS = [
   /^\/d3\/data\/item-type$/,
@@ -86,7 +87,8 @@ Deno.serve(async (pedido) => {
   const parametros = new URL(pedido.url).searchParams;
   const caminho = parametros.get("caminho") ?? "";
   const locale = parametros.get("locale") ?? "en_US";
-  if (!LOCALES.has(locale) || !CAMINHOS.some((c) => c.test(caminho))) {
+  const regiao = parametros.get("regiao") ?? "us";
+  if (!LOCALES.has(locale) || !REGIOES.has(regiao) || !CAMINHOS.some((c) => c.test(caminho))) {
     return erro(400, "caminho não permitido");
   }
 
@@ -94,17 +96,18 @@ Deno.serve(async (pedido) => {
   if (passouDoLimite(ip)) return erro(429, "muitos pedidos; tente de novo em um minuto");
 
   const ehPerfil = caminho.startsWith("/d3/profile/");
-  const chave = `${locale} ${caminho}`;
+  const chave = `${regiao} ${locale} ${caminho}`;
+  const url = `https://${regiao}.api.blizzard.com${caminho}?locale=${locale}`;
   const guardado = cache.get(chave);
   if (guardado && Date.now() < guardado.vence) return resposta(200, guardado.corpo);
 
   try {
-    let r = await fetch(`${URL_API}${caminho}?locale=${locale}`, {
+    let r = await fetch(url, {
       headers: { Authorization: "Bearer " + (await tokenValido()) },
     });
     if (r.status === 401) { // token venceu antes da hora: pede outro uma vez
       token = "";
-      r = await fetch(`${URL_API}${caminho}?locale=${locale}`, {
+      r = await fetch(url, {
         headers: { Authorization: "Bearer " + (await tokenValido()) },
       });
     }

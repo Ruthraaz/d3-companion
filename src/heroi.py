@@ -8,19 +8,20 @@ que o parser tira da dica do jogo, então o avaliador é o mesmo do F8.
 Limites da API (da Blizzard, não do app):
   - só o que está EQUIPADO (mochila e baú continuam no F8);
   - atualiza quando você sai do jogo (ou troca de personagem), não na hora;
-  - a conta precisa ser da região Américas (us), que é a do Brasil.
+  - procura nas 4 regiões (Américas, Europa, Coreia, Taiwan) ao mesmo tempo.
 
 Uso:
-    python src/heroi.py Jogador#1234                 # lista os heróis
-    python src/heroi.py Jogador#1234 <id> <build>    # compara um herói com uma build (id do arquivo)
+    python src/heroi.py Jogador#1234                          # lista os heróis
+    python src/heroi.py Jogador#1234 <id> <build> [regiao]    # compara um herói com uma build (id do arquivo)
 """
 
 import re
 import sys
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor
 
 from avaliador import avaliar, carregar_builds
-from blizzard import CLASSES, Blizzard, ErroBlizzard
+from blizzard import CLASSES, REGIOES, Blizzard, ErroBlizzard, NaoEncontrado
 from idioma import t
 from parser import estruturar_afixo
 
@@ -48,22 +49,39 @@ def conta_da_battletag(texto: str) -> str:
     return f"{m.group(1)}-{m.group(2)}"
 
 
-def _pegar(api: Blizzard, caminho: str) -> dict:
+def _pegar(api: Blizzard, caminho: str, regiao: str = "us") -> dict:
     try:
-        return api.pegar(caminho, guardar=False)  # perfil muda: nunca do cache
+        return api.pegar(caminho, guardar=False, regiao=regiao)  # perfil muda: nunca do cache
+    except NaoEncontrado as e:
+        raise NaoEncontrado(t("A Blizzard não achou essa BattleTag. Confira o número depois do #.")) from e
+
+
+def _perfil_na_regiao(api: Blizzard, conta: str, regiao: str):
+    """O perfil numa região, None se a conta não existe lá, ou o erro (sem internet etc.)."""
+    try:
+        return _pegar(api, f"/d3/profile/{conta}/", regiao)
+    except NaoEncontrado:
+        return None
     except ErroBlizzard as e:
-        if "não conhece" in str(e):
-            raise ErroBlizzard(t("A Blizzard não achou essa BattleTag na região Américas. "
-                                 "Confira o número depois do #.")) from e
-        raise
+        return e
 
 
 def herois(api: Blizzard, battletag: str) -> list[dict]:
-    """Os heróis da conta, do jogado mais recente pro mais antigo."""
+    """Os heróis da conta em todas as regiões (Américas, Europa, Coreia, Taiwan),
+    do jogado mais recente pro mais antigo. Cada um diz a sua "regiao"."""
     conta = urllib.parse.quote(conta_da_battletag(battletag), safe="")
-    perfil = _pegar(api, f"/d3/profile/{conta}/")
+    with ThreadPoolExecutor(max_workers=len(REGIOES)) as grupo:  # as 4 ao mesmo tempo
+        perfis = dict(zip(REGIOES, grupo.map(lambda r: _perfil_na_regiao(api, conta, r), REGIOES)))
+    achados = {r: p for r, p in perfis.items() if isinstance(p, dict)}
+    if not achados:
+        erros = [p for p in perfis.values() if isinstance(p, ErroBlizzard)]
+        if erros:
+            raise erros[0]
+        raise NaoEncontrado(t("A Blizzard não achou essa BattleTag em nenhuma região (Américas, Europa, "
+                              "Coreia e Taiwan). Confira o número depois do #."))
     lista = [{
         "id": h["id"],
+        "regiao": regiao,
         "nome": h["name"],
         "classe": CLASSE_DO_PERFIL.get(h.get("class")),
         "nivel": h.get("level"),
@@ -72,7 +90,7 @@ def herois(api: Blizzard, battletag: str) -> list[dict]:
         "hardcore": bool(h.get("hardcore")),
         "morto": bool(h.get("dead")),
         "atualizado": h.get("last-updated"),
-    } for h in perfil.get("heroes", [])]
+    } for regiao, perfil in achados.items() for h in perfil.get("heroes", [])]
     return sorted(lista, key=lambda h: -(h["atualizado"] or 0))
 
 
@@ -102,11 +120,11 @@ def item_do_perfil(dados: dict, espaco: str) -> dict:
     }
 
 
-def heroi(api: Blizzard, battletag: str, id_heroi: int) -> dict:
+def heroi(api: Blizzard, battletag: str, id_heroi: int, regiao: str = "us") -> dict:
     """Um herói com os itens equipados (por lugar da API) e as habilidades."""
     conta = urllib.parse.quote(conta_da_battletag(battletag), safe="")
-    dados = _pegar(api, f"/d3/profile/{conta}/hero/{int(id_heroi)}")
-    itens = _pegar(api, f"/d3/profile/{conta}/hero/{int(id_heroi)}/items")
+    dados = _pegar(api, f"/d3/profile/{conta}/hero/{int(id_heroi)}", regiao)
+    itens = _pegar(api, f"/d3/profile/{conta}/hero/{int(id_heroi)}/items", regiao)
     skills = dados.get("skills") or {}
     return {
         "id": dados.get("id"),
@@ -163,13 +181,14 @@ def main():
     try:
         if len(sys.argv) == 2:
             for h in herois(api, sys.argv[1]):
-                print(f"{h['id']:>12}  {h['nome']:<14} {h['classe'] or '?':<13} nível {h['nivel']}"
+                print(f"{h['regiao']}  {h['id']:>12}  {h['nome']:<14} {h['classe'] or '?':<13} nível {h['nivel']}"
                       f"  paragon {h['paragon']}{'  (temporada)' if h['temporada'] else ''}")
             return
         build = next((b for b in carregar_builds() if b["id"] == sys.argv[3]), None)
         if build is None:
             sys.exit(f"Não existe build {sys.argv[3]!r} em builds/.")
-        r = comparar(heroi(api, sys.argv[1], int(sys.argv[2])), build)
+        regiao = sys.argv[4] if len(sys.argv) > 4 else "us"
+        r = comparar(heroi(api, sys.argv[1], int(sys.argv[2]), regiao), build)
     except ErroBlizzard as e:
         sys.exit(str(e))
     for x in r["itens"]:

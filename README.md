@@ -342,7 +342,7 @@ Na aba **Meu herói**, digite sua BattleTag (ex.: `Jogador#1234`). O app pede à
 - **Habilidades:** ✓ igual à build, ≈ runa diferente, ✗ falta na sua barra. Também lista o que você usa e a build não usa.
 - A BattleTag fica salva no `.env` (`BATTLETAG=`), então não precisa digitar de novo.
 
-Limites da API da Blizzard (não do app): só os itens **equipados** (mochila e baú continuam no F8); os dados **atualizam quando você sai do jogo**, não na hora; só contas da região **Américas** (a do Brasil).
+Limites da API da Blizzard (não do app): só os itens **equipados** (mochila e baú continuam no F8); os dados **atualizam quando você sai do jogo**, não na hora; o app procura a BattleTag nas **4 regiões** (Américas, Europa, Coreia e Taiwan) ao mesmo tempo e mostra os heróis de todas; quando a conta tem heróis em mais de uma, o nome da região aparece no herói.
 
 Pelo terminal: `python src/heroi.py Jogador#1234` lista os heróis; `python src/heroi.py Jogador#1234 <id> <build>` compara.
 

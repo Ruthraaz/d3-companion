@@ -158,6 +158,11 @@ trabalho extra agora, não feche essa porta:
   perfil 5 min), 240 pedidos/min por IP (o índice faz ~135), Verify JWT desligado. 429 e outros erros da
   ponte têm mensagem própria. `D3C_PONTE` no ambiente troca o endereço (vazio = volta a exigir chave).
   Com chave no .env o app fala direto com a Blizzard, como antes. Mudou a função? Arthur cola de novo no painel.
+- **Regiões (27/10/2026):** `REGIOES = us, eu, kr, tw`; `pegar(..., regiao=)` troca o host
+  (`{regiao}.api.blizzard.com`, mesmo token; dados do jogo sempre de us). Na ponte vai `&regiao=` só fora de us
+  (a 1.0.2 sem o parâmetro continua funcionando). `heroi.herois` pergunta as 4 em paralelo; 404 =
+  `NaoEncontrado` (subclasse de ErroBlizzard; antes comparava o texto em português e quebrava em inglês).
+  Cada herói tem `regiao`; o JS manda de volta em `comparar_heroi(..., regiao)`.
 
 ### .exe (26/10/2026) — notas
 - `ferramentas/empacotar.py` (PyInstaller 6.22.3, onedir, windowed). Entrada `src/d3companion.py`

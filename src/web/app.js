@@ -59,6 +59,7 @@ const estado = {
   guias: null,       // lista de guias do Maxroll (pede ao Python na 1ª vez que abre a aba)
   classe: null,      // classe do boneco: filtra as abas Guias e Builds (as duas usam a mesma)
   herois: [],        // heróis da BattleTag (aba Meu herói)
+  regiaoHeroi: "us", // região do herói escolhido (us, eu, kr, tw)
   heroi: null,       // id do herói escolhido
 };
 
@@ -821,24 +822,29 @@ async function buscarHerois(evento) {
 }
 
 function desenharHerois() {
+  const variasRegioes = new Set(estado.herois.map(h => h.regiao)).size > 1;
   trocar(document.getElementById("lista-herois"), estado.herois.map(h =>
     el("button", {
       type: "button",
-      class: "chip-build" + (h.id === estado.heroi ? " ativo-heroi" : ""),
-      onclick: () => escolherHeroi(h.id),
+      class: "chip-build" + (h.id === estado.heroi && h.regiao === estado.regiaoHeroi ? " ativo-heroi" : ""),
+      onclick: () => escolherHeroi(h.id, h.regiao),
     },
       iconeDaClasse(h.classe),
       el("span", {},
         el("span", { class: "chip-apelido" }, h.nome),
         el("span", { class: "chip-nome" }, [h.classe ? nomeDaClasse(h.classe) : "?", t("nível {n}", { n: h.nivel }),
           h.paragon ? `paragon ${h.paragon}` : "", h.temporada ? t("temporada") : "", h.hardcore ? "hardcore" : "",
-          h.morto ? t("morto") : ""].filter(Boolean).join(" · "))))));
+          h.morto ? t("morto") : "", variasRegioes ? t(REGIOES[h.regiao] || h.regiao) : ""].filter(Boolean).join(" · "))))));
 }
 
-function escolherHeroi(id) {
+// Só aparece no chip quando a conta tem heróis em mais de uma região.
+const REGIOES = { us: "Américas", eu: "Europa", kr: "Coreia", tw: "Taiwan" };  // passam por t()
+
+function escolherHeroi(id, regiao) {
   estado.heroi = id;
+  estado.regiaoHeroi = regiao;
   desenharHerois();
-  const h = estado.herois.find(x => x.id === id);
+  const h = estado.herois.find(x => x.id === id && x.regiao === regiao);
   const daClasse = estado.builds.filter(b => b.classe === h.classe);
   const caixa = document.getElementById("comparar-com");
   if (!daClasse.length) {
@@ -864,7 +870,7 @@ async function compararHeroi(idBuild) {
   const caixa = document.getElementById("resultado-heroi");
   const battletag = document.getElementById("form-heroi").elements.battletag.value.trim();
   trocar(caixa, el("p", { class: "mudo" }, t("Comparando…")));
-  const r = await estado.api.comparar_heroi(battletag, estado.heroi, idBuild);
+  const r = await estado.api.comparar_heroi(battletag, estado.heroi, idBuild, estado.regiaoHeroi || "us");
   if (r.erro) { trocar(caixa, el("p", { class: "importar-status erro" }, r.erro)); return; }
   const ordem = Object.keys(ESPACOS);
   const itens = [...r.itens].sort((a, b) => ordem.indexOf(a.espaco) - ordem.indexOf(b.espaco));
@@ -1371,8 +1377,8 @@ function apiDeExemplo() {
     visual: async id => visualDeExemplo(builds.find(b => b.id === id)),
     abrir_link: async url => { window.open(url, "_blank"); },
     herois: async tag => /#\d{3,6}$/.test(tag)
-      ? { herois: [{ id: 1, nome: "Caçadora", classe: "Demon Hunter", nivel: 70, paragon: 1520, temporada: true },
-                   { id: 2, nome: "Bruxo", classe: "Witch Doctor", nivel: 43, paragon: 1520, temporada: true }] }
+      ? { herois: [{ id: 1, regiao: "us", nome: "Caçadora", classe: "Demon Hunter", nivel: 70, paragon: 1520, temporada: true },
+                   { id: 2, regiao: "us", nome: "Bruxo", classe: "Witch Doctor", nivel: 43, paragon: 1520, temporada: true }] }
       : { erro: "Escreva a BattleTag com o número, ex.: Jogador#1234 (aparece no canto do app da Battle.net)." },
     comparar_heroi: async () => {
       const I = "https://blzmedia-a.akamaihd.net/d3/icons/items/large/";
