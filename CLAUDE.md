@@ -165,7 +165,7 @@ trabalho extra agora, não feche essa porta:
   `api.github.com/repos/Ruthraaz/d3-companion/releases/latest` (erro = None, faixa não aparece); o instalador só vale
   com nome `D3-Companion-Setup-X.Y.Z.exe`, URL exata `releases/download/vX.Y.Z/...`, `digest` sha256 e tamanho <= 400 MB.
   `baixar()` confere tamanho + SHA-256. `instalar()` roda `cmd /c ping -n 4 127.0.0.1 >nul & "<setup>" /SILENT ...`
-  (o `timeout` do Windows falha sem console) e a janela fecha (overlay.desligar + destroy). O .iss tem um 2º [Run]
+  /DIR="<pasta do .exe>" (atualiza onde está; o Arthur tinha instalado em D: sem a chave no registro) (o `timeout` do Windows falha sem console) e a janela fecha (overlay.desligar + destroy). O .iss tem um 2º [Run]
   com `Check: WizardSilent` que reabre o app. Só instala sozinho com `unins000.exe` ao lado do .exe (instalado);
   zip/código = abre a página. Release sem o Setup no nome certo quebra o botão: sempre publicar os dois arquivos.
 - **Regiões (27/10/2026):** `REGIOES = us, eu, kr, tw`; `pegar(..., regiao=)` troca o host

@@ -112,14 +112,17 @@ def baixar(instalador: dict, pasta: Path = PASTA_DO_DOWNLOAD, abrir=urllib.reque
     return destino
 
 
-def comando_de_instalar(arquivo: Path) -> str:
+def comando_de_instalar(arquivo: Path, pasta_do_app: Path) -> str:
     """Espera ~3 s (o app fecha nesse meio-tempo) e roda o instalador sem perguntas.
+    /DIR = a pasta onde o app está agora: sem isso, se o Windows perdeu o registro
+    da instalação, o instalador iria pra pasta padrão e ficariam duas cópias.
     O instalador abre o app de novo no fim (instalador.iss, [Run] com WizardSilent)."""
-    return f'cmd /c ping -n 4 127.0.0.1 >nul & "{arquivo}" /SILENT /SUPPRESSMSGBOXES /NORESTART'
+    return (f'cmd /c ping -n 4 127.0.0.1 >nul & "{arquivo}" /SILENT /SUPPRESSMSGBOXES /NORESTART '
+            f'/DIR="{pasta_do_app}"')
 
 
 def instalar(arquivo: Path, executar=subprocess.Popen) -> None:
-    executar(comando_de_instalar(arquivo), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), close_fds=True)
+    executar(comando_de_instalar(arquivo, Path(sys.executable).parent), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), close_fds=True)
 
 
 def main():

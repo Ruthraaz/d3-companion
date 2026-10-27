@@ -115,9 +115,10 @@ class TestBaixar(unittest.TestCase):
 class TestInstalar(unittest.TestCase):
     def test_espera_o_app_fechar_e_instala_sem_perguntas(self):
         arquivo = Path(r"C:\Users\Fulano de Tal\AppData\Local\Temp\D3-Companion-Setup-1.0.9.exe")
-        comando = comando_de_instalar(arquivo)
+        comando = comando_de_instalar(arquivo, Path(r"D:\D3 Companion"))
         self.assertTrue(comando.startswith("cmd /c ping -n 4 127.0.0.1 >nul & "))
         self.assertIn(f'"{arquivo}" /SILENT', comando)  # aspas: pasta com espaço
+        self.assertTrue(comando.endswith(r' /DIR="D:\D3 Companion"'))  # atualiza onde está, não na pasta padrão
 
     def test_do_codigo_nao_instala_sozinho(self):
         self.assertFalse(atualizar.instalado())  # os testes rodam do código, não do .exe
