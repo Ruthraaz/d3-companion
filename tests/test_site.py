@@ -34,6 +34,7 @@ sys.path.insert(0, str(RAIZ / "ferramentas"))
 
 import dados_do_site  # noqa: E402
 import janela  # noqa: E402
+import nuvem  # noqa: E402
 from avaliador import problemas_da_build  # noqa: E402
 from link_do_site import ErroLinkDoSite, build_do_link, e_link_do_site  # noqa: E402
 from maxroll import regravar_build, salvar_build  # noqa: E402
@@ -194,6 +195,133 @@ class TestSegurancaDoSite(unittest.TestCase):
         vence = re.search(r"^Expires: (\S+)$", texto, re.M).group(1)
         self.assertGreater(vence, datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
         self.assertNotIn("@", texto, "sem e-mail pessoal no site")
+
+
+def jwt_falso(papel: str) -> str:
+    """Só o formato de uma chave do Supabase (cabeçalho.dados.assinatura), sem valer nada."""
+    parte = lambda d: base64.urlsafe_b64encode(json.dumps(d).encode()).decode().rstrip("=")  # noqa: E731
+    return f'{parte({"alg": "HS256", "typ": "JWT"})}.{parte({"iss": "supabase", "role": papel})}.assinatura-falsa'
+
+
+class TestNuvem(unittest.TestCase):
+    """Contas só pra salvar builds (Supabase): SQL com RLS só do dono, site que
+    funciona sem config, só a chave pública e o supabase-js fixo com SRI."""
+
+    SQL = (RAIZ / "ferramentas" / "supabase.sql").read_text(encoding="utf-8")
+    JS = (RAIZ / "docs" / "nuvem.js").read_text(encoding="utf-8")
+    HTML = (RAIZ / "docs" / "montar.html").read_text(encoding="utf-8")
+
+    def csp(self, regra, html=None):
+        csp = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html or self.HTML).group(1)
+        return next(p.strip() for p in csp.split(";") if p.strip().startswith(regra + " "))
+
+    def test_sql_liga_rls_com_politicas_so_do_dono(self):
+        sql = " ".join(self.SQL.split())
+        self.assertIn("alter table public.builds enable row level security;", sql)
+        self.assertIn("alter table public.builds force row level security;", sql)
+        politicas = re.findall(r"create policy \"[^\"]+\" on public\.builds for (\w+) to authenticated ([^;]+);", sql)
+        self.assertEqual(sorted(p[0] for p in politicas), ["delete", "insert", "select", "update"])
+        for comando, regra in politicas:
+            with self.subTest(comando):
+                partes = re.findall(r"(?:using|with check) \((.+?)\)(?= with| *$)", regra)
+                self.assertTrue(partes)
+                for parte in partes:
+                    self.assertEqual(parte, "(select auth.uid()) = user_id")
+        self.assertRegex(sql, r"for update to authenticated using \(.+\) with check \(.+\)")
+        self.assertIn("revoke all on public.builds from anon, public;", sql)
+
+    def test_sql_guarda_o_minimo_com_limites(self):
+        tabela = re.search(r"create table if not exists public\.builds \((.*?)\n\);", self.SQL, re.S).group(1)
+        colunas = [linha.split()[0] for linha in tabela.splitlines() if re.match(r"^  [a-z_]+ ", linha)]
+        self.assertEqual(colunas, ["id", "user_id", "nome", "classe", "dados", "criado", "alterado"])
+        self.assertNotRegex(tabela.lower(), r"e-?mail|avatar|foto")
+        self.assertIn("default auth.uid() references auth.users (id) on delete cascade", tabela)
+        self.assertIn("octet_length(dados::text) <= 50000", tabela)
+        self.assertIn(">= 50 then", self.SQL)
+        # Os limites do site são os mesmos do banco.
+        self.assertIn("const MAXIMO_DE_BUILDS = 50;", self.JS)
+        self.assertIn("const MAXIMO_DA_BUILD = 50000;", self.JS)
+        for classe in ler_json(DADOS / "jogo.json")["classes"]:
+            self.assertIn(f"'{classe}'", tabela)
+
+    def test_sql_apagar_conta_so_a_propria(self):
+        funcao = re.search(r"create or replace function public\.apagar_minha_conta\(\).*?\$\$;", self.SQL, re.S).group(0)
+        self.assertIn("security definer", funcao)
+        self.assertIn("set search_path = ''", funcao)
+        self.assertIn("delete from auth.users where id = auth.uid();", funcao)
+        self.assertIn("revoke all on function public.apagar_minha_conta() from public, anon;", self.SQL)
+        self.assertNotIn("service_role", self.SQL)
+
+    def test_supabase_js_numa_versao_fixa_com_sri(self):
+        url = re.search(r'const SUPABASE_JS = "([^"]+)";', self.JS).group(1)
+        self.assertRegex(url, r"^https://cdn\.jsdelivr\.net/npm/@supabase/supabase-js@\d+\.\d+\.\d+/dist/umd/supabase\.js$")
+        self.assertRegex(self.JS, r'const SUPABASE_SRI = "sha384-[A-Za-z0-9+/]{64}";')
+        for linha in ("s.integrity = SUPABASE_SRI;", 's.crossOrigin = "anonymous";'):
+            self.assertIn(linha, self.JS)
+        # A CSP libera só esse arquivo (nem o resto do jsDelivr).
+        self.assertEqual(self.csp("script-src"), f"script-src 'self' {url}")
+        self.assertEqual(re.findall(r"https://[^\s\"'`]+", self.JS), [url])  # nenhum outro endereço fixo
+
+    def test_connect_src_igual_ao_config(self):
+        url, chave = nuvem.config_atual()
+        self.assertEqual(self.csp("connect-src"), nuvem.connect_src(url))
+        if url or chave:  # preenchido: tem que ser endereço do Supabase e chave pública
+            self.assertEqual(nuvem.conferir(url, chave), (url, chave))
+
+    def test_montador_carrega_a_nuvem_escondida(self):
+        self.assertIn('<section class="nuvem" data-nuvem hidden></section>', self.HTML)
+        ordem = [self.HTML.index(f'<script src="{js}"></script>') for js in ("idioma.js", "montar.js", "config-nuvem.js", "nuvem.js")]
+        self.assertEqual(ordem, sorted(ordem))
+        self.assertIn('href="nuvem.css"', self.HTML)
+        montar = (RAIZ / "src" / "web" / "montar.js").read_text(encoding="utf-8")
+        self.assertIn("paraNuvem, marcarNuvem, esquecerNuvem, daNuvem, nomeDaClasse,", montar)
+        # Sem config, para logo no começo (antes de baixar qualquer coisa).
+        ligar = self.JS[self.JS.index("async function ligar()"):]
+        self.assertLess(ligar.index("if (!config)"), ligar.index("raiz.hidden = false"))
+        self.assertLess(ligar.index("raiz.hidden = false"), ligar.index("lerSessao()"))
+
+    def test_so_aceita_a_chave_publica(self):
+        url = "https://abcdefghijklmnopqrst.supabase.co"
+        self.assertEqual(nuvem.papel_da_chave(jwt_falso("anon")), "anon")
+        self.assertEqual(nuvem.papel_da_chave("sb_publishable_abc123_XYZ"), "publishable")
+        self.assertEqual(nuvem.papel_da_chave(jwt_falso("service_role")), "secreta")
+        self.assertEqual(nuvem.papel_da_chave("sb_secret_abc123"), "secreta")
+        self.assertEqual(nuvem.conferir(url + "/", " sb_publishable_abc "), (url, "sb_publishable_abc"))
+        for chave in (jwt_falso("service_role"), "sb_secret_abc123", "nada", "a.b.c", ""):
+            with self.subTest(chave[:20]), self.assertRaises(nuvem.ErroNuvem):
+                nuvem.conferir(url, chave)
+        for ruim in ("http://abc.supabase.co", "https://abc.supabase.co.mal.com", "https://mal.com", "https://abc.supabase.co/rest"):
+            with self.subTest(ruim), self.assertRaises(nuvem.ErroNuvem):
+                nuvem.conferir(ruim, jwt_falso("anon"))
+        # O site confere do mesmo jeito (o JS também recusa service_role e sb_secret_).
+        self.assertIn('dados.role === "anon"', self.JS)
+        self.assertIn("sb_publishable_", self.JS)
+
+    def test_ligar_e_desligar_mexe_so_no_config_e_na_csp(self):
+        with tempfile.TemporaryDirectory() as pasta:
+            docs = Path(pasta)
+            for nome in ("config-nuvem.js", "montar.html"):
+                (docs / nome).write_text((RAIZ / "docs" / nome).read_text(encoding="utf-8"), encoding="utf-8")
+            antes = {n: (docs / n).read_text(encoding="utf-8") for n in ("config-nuvem.js", "montar.html")}
+            nuvem.gravar("https://abcdefghijklmnopqrst.supabase.co", "sb_publishable_abc", docs)
+            self.assertEqual(nuvem.config_atual(docs), ("https://abcdefghijklmnopqrst.supabase.co", "sb_publishable_abc"))
+            html = (docs / "montar.html").read_text(encoding="utf-8")
+            self.assertEqual(self.csp("connect-src", html), "connect-src 'self' https://abcdefghijklmnopqrst.supabase.co")
+            self.assertEqual(self.csp("script-src", html), self.csp("script-src"))
+            nuvem.gravar("", "", docs)
+            if nuvem.config_atual() == ("", ""):
+                for nome, texto in antes.items():
+                    self.assertEqual((docs / nome).read_text(encoding="utf-8"), texto, nome)
+
+    def test_nenhuma_chave_secreta_no_site(self):
+        for arquivo in (RAIZ / "docs").rglob("*"):
+            if arquivo.suffix not in {".js", ".html", ".json", ".txt", ".css"}:
+                continue
+            texto = arquivo.read_text(encoding="utf-8")
+            with self.subTest(arquivo.name):
+                self.assertNotRegex(texto, r"sb_secret_\w{6,}")
+                for possivel in re.findall(r"eyJ[\w-]+\.eyJ[\w-]+\.[\w-]+", texto):
+                    self.assertNotEqual(nuvem.papel_da_chave(possivel), "secreta")
 
 
 class TestDadosDoJogo(unittest.TestCase):
@@ -368,7 +496,7 @@ class TestIdioma(unittest.TestCase):
         return frases
 
     def test_toda_frase_do_js_tem_traducao(self):
-        for js in (RAIZ / "src" / "web" / "montar.js", RAIZ / "src" / "web" / "app.js"):
+        for js in (RAIZ / "src" / "web" / "montar.js", RAIZ / "src" / "web" / "app.js", RAIZ / "docs" / "nuvem.js"):
             with self.subTest(js.name):
                 faltam = sorted(self.frases_do_js(js) - set(self.en))
                 self.assertEqual(faltam, [], "ponha em src/web/dados/en.json")

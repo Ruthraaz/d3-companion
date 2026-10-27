@@ -236,6 +236,7 @@ h1 span { color: var(--ouro); }
   color: var(--ok); font-weight: 700;
 }
 .lista-seguranca b { color: var(--texto); }
+.secao-sub { margin: 32px 0 14px; font-size: 20px; scroll-margin-top: 80px; }
 
 .perguntas { display: grid; gap: 8px; }
 .perguntas details { border: 1px solid var(--borda); border-radius: 10px; background: var(--painel); }

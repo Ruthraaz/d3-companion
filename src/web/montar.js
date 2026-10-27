@@ -142,6 +142,7 @@ function temConteudo(b) {
 function buildVazia() {
   return {
     id: "",                            // no app: a build de builds/ que este rascunho altera ("" = nova)
+    // nuvem: no site com conta, a id da build salva na nuvem que este rascunho altera (nuvem.js)
     apelido: "",
     lugares: {},                      // lugar -> {item, afixos: [modelo], ancient}
     gemas: [null, null, null],
@@ -393,7 +394,7 @@ function desenharCabeca() {
     mudou();
   });
 
-  const onde = noApp() ? (b.id ? t("salva no app") : t("ainda não salva")) : t("montada no site");
+  const onde = noApp() ? (b.id ? t("salva no app") : t("ainda não salva")) : b.nuvem ? t("salva na nuvem") : t("montada no site");
   trocar($("cabeca-build"),
     icone(ICONE_HAB(ICONE_DA_CLASSE[estado.classe]), "emblema"),
     el("div", { class: "cabeca-texto" },
@@ -729,9 +730,46 @@ async function abrir(build, id = "") {
   desenhar();
 }
 
+// Site com conta (nuvem.js): a build de agora e a id dela na nuvem ("" = ainda não está lá).
+function paraNuvem() {
+  return { build: paraBuild(), classe: estado.classe, nuvem: atual().nuvem || "" };
+}
+function marcarNuvem(classe, id) {
+  const b = estado.rascunhos[classe];
+  if (!b) return;
+  b.nuvem = id;
+  guardar();
+  desenharCabeca();
+}
+// Esquece a id de uma build apagada na nuvem (sem id: de todas). O rascunho fica.
+function esquecerNuvem(id) {
+  for (const b of Object.values(estado.rascunhos)) if (b.nuvem && (!id || b.nuvem === id)) delete b.nuvem;
+  guardar();
+  desenharCabeca();
+}
+async function daNuvem(build, id) {
+  if (!(await pronto)) return false;
+  try {
+    estado.rascunhos[build.classe] = Object.assign(doBuild(build), { nuvem: id });
+    estado.classe = build.classe;
+  } catch {
+    avisar(t("Não consegui abrir essa build no montador."), true);
+    return false;
+  }
+  estado.alvo = { tipo: "espaco", lugar: "Head" };
+  estado.busca = "";
+  if (!noApp()) history.replaceState(null, "", location.pathname);
+  guardar();
+  avisar(t("Build aberta da nuvem: {nome}. \"Salvar na nuvem\" grava em cima dela.", { nome: estado.rascunhos[build.classe].apelido || nomeDaClasse(build.classe) }));
+  desenhar();
+  return true;
+}
+
 window.Montador = {
   iniciar: (elemento, escolhas) => (pronto ||= iniciar(elemento, escolhas)),
   abrir,
+  paraNuvem, marcarNuvem, esquecerNuvem, daNuvem, nomeDaClasse,
+  noSite: Promise.resolve(false),  // no site: a promessa de "idioma + montador prontos"
 };
 
 // No site, liga sozinho (no app quem liga é o app.js, ao abrir a aba Montar).
@@ -747,15 +785,16 @@ if (noSite && window.top !== window.self) {
     if (!r.ok) throw new Error(String(r.status));
     return r.json();
   };
-  (async () => {
+  window.Montador.noSite = (async () => {
     // Primeiro o idioma (o da escolha guardada ou o do navegador), depois o resto.
     if (window.Idioma) {
       window.Idioma.escolher();
       await window.Idioma.carregar(() => json("dados/en.json"));
       window.Idioma.aplicar();
     }
-    window.Montador.iniciar(noSite, { modo: "site", carregar: () => json("dados/jogo.json") });
+    const ok = window.Montador.iniciar(noSite, { modo: "site", carregar: () => json("dados/jogo.json") });
     if (window.Dicas) window.Dicas.ligar(() => json(emIngles() ? "dados/dicas.en.json" : "dados/dicas.json"));
+    return ok;
   })();
 }
 })();

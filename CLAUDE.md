@@ -265,6 +265,34 @@ trabalho extra agora, não feche essa porta:
   O histórico de exemplo (apiDeExemplo) é montado na hora com t(); o de verdade fica no idioma em que foi gravado.
 - Cache do navegador segura o site.css velho no teste local: recarregar o próprio .css com Ctrl+Shift+R.
 
+### Contas: salvar builds na nuvem (26/10/2026) — notas
+- Pedido: contas **só pra salvar builds na nuvem**, login Discord/Google via Supabase (plano grátis). O Arthur cria o
+  projeto e os apps OAuth sozinho (passo a passo no README, "Passo a passo pro Arthur ligar a nuvem"). Até lá, o
+  `docs/config-nuvem.js` fica vazio e a barra da nuvem nem aparece.
+- Banco: `ferramentas/supabase.sql` (roda no SQL Editor, pode repetir). Tabela `builds` (id, user_id default auth.uid()
+  on delete cascade, nome ≤60, classe das 7, dados jsonb ≤50000 bytes, criado, alterado). RLS enable + force, 4 políticas
+  `to authenticated` com `(select auth.uid()) = user_id`; anon sem grant. Gatilho `builds_antes_de_gravar`: máx. 50 por
+  conta, id/dono/criado não mudam, alterado = now(). `apagar_minha_conta()` security definer (search_path '') apaga
+  `auth.users where id = auth.uid()`. Nada de e-mail na tabela (LGPD).
+- Site: `docs/nuvem.js` + `nuvem.css` (só do site, não são cópias). supabase-js **2.117.3** UMD do jsDelivr com SRI sha384
+  (conferido contra o hash do jsDelivr); carregado só ao clicar em Entrar ou com sessão guardada (`sb-<ref>-auth-token`)
+  ou na volta do login (`?code=`). PKCE; `redirectTo` = a própria página; depois tira `?code=` do endereço (o `#b=` fica).
+  "Sair" = `signOut({scope: "local"})`. Só aceita chave `sb_publishable_` ou JWT com role anon (o resto desliga a nuvem).
+- CSP do montar.html: `script-src 'self' <URL exata do supabase.js>`; `connect-src 'self'` + o Project URL depois de
+  `python ferramentas/nuvem.py <url> <chave>` (ele recusa service_role/sb_secret_; `--desligar` volta). Teste confere
+  que o connect-src bate com o config.
+- montar.js ganhou `paraNuvem/marcarNuvem/esquecerNuvem/daNuvem/nomeDaClasse` e `Montador.noSite` (promessa: idioma +
+  montador prontos). Rascunho guarda `nuvem` = id da build na nuvem que "Salvar na nuvem" altera ("Começar de novo" esquece).
+- Privacidade: seção `#nuvem` na página inicial (en e pt), dentro de "Security and privacy".
+- Teste no navegador sem config: barra escondida, supabase-js não baixa, sem erro. Com config falsa + Supabase falso
+  (só na aba): salvar/alterar/listar/abrir/apagar funcionando; o supabase-js real carrega com SRI e CSP.
+- **App (para depois):** o app já importa builds pelo link do site. Pra ver as builds da nuvem no app: botão "Entrar"
+  em Configurações abrindo o navegador do sistema no login do Supabase com PKCE e redirect pra
+  `http://127.0.0.1:<porta>/callback` (servidor local só durante o login, igual a CLIs); guardar só o refresh token
+  no `.env` (nunca na página, igual às chaves da Blizzard); listar com a mesma tabela via `urllib` (REST
+  `/rest/v1/builds` com a chave pública + token) e gravar cada uma com `link_do_site.build_montada` +
+  `salvar_build`. Precisa pôr `http://127.0.0.1/**` nas Redirect URLs do Supabase.
+
 ### Licença (26/10/2026)
 - MIT, em `LICENSE` (titular: Ruthraaz), com aviso de que nomes/ícones do jogo são da Blizzard e o Tesseract tem a
   licença dele. Vai no zip como `LICENSE.txt`; link no rodapé do site (en e pt) e no topo do README.

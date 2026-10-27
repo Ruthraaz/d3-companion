@@ -4,9 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Só arquivos do site e ícones do servidor da Blizzard. A build fica no endereço
-       (depois do #), que o navegador nunca manda pro servidor. -->
+       (depois do #), que o navegador nunca manda pro servidor.
+       Nuvem (opcional, nuvem.js): o arquivo exato do supabase-js no jsDelivr (com SRI) e, depois
+       do "python ferramentas/nuvem.py", o endereço do projeto Supabase no connect-src. -->
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://blzmedia-a.akamaihd.net; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+        content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js; style-src 'self'; img-src 'self' https://blzmedia-a.akamaihd.net; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <title data-t>Montar build — D3 Companion</title>
   <meta data-t name="description" content="Monte sua build de Diablo III com os itens, gemas, cubo, habilidades e paragon do jogo, e leve pro D3 Companion com um link.">
@@ -32,6 +34,7 @@
   <!-- app.css (= src/web/estilo.css), montar.css, montar.js, dica.js e idioma.js são cópias do app; um teste confere. -->
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="montar.css">
+  <link rel="stylesheet" href="nuvem.css">
 </head>
 <body>
   <header class="topo">
@@ -61,6 +64,8 @@
 
   <main data-montador="site">
     <section class="painel ativo">
+      <!-- Entrar / Salvar na nuvem / Minhas builds (nuvem.js). Escondido sem o config-nuvem.js. -->
+      <section class="nuvem" data-nuvem hidden></section>
       <p class="carregando-jogo" data-m="carregando" data-t>Carregando os itens do jogo…</p>
       <div class="faixa-classes" data-m="classes-builds" role="tablist"></div>
       <div class="cabeca-build" data-m="cabeca-build"></div>
@@ -118,5 +123,7 @@
   <script src="idioma.js"></script>
   <script src="dica.js"></script>
   <script src="montar.js"></script>
+  <script src="config-nuvem.js"></script>
+  <script src="nuvem.js"></script>
 </body>
 </html>

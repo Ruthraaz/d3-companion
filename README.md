@@ -65,6 +65,7 @@ A lógica (OCR, parser, avaliador) fica num **núcleo** sem interface (`src/nucl
 | 8e | Upar: o F8 mostra itens parecidos com os da build ("serve por enquanto", selo amarelo) | ✅ funcionando |
 | 8f | Marcadores: em que nível libera cada habilidade/runa e onde pôr o paragon | ✅ funcionando |
 | 8g | Seu herói (BattleTag) vs. a build | ✅ funcionando |
+| 9 | Contas no site só pra **salvar builds na nuvem** (Discord/Google pelo Supabase) | ✅ pronto no código; falta o Arthur criar o projeto no Supabase |
 
 ## O que aprendemos na Etapa 1
 
@@ -389,6 +390,77 @@ python ferramentas/dados_do_site.py --so-copiar  # só copia pro site (docs/)
 ```
 O site usa os mesmos arquivos do app: `docs/app.css` (= `src/web/estilo.css`), `montar.css`, `montar.js`, `dica.js`, `idioma.js` e `dados/` são cópias. Um teste confere que estão em dia.
 
+## Salvar builds na nuvem (contas, opcional)
+
+No montador do site, quem quiser pode **entrar com Discord ou Google** e salvar as builds na própria conta, pra abrir em qualquer PC. A conta serve **só pra isso**: montar, copiar o link e usar o app continuam sem conta nenhuma.
+
+- **Barra da nuvem** no topo do montador: **Entrar com Discord / Google** → **Salvar na nuvem** (a 1ª vez cria; depois grava em cima da mesma) → **Minhas builds** (abrir ou apagar cada uma) → **Sair**.
+- **Apagar:** em Minhas builds, **Apagar minhas builds** (todas) ou **Apagar minha conta** (a conta e todas as builds, na hora). Os dois pedem um 2º clique.
+- **Sem configurar, nada muda:** com o `docs/config-nuvem.js` vazio, a barra nem aparece e o site não fala com ninguém.
+
+Como é feito (e por quê):
+- **Supabase** (plano grátis) guarda as contas e as builds. O login é OAuth do próprio Supabase (PKCE): não existe senha nossa, e o segredo do Discord/Google fica **só no painel do Supabase**.
+- **Banco** (`ferramentas/supabase.sql`): tabela `builds` (id, user_id, nome, classe, `dados` = a build no mesmo formato do link, criado, alterado). **RLS ligado** com 4 políticas "só o dono" (`user_id = auth.uid()`): cada conta lê, cria, muda e apaga só as próprias. O papel `anon` (visitante) não tem acesso nenhum. Limites: 50 KB por build e **50 builds por conta** (gatilho no banco). Apagar a conta apaga as builds junto (`on delete cascade`).
+- **Só a chave pública** vai no site (`anon` ou `sb_publishable_...`): ela é pública de propósito, quem protege os dados é o RLS. A `service_role`/`sb_secret_` nunca vai no repositório: `ferramentas/nuvem.py`, o próprio site e um teste recusam.
+- **supabase-js** vem do jsDelivr numa **versão fixa (2.117.3) com SRI**: o navegador confere o hash e recusa o arquivo se ele mudar. E só é baixado quando a pessoa clica em Entrar ou já está conectada.
+- **CSP** continua rígida: libera só aquele arquivo do jsDelivr e, depois de configurado, só o endereço do seu projeto Supabase (`connect-src`).
+- **LGPD:** na tabela vai só o id da conta e as builds (nada de e-mail, nome ou foto). O que fica guardado e como apagar está na página inicial ("Planner account (optional)" / "Conta no montador (opcional)", âncora `#nuvem`).
+- Código: `docs/nuvem.js` (só do site), `docs/nuvem.css`, ganchos no `montar.js` (`paraNuvem`, `daNuvem`, `marcarNuvem`, `esquecerNuvem`). Testes em `tests/test_site.py` (`TestNuvem`).
+
+### Passo a passo pro Arthur ligar a nuvem
+
+Isto é com você (o Claude não cria contas nem faz login por você). Leva uns 20 minutos. **Nenhum segredo vai pro repositório nem pro chat**: Client Secret do Discord/Google e a senha do banco ficam só nos painéis (guarde num gerenciador de senhas).
+
+**1. Criar o projeto no Supabase**
+1. Entre em https://supabase.com (pode ser com a sua conta do GitHub) → **New project**.
+2. Nome `d3-companion`, plano **Free**, região **South America (São Paulo)**. Crie uma senha forte pro banco (você quase não vai usar; guarde fora do repositório).
+
+**2. Rodar o SQL**
+1. No painel do projeto: **SQL Editor** → **New query**.
+2. Cole o arquivo `ferramentas/supabase.sql` inteiro → **Run**. Tem que dizer "Success".
+3. Confira em **Table Editor** → `builds`: aparece **RLS enabled**.
+
+**3. Deixar só Discord e Google**
+1. **Authentication → Sign In / Providers**: desligue **Email** (senão dá pra criar conta com e-mail e senha pela chave pública). Deixe **Anonymous sign-ins** desligado.
+2. Ainda nessa tela, abra **Discord** e **Google** e copie o **Callback URL** que o Supabase mostra (é `https://SEU-PROJETO.supabase.co/auth/v1/callback`). Você vai colar nos dois passos abaixo.
+
+**4. App OAuth no Discord**
+1. https://discord.com/developers/applications → **New Application** → nome `D3 Companion`.
+2. **OAuth2** → **Redirects** → **Add Redirect** → cole o Callback URL do Supabase → **Save Changes**.
+3. Copie o **Client ID**. Em **Client Secret**, clique **Reset Secret** e copie.
+4. No Supabase: **Authentication → Sign In / Providers → Discord** → ligue, cole **Client ID** e **Client Secret** → **Save**.
+
+**5. App OAuth no Google**
+1. https://console.cloud.google.com → crie um projeto `D3 Companion`.
+2. **Google Auth Platform** (ou "APIs e serviços → Tela de consentimento OAuth"): tipo **Externo**, nome do app `D3 Companion`, seu e-mail de suporte. Em **Domínios autorizados**, ponha `SEU-PROJETO.supabase.co`. Escopos: só os básicos (`openid`, `email`, `profile`). Em **Público**, clique **Publicar app** (com só esses escopos não precisa de verificação do Google).
+3. **Clientes** (ou "Credenciais") → **Criar cliente OAuth** → tipo **Aplicativo da Web**:
+   - Origens JavaScript autorizadas: `https://ruthraaz.github.io`
+   - URIs de redirecionamento autorizados: o Callback URL do Supabase.
+4. Copie o **ID do cliente** e a **Chave secreta do cliente**.
+5. No Supabase: **Authentication → Sign In / Providers → Google** → ligue, cole os dois → **Save**.
+
+**6. Endereços de volta (Site URL e Redirect URLs)**
+No Supabase: **Authentication → URL Configuration**:
+- **Site URL:** `https://ruthraaz.github.io/d3-companion/montar.html`
+- **Redirect URLs** (Add URL, um por vez):
+  - `https://ruthraaz.github.io/d3-companion/montar.html`
+  - `https://ruthraaz.github.io/d3-companion/pt/`
+  - (pra testar no seu PC) `http://localhost:8766/montar.html`
+
+**7. Preencher o `docs/config-nuvem.js`**
+1. No Supabase: **Project Settings → API Keys** (e **Data API** pro endereço). Copie o **Project URL** e a chave **publishable** (`sb_publishable_...`) ou, na aba *Legacy*, a **anon** (`eyJ...`). **Nunca** a *secret* / *service_role*.
+2. Na pasta do projeto:
+   ```
+   python ferramentas/nuvem.py https://SEU-PROJETO.supabase.co SUA_CHAVE_PUBLICA
+   ```
+   Ele confere a chave (recusa a secreta), preenche o `docs/config-nuvem.js` e libera o endereço na CSP do `docs/montar.html`. Pra desligar: `python ferramentas/nuvem.py --desligar`.
+3. Rode os testes (`.venv/Scripts/python.exe -m unittest discover tests`), faça commit dos dois arquivos e push. Em 1–2 minutos o GitHub Pages publica.
+
+**8. Testar**
+Abra https://ruthraaz.github.io/d3-companion/montar.html → **Entrar com Discord** → autorize → volta pro montador "conectado com Discord". Monte algo, **Salvar na nuvem**, abra em outro navegador com a mesma conta → **Minhas builds** → **Abrir**. No fim, teste **Apagar minha conta**.
+
+> O plano grátis do Supabase **pausa o projeto depois de 1 semana sem uso**. Se a nuvem parar ("A nuvem não respondeu"), entre no painel e clique em **Restore**. O montador continua funcionando sem a nuvem.
+
 ## Inglês e português
 
 O site abre **em inglês** e vai sozinho pra **português** quando o navegador está em português (`docs/pt/` é a página inicial em português; o link **English / Português** no topo troca e a escolha fica guardada no navegador). No montador, o botão do topo faz o mesmo.
@@ -429,6 +501,7 @@ O app não lida com senha nem dado de pagamento, mas mexe com chave da Blizzard,
 - **Links:** o app só abre no navegador endereços `https://maxroll.gg/...` (sem porta, usuário, espaço ou caractere escondido).
 - **Janela:** monta tudo com `textContent` (nunca `innerHTML`) e tem *Content-Security-Policy*: só os arquivos do app e os ícones do servidor da Blizzard. O `'unsafe-eval'` é exigência do pywebview.
 - **Dependências** com versão fixa no `requirements.txt` e conferidas na base de falhas conhecidas (OSV). O Pillow foi de 10.4.0 (com dezenas de falhas conhecidas) para 13.0.0.
+- **Contas do site (nuvem):** opcionais e só no montador. RLS "só o dono" no banco, só a chave pública no site, supabase-js com versão fixa e SRI, nada de e-mail na tabela e botões pra apagar as builds e a conta. Detalhes em "Salvar builds na nuvem".
 
 ## Baixar pronto (sem Python)
 

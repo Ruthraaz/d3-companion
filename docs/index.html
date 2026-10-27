@@ -193,9 +193,19 @@
       <ul class="lista-seguranca">
         <li><b>It doesn't read the game from the inside.</b> No memory, DLL or DirectX: just a screenshot of the tooltip area when you press the hotkey.</li>
         <li><b>Your screenshots stay on your PC</b> and the app keeps only the 200 newest. Nothing is sent anywhere.</li>
-        <li><b>It only talks to Maxroll and Blizzard</b>, always over HTTPS. No account, no data collection, no usage analytics.</li>
+        <li><b>It only talks to Maxroll and Blizzard</b>, always over HTTPS. The app has no account, no data collection and no usage analytics.</li>
         <li><b>Your Blizzard key is yours:</b> it stays in a file on your PC (<code>%APPDATA%\D3 Companion\.env</code>), and the app window can't even read it.</li>
         <li><b>Reviewed:</b> size limits on everything that comes from the internet, links only from Maxroll, libraries checked against the known vulnerabilities database (OSV).</li>
+      </ul>
+      <h3 class="secao-sub" id="nuvem">Planner account (optional): what is stored</h3>
+      <ul class="lista-seguranca">
+        <li><b>It's only for saving builds in the cloud.</b> Planning, copying the link and using the app still need no account at all.</li>
+        <li><b>You sign in with Discord or Google</b>, through Supabase (the service that stores the builds). There is no password of ours.</li>
+        <li><b>What we store:</b> your account number and the builds you save (name, class and the build). The builds table has no e-mail, name or picture.
+          Supabase keeps with the account what Discord/Google send at sign-in (like the e-mail), only so you can sign in.</li>
+        <li><b>Nobody else sees your builds:</b> the database only lets each account read and change its own.</li>
+        <li><b>Deleting is up to you:</b> in the planner, "My builds" → <b>Delete my builds</b> (all of them) or <b>Delete my account</b>
+          (the account and all its builds, right away). "Sign out" only disconnects this browser.</li>
       </ul>
     </section>
 
