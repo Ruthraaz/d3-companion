@@ -25,7 +25,7 @@ import sys
 from difflib import get_close_matches
 from pathlib import Path
 
-from idioma import t
+from idioma import atual, t
 from pastas import PASTA_BUILDS  # builds/ do projeto (ou do usuário, no .exe)
 
 # O parser devolve o encaixe da arma ("1-Hand", "2-Hand"); a build usa "Weapon".
@@ -80,12 +80,18 @@ def _modelo(regra: str | dict) -> str:
 
 
 def _rotulo(regra: str | dict) -> str:
-    """Nome curto pra mostrar (ex.: "Destreza"); sem rótulo, o próprio modelo."""
+    """Nome curto pra mostrar, já no idioma do app (ex.: "Destreza" ou "Dexterity");
+    sem rótulo, o próprio modelo."""
     if isinstance(regra, str):
         return regra
-    texto = regra.get("rotulo") or regra["modelo"]
+    texto = t(regra.get("rotulo") or regra["modelo"])
+    # Dano de habilidade: o rótulo foi gravado com o nome em português ("Dano de Tiro
+    # Múltiplo"); em inglês, o nome vem do modelo, que é o texto do jogo em inglês.
+    habilidade = re.fullmatch(r"Increases (.+) Damage by #% \*", regra["modelo"])
+    if habilidade and atual() == "en" and texto.startswith("Dano de "):
+        texto = t("Dano de {hab}", hab=habilidade.group(1))
     if regra.get("minimo") is not None:
-        texto += f' (mín. {regra["minimo"]})'
+        texto += t(" (mín. {n})", n=regra["minimo"])
     return texto
 
 

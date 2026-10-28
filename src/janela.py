@@ -49,7 +49,7 @@ from avaliador import ficha_da_build, ler_builds, problemas_da_build
 from blizzard import Blizzard, ErroBlizzard, visual_da_build
 from config import ler_config, salvar_config
 from heroi import comparar, herois, heroi
-from idioma import t
+from idioma import atual, t
 from maxroll import (ErroMaxroll, baixar_planner, builds_do_heroi, catalogo, classe_do_planner,
                      link_de_guia, montar, nomes_dos_perfis, planners_do_link, regravar_build,
                      remover_build, salvar_build)
@@ -294,12 +294,12 @@ class Api:
             nomes = {h["slug"]: h for tipo in ("ativas", "passivas") for h in da_classe[tipo]}
             for a in r["habilidades"]["ativas"]:
                 if a["habilidade"] in nomes:
-                    runas[a["habilidade"]] = {x["letra"]: x["nome_pt"]
+                    runas[a["habilidade"]] = {x["letra"]: x["nome" if atual() == "en" else "nome_pt"]
                                               for x in self._blizzard.runas(build["classe"], a["habilidade"])}
         except ErroBlizzard:
             pass
         def nome(slug):
-            return nomes.get(slug, {}).get("nome_pt", slug)
+            return nomes.get(slug, {}).get("nome" if atual() == "en" else "nome_pt", slug)
         def icone(slug):
             return nomes.get(slug, {}).get("icone")
         hab = r["habilidades"]

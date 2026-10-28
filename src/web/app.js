@@ -739,6 +739,20 @@ function etiquetas(lista, classe) {
   return el("ul", {}, lista.map(x => el("li", { class: `etiqueta ${classe}` }, t(x))));
 }
 
+// "Como conseguir" cada item do espaço (origem.py). Item sem origem conhecida
+// (sem internet ou que a Blizzard não conhece) não aparece.
+function comoConseguir(nomes) {
+  const v = visualDa(estado.builds[estado.build]);
+  const com = nomes.filter(n => v.itens[n] && v.itens[n].origem && v.itens[n].origem.length);
+  if (!com.length) return null;
+  return el("div", { class: "como-conseguir" },
+    el("h3", {}, t("Como conseguir")),
+    com.map(n => [
+      com.length > 1 && el("p", { class: "t-lendario" }, n),
+      el("ul", {}, v.itens[n].origem.map(o => el("li", {}, t(o.texto, o.vars)))),
+    ]));
+}
+
 function desenharDetalhe() {
   // Na aba Habilidades o detalhe é sempre de uma habilidade (trocar de build limpa a escolha).
   const sub = document.querySelector("#painel-builds .sub-aba.ativa");
@@ -755,6 +769,7 @@ function desenharDetalhe() {
       espaco.itens.length ? espaco.itens.join(t(" ou ")) : t("Qualquer item")),
     !espaco.definido && el("p", { class: "mudo" },
       t("A build {nome} não fala deste espaço: valem só as regras gerais, que ela pede em todos.", { nome: build.apelido })),
+    comoConseguir(espaco.itens),
     el("h3", {}, t("Obrigatórios")),
     etiquetas(espaco.obrigatorios, "obrigatorio"),
     el("h3", {}, t("Desejáveis")),
@@ -1468,8 +1483,19 @@ function visualDeExemplo(build) {
     "Mantle of Channeling": "p4_unique_shoulder_103_demonhunter_male",
     "Ring of Royal Grandeur": "unique_ring_107_x1_demonhunter_male",
   };
+  // "Como conseguir" de exemplo, com as mesmas frases do origem.py.
+  const geral = ["Cai de monstros em qualquer lugar (mais em Tormento alto e nas Fendas).",
+                 "Aposta na Kadala, com Fragmentos de Sangue.",
+                 "Cubo de Kanai: receita que transforma um item raro do mesmo tipo em lendário."];
+  const origem = nome => (
+    nome === "Ring of Royal Grandeur"
+      ? [{ texto: "Só sai do Cache Horádrico do Ato {ato} (missões do Modo Aventura).", vars: { ato: "I" } },
+         { texto: "O Cache do Ato IV também pode trazer." }, { texto: "Não cai de monstros nem sai na Kadala ou no cubo." }]
+      : nome.includes("Stone") || nome.startsWith("Bane")
+        ? [{ texto: "Cai dos Guardiões da Grande Fenda." }]
+        : geral.map(texto => ({ texto })));
   const itens = Object.fromEntries(Object.entries(itemIcone).map(([nome, i]) =>
-    [nome, { nome, icone: `${ICONES}/items/large/${i}.png` }]));
+    [nome, { nome, icone: `${ICONES}/items/large/${i}.png`, origem: origem(nome) }]));
   const pt = {
     "entangling-shot": "Tiro Enredante", multishot: "Tiro Múltiplo", strafe: "Metralhar", preparation: "Preparação",
     "smoke-screen": "Cortina de Fumaça", vengeance: "Vingança", "cull-the-weak": "Abater os Fracos",

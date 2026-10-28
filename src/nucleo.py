@@ -161,7 +161,7 @@ def dica_do_mistico(r: dict) -> str | None:
     falta = [a["rotulo"] for a in r["afixos"] if not a["ok"]]
     if not falta or not r.get("sobrando"):
         return None
-    trocaveis = [t(f) for f in falta if f != "Encaixe"] or [t(falta[0])]
+    trocaveis = [t(f) for f in falta if f not in ("Encaixe", t("Encaixe"))] or [t(falta[0])]
     alvo = trocaveis[0] + (" " + t("(ou {afixo})", afixo=trocaveis[1]) if len(trocaveis) > 1 else "")
     return t('Dica: no Místico, troque "{afixo}" por {alvo}.', afixo=r["sobrando"][0], alvo=alvo)
 

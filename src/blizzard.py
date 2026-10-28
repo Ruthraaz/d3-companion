@@ -287,8 +287,9 @@ class Blizzard:
 def visual_da_build(build: dict, api: "Blizzard") -> dict:
     """Ícones e textos em português pra janela mostrar a build:
 
-      itens: {nome do item: {"nome", "icone"}} (espaços, cubo e gemas);
-             item que a Blizzard não conhece fica com icone None;
+      itens: {nome do item: {"nome", "icone", "origem"}} (espaços, cubo e gemas);
+             item que a Blizzard não conhece fica com icone None; "origem" é o
+             "Como conseguir" (origem.py);
       habilidades: {"ativas": [...], "passivas": [...]}, cada uma com nome,
              nome_pt, icone, descricao_pt e, nas ativas, a runa escolhida.
     """
@@ -296,10 +297,12 @@ def visual_da_build(build: dict, api: "Blizzard") -> dict:
     nomes = [n for e in build.get("espacos", {}).values() for n in e.get("itens", [])]
     nomes += list(build.get("cubo", {}).values()) + build.get("gemas", [])
     nomes += list((build.get("seguidor") or {}).get("itens", {}).values())
+    from origem import origens_dos_itens  # aqui: origem importa deste módulo
+    origens = origens_dos_itens(nomes, api)
     itens = {}
     for nome in nomes:
         achado = indice.get(chave_do_nome(nome))
-        itens[nome] = {"nome": nome, "icone": achado["icone"] if achado else None}
+        itens[nome] = {"nome": nome, "icone": achado["icone"] if achado else None, "origem": origens[nome]}
 
     escolhidas = build.get("habilidades", {})
     habilidades = {"ativas": [], "passivas": []}

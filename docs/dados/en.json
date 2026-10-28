@@ -483,5 +483,21 @@
   "Modo gravação": "Recording mode",
   "Pra gravar vídeo do app (OBS, Xbox Game Bar): o selo aparece na gravação. Enquanto ligado, avalia só pelo atalho. Desligue depois de gravar.": "For recording videos of the app (OBS, Xbox Game Bar): the badge shows up in the recording. While on, items are checked only with the shortcut. Turn it off after recording.",
   "gravação + ": "recording + ",
-  "Modo gravação precisa ser \"sim\" ou \"nao\".": "Recording mode must be \"sim\" or \"nao\"."
+  "Modo gravação precisa ser \"sim\" ou \"nao\".": "Recording mode must be \"sim\" or \"nao\".",
+  "Dano da arma": "Weapon damage",
+  "Dano mín–máx": "Min–max damage",
+  " (mín. {n})": " (min. {n})",
+  "Como conseguir": "How to get it",
+  "Só sai do Cache Horádrico do Ato {ato} (missões do Modo Aventura).": "Only from the Act {ato} Horadric Cache (Adventure Mode bounties).",
+  "O Cache do Ato IV também pode trazer.": "The Act IV cache can drop it too.",
+  "Não cai de monstros nem sai na Kadala ou no cubo.": "It doesn't drop from monsters and can't come from Kadala or the Cube.",
+  "Forjado pelo Ferreiro (precisa do plano).": "Crafted by the Blacksmith (needs the plan).",
+  "Feito pelo Joalheiro (precisa do plano).": "Crafted by the Jeweler (needs the plan).",
+  "Feito pela Mística.": "Made by the Mystic.",
+  "Feito por um artesão (precisa do plano).": "Crafted by an artisan (needs the plan).",
+  "Cai dos Guardiões da Grande Fenda.": "Drops from Greater Rift Guardians.",
+  "Cai de monstros em qualquer lugar (mais em Tormento alto e nas Fendas).": "Drops from monsters anywhere (more on high Torment and in Rifts).",
+  "Aposta na Kadala, com Fragmentos de Sangue.": "Gamble it from Kadala with Blood Shards.",
+  "Cubo de Kanai: receita que transforma um item raro do mesmo tipo em lendário.": "Kanai's Cube: the recipe that upgrades a rare item of the same type to legendary.",
+  "Só cai com personagem de temporada.": "Only drops for seasonal characters."
 }

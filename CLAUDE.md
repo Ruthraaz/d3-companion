@@ -161,6 +161,18 @@ trabalho extra agora, não feche essa porta:
 - **Modo gravação (27/10/2026, 1.0.4):** `GRAVACAO=sim` no .env (Configurações). `JanelaSelo(gravacao=True)` não chama
   `SetWindowDisplayAffinity` (o selo aparece no OBS); o vigia para (ele se veria) e o F8 emite `esconder` e espera
   0,15 s antes do print. Feito pro Arthur gravar o vídeo de divulgação.
+- **1.0.5 (27/10/2026): idioma + Como conseguir.** (1) Em inglês ainda saíam rótulos em português nas builds do
+  Maxroll ("Dano de Tiro Múltiplo", "Dano mín–máx", "Dano da arma") e nomes de habilidade/runa no Meu herói.
+  Agora `avaliador._rotulo()` devolve o rótulo já no idioma (t(); dano de habilidade em inglês sai do modelo:
+  "Increases Multishot Damage by #% *" -> "Multishot damage"; "(mín. N)" também passa por t()). Quem mostra
+  ainda chama t() de novo, sem efeito. `nucleo.dica_do_mistico` compara "Encaixe" nos dois idiomas. janela.py
+  usa `nome` (en) ou `nome_pt` conforme `idioma.atual()`. (2) `src/origem.py`: "Como conseguir" de cada item,
+  mostrado no detalhe do espaço (app.js `comoConseguir`). Da API: tooltipParams `/artisan/<artesão>/` = forjado;
+  typeName "Legendary Gem" = Guardiões da Grande Fenda; `isSeasonRequiredToDrop`. À mão: `ITENS_DO_CACHE`
+  (21 itens só do Cache Horádrico dos atos I, II, III e V; o do Ato IV sorteia entre eles; lista conferida na
+  wiki do Diablo em 27/10/2026). Resto: regra geral (monstros, Kadala, cubo "raro -> lendário"). Sem detalhes
+  (sem internet / item desconhecido) = [] (melhor nada que errado). `visual_da_build` manda `origem` em cada
+  item como {texto, vars}; a janela traduz com t().
 - **Atualização pelo app (27/10/2026, a partir da 1.0.3):** `src/atualizar.py`. `versao_nova()` lê
   `api.github.com/repos/Ruthraaz/d3-companion/releases/latest` (erro = None, faixa não aparece); o instalador só vale
   com nome `D3-Companion-Setup-X.Y.Z.exe`, URL exata `releases/download/vX.Y.Z/...`, `digest` sha256 e tamanho <= 400 MB.

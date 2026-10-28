@@ -8,6 +8,7 @@
 
 - **Selo no jogo (F8):** serve, serve por enquanto (pra upar) ou não serve, com os afixos que tem e os que faltam, e a dica do Místico.
 - **Builds do Maxroll:** cole o link do guia ou do planejador e a build fica salva no app.
+- **Como conseguir:** clique num item da build e veja de onde ele vem: monstros, Kadala, cubo de Kanai, ferreiro, joalheiro, Guardião da Grande Fenda ou o Cache Horádrico de um ato.
 - **Monte a sua:** itens, gemas, cubo de Kanai, habilidades com runas e paragon, com os dados do jogo, no app ou no site.
 - **Dica do item:** passe o mouse num item ou gema e veja o poder lendário e os bônus do set, em português.
 - **Meu herói:** pela BattleTag, compara o equipamento do seu herói com a build.
